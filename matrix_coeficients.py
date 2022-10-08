@@ -8,6 +8,41 @@ import scipy.special
 import legendre_plynomials
 from constants_and_atomic_properties import *
 
+def z_EE(E,E2):
+  return (E+abs(E2))/abs(E2)
+
+def z_kb(k,b):
+  return pow(k,2)/pow(b,2) + 1
+
+def z_nprime(n_prime):
+  return 4/pow(n_prime,2) + 1
+
+def n_prime_from_z(z):
+  return 2/math.sqrt(z-1)
+
+def z_nunu(nu_j, nu_2):
+  return nu_j/nu_2
+
+def z2_nuE2(nu,E2):
+  return h*nu/abs(E2)
+
+def z2_nunu(nu,nu_2):
+  return nu/nu_2
+
+def E2_from_z2(z2,nu):
+  return h*nu/z2
+
+def E_from_z(z,E2):
+  return z * E2 - E2
+
+def E(k):
+  return pow(h,2)/(8*math.pi*math.pi*el_mass) * pow(k,2)
+
+def E2(b_):
+  return pow(h,2)/(8*math.pi*math.pi*el_mass) * pow(b_/2,2)
+
+def E2(nu_2):
+  return -h*nu_2
 
 def b(n_0, l_0, Z):
   factor = None
@@ -37,7 +72,7 @@ def k(E):
   return 2*math.pi / h * math.sqrt(2*el_mass*E)
 
 def n_prime(E, Z, n,l):
-  return b(n,l,Z)/k(E)
+  return 2*b(n,l,Z)/k(E)
 
 def N0(b_):
   return math.sqrt(pow(b_,3)/math.pi)
@@ -56,6 +91,21 @@ def N(l, m, b_, k_):
   if m >= 1:
     result *= 2
   return math.sqrt(result)
+
+def N_square(l, m, b_, k_):
+  result = 2*(2*l+1)*math.factorial(l-m)/math.factorial(l+m) * 4 * math.pi * el_mass/h/h * b_ * product_n_prime(b_,k_,l)
+  if m >= 1:
+    result *= 2
+  return result
+
+def N_lm_from_z(l,m,z,b_):
+  k_ = math.sqrt(z-1)*b_
+  return N(l,m,b_,k_)
+
+def N_lm_square_from_z(l,m,z,b_):
+  k_ = math.sqrt(z-1)*b_
+  return N_square(l,m,b_,k_)
+  
   
 def q(nu):
   return 2*math.pi*nu/speed_of_light
@@ -67,6 +117,7 @@ def delta(a,b):
       return 0
 
 ######################### BEGIN OF MAKING K_p,l #######################################################
+
 def C(n_prime, p, l, s):
   coef = scipy.special.binom(p+1-l,s)
   product1 = 1
@@ -238,12 +289,16 @@ def polynom(k, eta):
   elif k == 1: return math.sqrt(1-eta*eta)
   else: return (2*k-1)/(k-1) * eta * polynom(k-1,eta) - k/(k-1) * polynom(k-2,eta)
 
+def C_1_from_z(z, b_, l, nu, p_limit):
+  k_ = math.sqrt(z-1)*b_
+  return C_1(b_, k_, l, nu ,p_limit)
+
 def C_1(b_, k_, l, nu, p_limit):
   #print("*"*30 + "Start C_1" + "*"*30)
   part1 = b_/pow(-2*k_,l+1)
   sum = 0
   for p in range(p_limit):
-    q_l = q(nu)
+    #q_l = q(nu)
     n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
     J = J1(p,l)
     K1 = K_recursive(p,l,k_,b_)
@@ -458,6 +513,64 @@ def A_d_2_product(z,l,E,nu,p_limit, theta0, alpha):
   return (parallel,orthogonal)
 
 ################## END of matrix element calculation
+
+## Start of f functions for angle independant part of matrix products:
+
+def f_a(Z,l,z,nu_in,p_limit):
+  b_ = b(1,0,Z)
+  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_)
+  postfactor = C_1_from_z(z,b_,l,nu_in,p_limit) * C_1_from_z(z,b_,l,nu_in,p_limit).conj()
+  return prefactor*postfactor
+
+def f_b(Z,l,g_k,z,z2,nu_in,p_limit):
+  E2 = E2_from_z2(z2,nu_in)
+  E = E_from_z(z,E2)
+  b_ = b(2, 1, Z)
+  k_ = k(E)
+  N2N2B1 = pow(N0(b_),2) * pow(N(l, 1, b_, k_),2) * B_1(b_, k_, l, nu_in, p_limit)
+  if g_k == 0: 
+    Bl0star = B_0(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl0star
+  elif g_k == 1:
+    Bl1star = B_1(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl1star
+  elif g_k == 2:
+    Bl2star = B_2(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl2star
+
+def f_c(Z,l,g_k,z,z2,nu_in,p_limit):
+  E2 = E2_from_z2(z2,nu_in)
+  E = E_from_z(z,E2)
+  b_ = b(2, 1, Z)
+  k_ = k(E)
+  N2N2B1 = pow(N0(b_),2) * pow(N(l, 0, b_, k_),2) * B_0(b_, k_, l, nu_in, p_limit)
+  if g_k == 0: 
+    Bl0star = B_0(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl0star
+  elif g_k == 1:
+    Bl1star = B_1(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl1star
+  elif g_k == 2:
+    Bl2star = B_2(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl2star
+
+def f_d(Z,l,g_k,z,z2,nu_in,p_limit):
+  E2 = E2_from_z2(z2,nu_in)
+  E = E_from_z(z,E2)
+  b_ = b(2, 1, Z)
+  k_ = k(E)
+  N2N2B1 = pow(N0(b_),2) * pow(N(l, 2, b_, k_),2) * B_2(b_, k_, l, nu_in, p_limit)
+  if g_k == 0: 
+    Bl0star = B_0(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl0star
+  elif g_k == 1:
+    Bl1star = B_1(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl1star
+  elif g_k == 2:
+    Bl2star = B_2(b_,k_,l,nu_in,p_limit).conjugate()
+    return N2N2B1 * Bl2star
+
+## end of angle independant part
 
 def print_Js():
   p_limit = 6

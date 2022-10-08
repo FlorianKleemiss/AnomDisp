@@ -226,7 +226,7 @@ def right_side_44_imag(l,m,Theta,theta0,alpha=math.pi/2,Phi=0):
         res.append(res_)
     return res  
 
-if __name__ == "__main__":
+def test():
   import random
   random.seed()
   theta0 = random.random()*math.pi
@@ -418,3 +418,6 @@ if __name__ == "__main__":
   
   
   print("tada")
+
+if __name__ == "__main__":
+  test()
