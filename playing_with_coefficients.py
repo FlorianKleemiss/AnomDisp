@@ -173,10 +173,10 @@ def Psi_orth_d(l,m,k,theta0,alpha):
   elif k == 2:
     return a * math.cos(alpha) - b * math.cos(theta0) * math.sin(alpha)
 
-# n is the complex quantum number where we are in energy spectrum
-# z2 is the absorption edge z of the element we look at
-# el_nr is the number of the elemtn in the periodic table
-# E_in is the input energy
+# n is the complex quantum number where we are in energy spectrum for integration
+# z2 is the value of z at the absorption edge of the element we look at
+# el_nr is the number of the element in the periodic table
+# E_in is the input energy (incoming X-ray)
 def calc_S_values(theta0, alpha, l_max, p_max, z, z2, nu_in, el_nr):
   a=0
   b=0
@@ -211,19 +211,19 @@ nu_2 = get_ionization_energy_2s(el_nr) * h
 z2 = z2_nunu(nu=nu_in,nu_2=nu_2)
 x = np.linspace(1.001,5.001,200)
 a_result = []
-#b_result = []
+b_result = []
 #c_result = []
 #d_result = []
 #g_result = []
 for i in range(len(x)):
   z = x[i]
   #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
-  temp1 = f_a(el_nr,1,z,nu_in,1)
+  temp1 = f_a(el_nr,1,z,nu_in,2,5)
   temp = f_s_1(z)
-  temp /= 4*math.pi*math.pi*el_mass/h/h
+  temp *= 4*math.pi*math.pi*el_mass/h/h
   temp2 = temp
-  a_result.append(temp2 / temp1)
-  #b_result.append(b_)
+  a_result.append(temp1/temp2)
+  #b_result.append(temp2)
   #c_result.append(c_)
   #d_result.append(d_)
   

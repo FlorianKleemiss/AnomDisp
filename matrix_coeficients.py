@@ -45,13 +45,10 @@ def E2(nu_2):
   return -h*nu_2
 
 def b(n_0, l_0, Z):
-  factor = None
   Z_eff = None
   if n_0 == 1:
-    factor = 1
     Z_eff = get_Zeff_1s(Z)
   elif n_0 == 2:
-    factor = 2
     if l_0 == 0:
       Z_eff = get_Zeff_2s(Z)
     elif l_0 == 1:
@@ -59,14 +56,13 @@ def b(n_0, l_0, Z):
     elif l_0 == 2:
       Z_eff = get_Zeff_2p_3_2(Z)
   elif n_0 == 3:
-    factor = 3
     if l_0 ==0:
       Z_eff = get_Zeff_3s(Z)
     elif l_0 == 1:
       Z_eff = get_Zeff_3p_1_2(Z)
     elif l_0 == 2:
       Z_eff = get_Zeff_3d_3_2(Z)
-  return Z_eff/(factor*a0)
+  return Z_eff/(n_0*a0)
 
 def k(E):
   return 2*math.pi / h * math.sqrt(2*el_mass*E)
@@ -102,7 +98,7 @@ def N_lm_from_z(l,m,z,b_):
   k_ = math.sqrt(z-1)*b_
   return N(l,m,b_,k_)
 
-def N_lm_square_from_z(l,m,z,b_):
+def N_lm_square_from_z(n,l,m,z,b_):
   k_ = math.sqrt(z-1)*b_
   return N_square(l,m,b_,k_)
   
@@ -152,12 +148,12 @@ def prepare_M(p,l,np4):
   M[0,0] = complex(1.0,0)
   M[1,0] = complex(0.0,np44)
   M[1,1] = -2*(l+1)
-  for j in range(2,p+2):
-    M[j,0] = -0.25*M[j-1,1] + complex(0,np44)*M[j-1,0]
+  for j in range(1,p+1):
+    M[j+1,0] = -0.25*M[j,1] + complex(0,np44)*M[j,0]
     for s in range(1,j):
-      M[j,s] = -0.25*(s+1)*M[j-1,s+1] + complex(0,np44)*M[j-1,s] + (s-1-2*(l+j))*M[j-1,s-1]
-    M[j,j-1] = complex(0,np44) * M[j-1,j-1] + (j-2-2*(l+j))*M[j-1,j-2]
-    M[j,j] = (j-1-2*(l+j))*M[j-1,j-1]
+      M[j+1,s] = -0.25*(s+1)*M[j,s+1] + complex(0,np44)*M[j,s] + (s-1-2*(l+j+1))*M[j,s-1]
+    M[j+1,j] = complex(0,np44) * M[j,j] + (j-1-2*(l+j+1))*M[j,j-1]
+    M[j+1,j+1] = (j-2*(l+j+1))*M[j,j]
   return M
 
 def g_from_M(M, zeta, j):
@@ -167,15 +163,15 @@ def g_from_M(M, zeta, j):
     sum += M[j,i]
   return sum
   
-def K_recursive(p, l, k, b):
+def K_recursive(p, l, k, b, n_0):
   if l > p+1:
     return 0
-  np4 = b/(k*2) #n'/4
+  np4 = n_0*b/k/4 #n'/4
   M = prepare_M(p,l,np4)
   part1 = -complex(0,2*math.pi) / pow(complex(0,2*k),p+2-l)
   g = g_from_M(M, complex(0,np4), p+1-l)
-  part2 = g / pow(-pow(np4,2)-0.25,p+2)
-  ex = math.exp(-8*np4 * math.atan(1/(8*np4)))
+  part2 = g * pow(1/(-pow(np4,2)-0.25),(p+2))
+  ex = math.exp(-8*np4 * math.atan(1/(2*np4)))
   return part1 * part2 * ex
 
 ################### END OF CALC K ############################################
@@ -289,11 +285,11 @@ def polynom(k, eta):
   elif k == 1: return math.sqrt(1-eta*eta)
   else: return (2*k-1)/(k-1) * eta * polynom(k-1,eta) - k/(k-1) * polynom(k-2,eta)
 
-def C_1_from_z(z, b_, l, nu, p_limit):
+def C_1_from_z(z, b_, n_0, l, nu, p_limit):
   k_ = math.sqrt(z-1)*b_
-  return C_1(b_, k_, l, nu ,p_limit)
+  return C_1(b_, k_, n_0, l, nu ,p_limit)
 
-def C_1(b_, k_, l, nu, p_limit):
+def C_1(b_, k_, n_0, l, nu, p_limit):
   #print("*"*30 + "Start C_1" + "*"*30)
   part1 = b_/pow(-2*k_,l+1)
   sum = 0
@@ -301,8 +297,8 @@ def C_1(b_, k_, l, nu, p_limit):
     #q_l = q(nu)
     n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
     J = J1(p,l)
-    K1 = K_recursive(p,l,k_,b_)
-    K2 = K_recursive(p+1,l,k_,b_)
+    K1 = K_recursive(p,l,k_,b_, n_0)
+    K2 = K_recursive(p+1,l,k_,b_, n_0)
     K2_mod = b_/2*K2
     #print("p: {:d} n1: {:.5e}".format(p,n1))
     #print("  J: {:2f} K1: {:.5e} K2: {:.5e}".format(J,K1,K2))
@@ -516,10 +512,12 @@ def A_d_2_product(z,l,E,nu,p_limit, theta0, alpha):
 
 ## Start of f functions for angle independant part of matrix products:
 
-def f_a(Z,l,z,nu_in,p_limit):
-  b_ = b(1,0,Z)
-  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_)
-  postfactor = C_1_from_z(z,b_,l,nu_in,p_limit) * C_1_from_z(z,b_,l,nu_in,p_limit).conj()
+def f_a(Z,l,z,nu_in,n_0,p_limit):
+  b_ = b(n_0,0,Z)
+  k_ = math.sqrt(z-1)*b_
+  prefactor = pow(N0(b_),2) * N_lm_square_from_z(n_0,l,1,z,b_)
+  C1 = complex(C_1_from_z(z,b_,n_0,l,nu_in,p_limit))
+  postfactor = C1 * C1.conjugate()
   return prefactor*postfactor
 
 def f_b(Z,l,g_k,z,z2,nu_in,p_limit):
