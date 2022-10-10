@@ -14,6 +14,12 @@ r_0 = pow(el_charge,2)/el_charge/pow(speed_of_light,2)
 r_0_for_nu = pow(el_charge,2)/el_charge
 angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
 
+def exp_from_z(z,n_0):
+  return math.exp(-2*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
+
+def exp_squared_from_z(z,n_0):
+  return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
+
 elements = ["DUMMY","H",                                                                                                                                              "He",
             "Li","Be",                                                                                                                        "B", "C", "N", "O", "F","Ne",
             "Na","Mg",                                                                                                                       "Al","Si", "P", "S","Cl","Ar",

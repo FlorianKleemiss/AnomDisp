@@ -1,5 +1,5 @@
 from legendre_plynomials import *
-from matrix_coeficients import *
+from matrix_coefficients_v2 import *
 import matplotlib.pyplot as plt
 
 def getting_agreement():
@@ -203,38 +203,90 @@ def f_s_1(z):
   part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
   return part1*part2/part3
 
+def f_s_1_hoenl(z):
+  part1 = 64/(3*pow(z,3))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-4/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-2*math.pi/sqrt_var)
+  return part1*part2/part3
+  
+def f_s_2(z):
+  part1 = 2048*pow(z-5,2)*(z+3)/(15*pow(z,7))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
+  return part1*part2/part3
+
+def f_s_2_hoenl(z):
+  part1 = 256*(4*z-3)/(15*pow(z,5))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-4/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-2*math.pi/sqrt_var)
+  return part1*part2/part3
+
 t0 = math.pi/3
 alp = math.pi/1.823
-el_nr = 42
+el_nr = 6
 nu_in = 3800 * h
 nu_2 = get_ionization_energy_2s(el_nr) * h
-z2 = z2_nunu(nu=nu_in,nu_2=nu_2)
-x = np.linspace(1.001,5.001,200)
+x = np.linspace(1.001,4.501,200)
 a_result = []
 b_result = []
-#c_result = []
-#d_result = []
+c_result = []
+d_result = []
 #g_result = []
-for i in range(len(x)):
-  z = x[i]
+x2 = pow(2* q(nu_in)/b(2,0, el_nr),2)
+constant_factor = 4*math.pi*math.pi*el_mass/h/h
+for z in x:
   #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
-  temp1 = f_a(el_nr,1,z,nu_in,2,5)
-  temp = f_s_1(z)
-  temp *= 4*math.pi*math.pi*el_mass/h/h
-  temp2 = temp
-  a_result.append(temp1/temp2)
-  #b_result.append(temp2)
-  #c_result.append(c_)
-  #d_result.append(d_)
+  #temp1 = f_a(el_nr,1,z,nu_in,2,1)
+  temp_voll = f_a(
+    Z=el_nr,
+    l=1,
+    z=z,
+    nu_in = nu_in,
+    n_0 = 1,
+    p_limit = 3)
+
+  #temp = temp1 - temp_p
+  
+  #temp /= x2
+  #temp *= 4*math.pi*math.pi*el_mass/h/h
+  #temp2 = temp
+
+  temp1 = f_s_1_hoenl(z) * constant_factor
+  a_result.append(temp_voll/temp1)
+  temp2 = f_s_2_hoenl(z) * constant_factor *x2
+  temp_voll_2 = f_a(
+    Z=el_nr,
+    l=2,
+    z=z,
+    nu_in = nu_in,
+    n_0 = 1,
+    p_limit = 5
+  )
+  b_result.append(temp_voll_2/temp2)
+  #temp1 /= x2
+  #temp1 *= constant_factor
+  #temp *= constant_factor
+  
+  #b_result.append(temp)
+  #c_result.append(temp1)
+  null = 0
+  #d_result.append(temp2)
   
   #g_result.append(temp)
 
 fig = plt.figure()
 axes = fig.add_subplot(1,1,1)
-axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',label="a")
-#axes.scatter(x,b_result,s=10,facecolors='none',edgecolors='g',label="b")
-#axes.scatter(x,c_result,s=10,facecolors='none',edgecolors='r',label="c")
-#axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='y',label="d")
+axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',label="voll l=1")
+axes.scatter(x,b_result,s=10,facecolors='none',edgecolors='g',label="voll l=2")
+#axes.scatter(x,c_result,s=10,facecolors='none',edgecolors='r',label="f l=1")
+#axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='y',label="f l=2")
 #axes.plot(x,g_result,'--',label="f_table1")
+axes.legend()
 
 plt.show()
