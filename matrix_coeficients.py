@@ -525,21 +525,12 @@ def A_d_2_product(z,l,E,nu,p_limit, theta0, alpha):
 
 ## Start of f functions for angle independant part of matrix products:
 
-def f_a(Z,l,z,nu_in,n_0,p_limit):
+def f_a(Z,l,k,z,nu_in,n_0,p_limit):
   b_ = b(n_0,0,Z)
   k_ = math.sqrt(z-1)*b_
   prefactor = pow(N0(b_),2) * N_lm_square_from_z(n_0,l,1,z,b_)
   C1 = complex(C_1_from_z(z,b_,n_0,l,nu_in,p_limit))
   postfactor = C1 * C1.conjugate()
-  return prefactor*postfactor
-
-def f_a_test(Z,l,z,nu_in,n_0):
-  b_ = b(n_0,0,Z)
-  k_ = math.sqrt(z-1)*b_
-  prefactor = pow(N0(b_),2) * N_lm_square_from_z(n_0,l,1,z,b_)
-  C1_0 = complex(C_1_test_from_z(z,b_,n_0,l,nu_in,0))
-  C1_2 = complex(C_1_test_from_z(z,b_,n_0,l,nu_in,2))
-  postfactor = C1_0 * C1_2.conjugate() + C1_0.conjugate() * C1_2
   return prefactor*postfactor
 
 def f_b(Z,l,g_k,z,z2,nu_in,p_limit):

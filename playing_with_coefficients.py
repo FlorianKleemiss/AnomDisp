@@ -1,6 +1,8 @@
 from legendre_plynomials import *
 from matrix_coefficients_v2 import *
 import matplotlib.pyplot as plt
+from brennan import brennan
+import scipy.integrate as integrate
 
 def getting_agreement():
   import random
@@ -194,9 +196,41 @@ def calc_S_values(theta0, alpha, l_max, p_max, z, z2, nu_in, el_nr):
       c+=Psi_parallel_c(l,2,k,theta0,alpha) * f_c(el_nr,l,k,z,z2,nu_in,p_max)
       d+=Psi_parallel_d(l,2,k,theta0,alpha) * f_d(el_nr,l,k,z,z2,nu_in,p_max)
   return a,b,c,d
-  
+
 def f_s_1(z):
   part1 = 512*(z+3)/(3*pow(z,4))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
+  return part1*part2/part3
+
+def f_p_1(z):
+  part1 = 512*(z+8/3)/(3*pow(z,5))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
+  return part1*part2/part3
+
+def f_l0(z):
+  part1 = 512/(9*pow(z,4))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
+  return part1*part2/part3
+
+def f_l2(z):
+  part1 = 2*8192*(z+3)/(45*pow(z,5))
+  z_1=z-1
+  sqrt_var = numpy.sqrt(z_1)
+  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
+  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
+  return part1*part2/part3
+
+def f_l2_c0(z):
+  part1 = -pow(2,14)*(z+3)/(45*pow(z,5))
   z_1=z-1
   sqrt_var = numpy.sqrt(z_1)
   part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
@@ -212,7 +246,7 @@ def f_s_1_hoenl(z):
   return part1*part2/part3
   
 def f_s_2(z):
-  part1 = 2048*pow(z-5,2)*(z+3)/(15*pow(z,7))
+  part1 = 2048*pow(z-1,2)*(z+3)/(15*pow(z,7))
   z_1=z-1
   sqrt_var = numpy.sqrt(z_1)
   part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
@@ -229,64 +263,380 @@ def f_s_2_hoenl(z):
 
 t0 = math.pi/3
 alp = math.pi/1.823
-el_nr = 6
-nu_in = 3800 * h
-nu_2 = get_ionization_energy_2s(el_nr) * h
-x = np.linspace(1.001,4.501,200)
+el_nr = 42
+#nu_in = 3800 * h
+start_nu_in = 0.8*get_ionization_energy_1s(el_nr)/h
+end_nu_in = 3*get_ionization_energy_1s(el_nr)/h
+x = np.linspace(start_nu_in,end_nu_in,200)
+#x = np.linspace(1.0000000001,20000.0,200000)
 a_result = []
 b_result = []
 c_result = []
 d_result = []
-#g_result = []
-x2 = pow(2* q(nu_in)/b(2,0, el_nr),2)
+e_result = []
+f_result = []
+g_result = []
+h_result = []
+i_result = []
+def x2(nu_in,n_0, el_nr, l_0):
+  return pow( n_0* q(nu_in)/b(n_0, l_0, el_nr),2)
 constant_factor = 4*math.pi*math.pi*el_mass/h/h
-for z in x:
-  #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
-  #temp1 = f_a(el_nr,1,z,nu_in,2,1)
-  temp_voll = f_a(
+br = brennan()
+
+def test_for_EM_and_Hoenl(el_nr, z, nu_in):
+  #temp_voll = f_a(
+  #  Z=el_nr,
+  #  l=1,
+  #  z=z,
+  #  nu_in = nu_in,
+  #  n_0 = 1,
+  #  p_limit = 3)
+##
+  #temp1 = f_s_1_hoenl(z) * constant_factor
+  #g_result.append(temp1)
+  #h_result.append(temp_voll)
+  #temp2 = f_s_2_hoenl(z) * constant_factor * x2(nu_in, 1, el_nr, 0)
+  #temp_voll_2 = f_a(
+  #  Z=el_nr,
+  #  l=2,
+  #  z=z,
+  #  nu_in = nu_in,
+  #  n_0 = 1,
+  #  p_limit = 5
+  #) 
+  #e_result.append(temp2)
+  #temp_voll_3 = f_a(
+  #  Z=el_nr,
+  #  l=3,
+  #  z=z,
+  #  nu_in = nu_in,
+  #  n_0 = 1,
+  #  p_limit = 5
+  #) 
+  #f_result.append(temp_voll_2)  
+
+  #temp3 = f_s_1(z) * constant_factor
+  #temp_voll_3 = f_a(
+  #  Z=el_nr,
+  #  l=1,
+  #  z=z,
+  #  nu_in = nu_in,
+  #  n_0 = 2,
+  #  p_limit = 3)
+  #c_result.append(temp3)
+  #d_result.append(temp_voll_3)
+#
+  #temp4 = f_s_2(z) * constant_factor * x2(nu_in, 2, el_nr, 0)
+  temp_voll_4 = f_a(
     Z=el_nr,
     l=1,
+    k=0,
     z=z,
     nu_in = nu_in,
     n_0 = 1,
-    p_limit = 3)
+    p_limit = 3) 
+  #a_result.append(temp4)
+  b_result.append(temp_voll_4)
 
-  #temp = temp1 - temp_p
+def test_for_fb_fc_fd(el_nr, z, nu_in):
+  a_res = 0
+  b_res = 0
+  c_res = 0
+  d_res = 0
+  e_res = 0
+  f_res = 0
+  g_res = 0
+  h_res = 0
+  i_res = 0
+  p_limit = 3
+  #a_res += f_s_1(z) * constant_factor
+  #b_res += f_p_1(z) * constant_factor
   
-  #temp /= x2
-  #temp *= 4*math.pi*math.pi*el_mass/h/h
-  #temp2 = temp
-
-  temp1 = f_s_1_hoenl(z) * constant_factor
-  a_result.append(temp_voll/temp1)
-  temp2 = f_s_2_hoenl(z) * constant_factor *x2
-  temp_voll_2 = f_a(
-    Z=el_nr,
-    l=2,
-    z=z,
-    nu_in = nu_in,
-    n_0 = 1,
-    p_limit = 5
-  )
-  b_result.append(temp_voll_2/temp2)
-  #temp1 /= x2
-  #temp1 *= constant_factor
-  #temp *= constant_factor
+  #c_res += f_l0(z) * constant_factor
+  #d_res += f_c_0(el_nr,0,0,z,nu_in,2,1)
+  a_res = f_l2_c0(z) * constant_factor
+  b_res = -f_l2_c0(z) * constant_factor
+  c_res = -0.5*f_l2_c0(z) * constant_factor
+  e_res += f_l2(z) * constant_factor
+  l = 2
+  for k_ in range(0,3):
+    f_res += f_c_0(el_nr,l,k_,z,nu_in,2,p_limit)
+    g_res += f_b(  el_nr,l,k_,z,nu_in,2,p_limit)
+    h_res += f_c_2(el_nr,l,k_,z,nu_in,2,p_limit)
+    i_res += f_d(  el_nr,l,k_,z,nu_in,2,p_limit)
+  #  if l == 0: continue
+  #  c_res += abs(f_b(el_nr,l,1,z,nu_in,2,p_limit))
+  #  c_res += abs(f_c_0(el_nr,l,1,z,nu_in,2,p_limit))
+  #  c_res += abs(f_c_2(el_nr,l,1,z,nu_in,2,p_limit))
+  #  c_res += abs(f_d(el_nr,l,1,z,nu_in,2,p_limit))
+  #  if l == 1: continue
+  #  c_res += abs(f_b(el_nr,l,2,z,nu_in,2,p_limit))
+  #  c_res += abs(f_c_0(el_nr,l,2,z,nu_in,2,p_limit)) 
+  #  c_res += abs(f_c_2(el_nr,l,2,z,nu_in,2,p_limit))
+  #  c_res += abs(f_d(el_nr,l,2,z,nu_in,2,p_limit))
+  #c_res = math.log(c_res)
+  d_res = f_res + g_res + h_res + i_res
+  a_result.append(a_res)
+  b_result.append(b_res)
   
-  #b_result.append(temp)
-  #c_result.append(temp1)
-  null = 0
-  #d_result.append(temp2)
+  c_result.append(c_res)
   
-  #g_result.append(temp)
+  d_result.append(d_res)
+  e_result.append(e_res)
+  f_result.append(f_res)
+  g_result.append(g_res)
+  h_result.append(h_res)
+  i_result.append(i_res)
+def plot_abcd_test():
+  fig, axes = plt.subplots(1,1)
+  #axes[0].scatter(x,a_result,s=10,facecolors='none',edgecolors='b',label="fs1")
+  #axes[0].scatter(x,b_result,s=10,facecolors='none',edgecolors='g',label="fp1")
+  #axes[1].scatter(x,c_result,s=10,facecolors='none',edgecolors='r',label="c paper l=0 k=0")
+  #axes[1].scatter(x,d_result,s=10,facecolors='none',edgecolors='black',label="c l=0 k=0")
+  axes.scatter(x,e_result,s=10,facecolors='none',edgecolors='y',label="l=2 paper")
+  axes.scatter(x,a_result,s=30,facecolors='none',edgecolors='y',label="l=2 c_0 paper")
+  axes.scatter(x,b_result,s=30,facecolors='none',edgecolors='y',label="l=2 -c_0 paper")
+  axes.scatter(x,c_result,s=50,facecolors='none',edgecolors='y',label="l=2 -0.5 c_0 paper")
+  axes.scatter(x,f_result,s=10,facecolors='none',edgecolors='b',label="l=2 c_0 code")
+  axes.scatter(x,g_result,s=10,facecolors='none',edgecolors='g',label="l=2 b code")
+  axes.scatter(x,h_result,s=20,facecolors='none',edgecolors='r',marker='^',label="l=2 c_2 code")
+  axes.scatter(x,i_result,s=10,facecolors='none',edgecolors='black',label="l=2 d code")
+  axes.plot(x,d_result,color='black',label="l=2 complete code")
 
-fig = plt.figure()
-axes = fig.add_subplot(1,1,1)
-axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',label="voll l=1")
-axes.scatter(x,b_result,s=10,facecolors='none',edgecolors='g',label="voll l=2")
-#axes.scatter(x,c_result,s=10,facecolors='none',edgecolors='r',label="f l=1")
-#axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='y',label="f l=2")
-#axes.plot(x,g_result,'--',label="f_table1")
-axes.legend()
+  axes.legend()
+  plt.show()
 
-plt.show()
+def plot_EM_Hoenl_test():
+  fig, axes = plt.subplots(1,1)
+  #axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="EM l=1")
+  axes.scatter(x,b_result,s=30,facecolors='none',edgecolors='g',label="PK l=1")
+  #axes[0].scatter(x,c_result,s=10,facecolors='none',edgecolors='r',marker='^',label="EM l=1")
+  #axes.scatter(x,d_result,s=30,facecolors='none',edgecolors='y',label="PK l=1")
+  
+  #axes.scatter(x,e_result,s=10,facecolors='none',edgecolors='b',marker='^',label="Hönl l=2")
+  #axes.scatter(x,f_result,s=30,facecolors='none',edgecolors='g',label="PK l=1")
+  #axes.scatter(x,g_result,s=10,facecolors='none',edgecolors='r',marker='^',label="Hönl l=1")
+  #axes.scatter(x,h_result,s=30,facecolors='none',edgecolors='y',label="PK l=1")
+  #axes.plot(x,g_result,'--',label="f_table1")
+  axes.legend()
+  #axes[1].legend()
+  
+  plt.show()
+
+def plot_integral_test(edge):
+  fig, axes = plt.subplots(1,1)
+  
+  axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="Hönl l=1")
+  #axes.scatter(x,b_result,s=20,facecolors='none',edgecolors='r',label="Hönl good epsilon l=1")
+  axes.scatter(x,c_result,s=10,facecolors='none',edgecolors='g',marker='^',label="Hönl complex l=1")
+  axes.scatter(x,d_result,color='r',label="Brennan real")
+  axes.scatter(x,e_result,color='y',label="Brennan complex")
+  axes.vlines(edge,-2,2)
+  axes.hlines(0.0,start_nu_in,end_nu_in)
+  axes.legend()
+  
+  plt.show()
+
+def test_integral_hönl(nu_in,el_nr):
+  z_null = h * nu_in / get_ionization_energy_1s(el_nr)
+  z_null_ls = h * nu_in / get_ionization_energy_2s(el_nr)
+  z_null_lp1 = h * nu_in / get_ionization_energy_2p1_2(el_nr)
+  z_null_lp2 = h * nu_in / get_ionization_energy_2p3_2(el_nr)
+  p_limit = 3
+  n_0 = 1
+  l = 1
+  k = 1
+  epsilon = 1E-10
+  if z_null >= 1:
+    integral1 = integrate.quad(
+      integrand_matrix,
+      1,
+      z_null-epsilon,
+      args=(f_a,z_null,el_nr, l, k, nu_in, n_0, p_limit),
+      points=z_null,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    integral2 = integrate.quad(
+      integrand_matrix,
+      z_null+epsilon,
+      100,
+      args=(f_a,z_null,el_nr, l, k, nu_in, n_0, p_limit),
+      points=z_null,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    a_result.append(-2*(integral1[0] + integral2[0])/constant_factor + kpcor[el_nr] - relcor[el_nr])
+  else:
+    total_integral = integrate.quad(
+      integrand_matrix,
+      1,
+      100,
+      args=(f_a,z_null,el_nr, l, k, nu_in, n_0, p_limit),
+      points=z_null,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    a_result.append(-2*total_integral[0]/constant_factor + kpcor[el_nr] - relcor[el_nr])
+    #b_result.append(-2*total_integral[0]/constant_factor)
+  if z_null_ls >1:
+    integral1 = integrate.quad(
+      integrand_matrix,
+      1,
+      z_null_ls-epsilon,
+      args=(f_a,z_null_ls,el_nr, l, k, nu_in, 2, p_limit),
+      points=z_null_ls,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    integral2 = integrate.quad(
+      integrand_matrix,
+      z_null_ls+epsilon,
+      100,
+      args=(f_a,z_null_ls,el_nr, l, k, nu_in, 2, p_limit),
+      points=z_null_ls,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    a_result[-1] -= (integral1[0]+integral2[0]) / constant_factor
+  else:
+    integral = integrate.quad(
+      integrand_matrix,
+      1,
+      100,
+      args=(f_a,z_null_ls,el_nr, 2, k, nu_in, 2, p_limit),
+      points=z_null_ls,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    a_result[-1] -= (integral[0]) / constant_factor
+  if z_null_lp1 >1:
+    res = 0
+    for k in range(0,3):
+      integral1 = integrate.quad(
+        integrand_matrix,
+        1,
+        z_null_lp1-epsilon,
+        args=(f_b,z_null_lp1,el_nr, 2, k, nu_in, 2, p_limit),
+        points=z_null_lp1,
+        limit=200000,
+        epsabs=1E-55,
+        epsrel=1E-10,
+        full_output=2)
+      integral2 = integrate.quad(
+        integrand_matrix,
+        z_null_lp1+epsilon,
+        100,
+        args=(f_b,z_null_lp1,el_nr, 2, k, nu_in, 2, p_limit),
+        points=z_null_lp1,
+        limit=200000,
+        epsabs=1E-55,
+        epsrel=1E-10,
+        full_output=2)
+      res += integral1[0]+integral2[0]
+    a_result[-1] -= 2 * (res) / constant_factor
+  else:
+    res = 0
+    for k in range(0,3):
+      integral = integrate.quad(
+      integrand_matrix,
+      1,
+      100,
+      args=(f_b,z_null_lp1,el_nr, 2, k, nu_in, 2, p_limit),
+      points=z_null_lp1,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+      res += integral[0]
+    a_result[-1] -= 2 * res / constant_factor
+  if z_null_lp2 >1:
+    res = 0
+    for k in range(0,3):
+      integral1 = integrate.quad(
+        integrand_matrix,
+        1,
+        z_null_lp2-epsilon,
+        args=(f_b,z_null_lp2,el_nr, 2, k, nu_in, 2, p_limit),
+        points=z_null_lp2,
+        limit=200000,
+        epsabs=1E-55,
+        epsrel=1E-10,
+        full_output=2)
+      integral2 = integrate.quad(
+        integrand_matrix,
+        z_null_lp2+epsilon,
+        100,
+        args=(f_b,z_null_lp2,el_nr, 2, k, nu_in, 2, p_limit),
+        points=z_null_lp2,
+        limit=200000,
+        epsabs=1E-55,
+        epsrel=1E-10,
+        full_output=2)
+      res += integral1[0]+integral2[0]
+    a_result[-1] -= 4 * (res) / constant_factor
+  else:
+    res = 0
+    for k in range(0,3):
+      integral = integrate.quad(
+      integrand_matrix,
+      1,
+      100,
+      args=(f_b,z_null_lp2,el_nr, 2, k, nu_in, 2, p_limit),
+      points=z_null_lp2,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+      res += integral[0]
+    a_result[-1] -= 4 * res / constant_factor
+  fac = 2*math.pi
+  c_result.append(f_a(el_nr,l,0,z_null,nu_in,n_0,p_limit) * fac/constant_factor)
+  for k in range(0,3):
+    c_result[-1] += (f_a(el_nr,2,k,z_null_ls,nu_in,n_0,p_limit) * fac/constant_factor)
+    c_result[-1] += (f_b(el_nr,2,k,z_null_lp1,nu_in,n_0,p_limit) * fac/constant_factor)
+    c_result[-1] += (2* f_b(el_nr,2,k,z_null_lp2,nu_in,n_0,p_limit) * fac/constant_factor)
+
+  lam = speed_of_light / nu_in * 1E10
+  fpfdp = br.at_angstrom(lam,'Mo')
+  d_result.append(fpfdp[0])
+  e_result.append(fpfdp[1])
+  
+
+def test_values():
+  nu_in = get_ionization_energy_2s(el_nr) * h
+  for l in range(0,10):
+    b_res = 0
+    c0_res = 0
+    c2_res = 0
+    d_res = 0
+    for k in range(0,min(l,2)):
+      b_res  += f_b(el_nr,l,k,1.001,nu_in,2,5)
+      c0_res += f_c_0(el_nr,l,k,1.001,nu_in,2,5)
+      c2_res += f_c_2(el_nr,l,k,1.001,nu_in,2,5)
+      d_res  += f_d(el_nr,l,k,1.001,nu_in,2,5)
+    print("------------------- l=%d ---------------------"%l)
+    print("b: %f"%b_res)
+    print("c0: %f"%c0_res)
+    print("c2: %f"%c2_res)
+    print("d: %f"%d_res)
+    null = 0
+
+for nu in x:
+  #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
+  #test_for_EM_and_Hoenl(el_nr,z,nu_in)
+  #test_for_fb_fc_fd(el_nr,z,nu_in)
+  test_integral_hönl(nu,el_nr)
+
+
+  #null = 0
+
+#plot_abcd_test()
+#plot_EM_Hoenl_test()
+plot_integral_test(get_ionization_energy_1s(el_nr)/h)
