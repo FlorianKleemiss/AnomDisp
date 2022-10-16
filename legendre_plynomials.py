@@ -129,6 +129,7 @@ def alpha_coef(l,m,m_,theta0, alpha):
     sum = 0
     #print("lower limit:" +str(max(0,-m-m_,-m+m_)) + " upper limit: " + str(min(l-m, l-m_, l+m_)+1))
     for rho in range(0, l-m+1):
+      if ct0_2 == 0: continue
       sum += pow(-1,rho) * scipy.special.binom(l-m,rho) * pow(ct0_2,2*rho) \
         * (pow(-1,m_) * scipy.special.binom(l+m,m+m_+rho) * pow(ct0_2,m_) \
         + scipy.special.binom(l+m,m-m_+rho) * pow(ct0_2,-m_))
@@ -151,6 +152,7 @@ def alpha_bar_coef(l,m,m_,theta0, alpha):
       * pow(np.cos(theta0/2),2*l) * pow(ct0_2,m)
     sum = 0
     for rho in range(0, l-m+1):
+      if ct0_2 == 0: continue
       sum += pow(-1,rho) * scipy.special.binom(l-m,rho) * pow(ct0_2,2*rho) \
         * (pow(-1,m_) * scipy.special.binom(l+m,m+m_+rho) * pow(ct0_2,m_) \
         + scipy.special.binom(l+m,m-m_+rho) * pow(ct0_2,-m_))
@@ -161,11 +163,14 @@ def beta_coef(l,m,m_,theta0, alpha):
     return 0
   if m_ == 0:
     return 0.0
+  if m == 0:
+    return 0.0
   ct0_2 = np.sin(theta0/2)/np.cos(theta0/2)
   part1 = np.sin(m*alpha) * scipy.special.factorial(l-m_) / scipy.special.factorial(l-m) \
     * pow(np.cos(theta0/2),2*l) * pow(ct0_2,m)
   sum = 0
   for rho in range(0, l-m+1):
+    if ct0_2 == 0: continue
     sum += pow(-1,rho) * scipy.special.binom(l-m,rho) * pow(ct0_2,2*rho) \
       * (pow(-1,m_) * scipy.special.binom(l+m,m+m_+rho) * pow(ct0_2,m_) \
       - scipy.special.binom(l+m,m-m_+rho) * pow(ct0_2,-m_))
@@ -181,6 +186,7 @@ def beta_bar_coef(l,m,m_,theta0, alpha):
     * pow(np.cos(theta0/2),2*l) * pow(ct0_2,m)
   sum = 0
   for rho in range(0, l-m+1):
+    if ct0_2 == 0: continue
     sum += pow(-1,rho) * scipy.special.binom(l-m,rho) * pow(ct0_2,2*rho) \
       * (pow(-1,m_) * scipy.special.binom(l+m,m+m_+rho) * pow(ct0_2,m_) \
       - scipy.special.binom(l+m,m-m_+rho) * pow(ct0_2,-m_))

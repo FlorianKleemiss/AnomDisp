@@ -35,6 +35,9 @@ def exp_from_z(z,n_0):
 def exp_squared_from_z(z,n_0):
   return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
+def exp_squared_from_z(z,n_0):
+  return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
+
 elements = ["DUMMY","H",                                                                                                                                              "He",
             "Li","Be",                                                                                                                        "B", "C", "N", "O", "F","Ne",
             "Na","Mg",                                                                                                                       "Al","Si", "P", "S","Cl","Ar",

@@ -266,8 +266,8 @@ alp = math.pi/1.823
 el_nr = 42
 #nu_in = 3800 * h
 start_nu_in = 0.8*get_ionization_energy_1s(el_nr)/h
-end_nu_in = 3*get_ionization_energy_1s(el_nr)/h
-x = np.linspace(start_nu_in,end_nu_in,200)
+end_nu_in = 1.2*get_ionization_energy_1s(el_nr)/h
+x = np.linspace(start_nu_in,end_nu_in,100)
 #x = np.linspace(1.0000000001,20000.0,200000)
 a_result = []
 b_result = []
@@ -423,6 +423,20 @@ def plot_EM_Hoenl_test():
   
   plt.show()
 
+def plot_angular_test(edge):
+  fig, axes = plt.subplots(1,1)
+  
+  axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="theta0 = 0")
+  axes.scatter(x,b_result,s=10,facecolors='none',edgecolors='r',marker='^',label="0.25 pi")
+  axes.scatter(x,c_result,s=10,facecolors='none',edgecolors='g',marker='^',label="0.5 pi")
+  axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='black',marker='^',label="2/3 pi")
+  axes.plot(x,e_result)
+  axes.plot(x,f_result)
+  axes.plot(x,g_result)
+  axes.legend()
+  
+  plt.show()
+
 def plot_integral_test(edge):
   fig, axes = plt.subplots(1,1)
   
@@ -449,20 +463,20 @@ def test_integral_hönl(nu_in,el_nr):
   epsilon = 1E-10
   if z_null >= 1:
     integral1 = integrate.quad(
-      integrand_matrix,
+      integrand_matrix_s,
       1,
       z_null-epsilon,
-      args=(f_a,z_null,el_nr, l, k, nu_in, n_0, p_limit),
+      args=(z_null,el_nr, l, k, nu_in, n_0, p_limit),
       points=z_null,
       limit=200000,
       epsabs=1E-55,
       epsrel=1E-10,
       full_output=2)
     integral2 = integrate.quad(
-      integrand_matrix,
+      integrand_matrix_s,
       z_null+epsilon,
       100,
-      args=(f_a,z_null,el_nr, l, k, nu_in, n_0, p_limit),
+      args=(z_null,el_nr, l, k, nu_in, n_0, p_limit),
       points=z_null,
       limit=200000,
       epsabs=1E-55,
@@ -471,10 +485,10 @@ def test_integral_hönl(nu_in,el_nr):
     a_result.append(-2*(integral1[0] + integral2[0])/constant_factor + kpcor[el_nr] - relcor[el_nr])
   else:
     total_integral = integrate.quad(
-      integrand_matrix,
+      integrand_matrix_s,
       1,
       100,
-      args=(f_a,z_null,el_nr, l, k, nu_in, n_0, p_limit),
+      args=(z_null,el_nr, l, k, nu_in, n_0, p_limit),
       points=z_null,
       limit=200000,
       epsabs=1E-55,
@@ -482,34 +496,34 @@ def test_integral_hönl(nu_in,el_nr):
       full_output=2)
     a_result.append(-2*total_integral[0]/constant_factor + kpcor[el_nr] - relcor[el_nr])
     #b_result.append(-2*total_integral[0]/constant_factor)
-  if z_null_ls >1:
+  if z_null_ls > 1:
     integral1 = integrate.quad(
-      integrand_matrix,
+      integrand_matrix_s,
       1,
       z_null_ls-epsilon,
-      args=(f_a,z_null_ls,el_nr, l, k, nu_in, 2, p_limit),
+      args=(z_null_ls,el_nr, l, k, nu_in, 2, p_limit),
       points=z_null_ls,
       limit=200000,
       epsabs=1E-55,
       epsrel=1E-10,
       full_output=2)
     integral2 = integrate.quad(
-      integrand_matrix,
+      integrand_matrix_s,
       z_null_ls+epsilon,
       100,
-      args=(f_a,z_null_ls,el_nr, l, k, nu_in, 2, p_limit),
+      args=(z_null_ls,el_nr, l, k, nu_in, 2, p_limit),
       points=z_null_ls,
       limit=200000,
       epsabs=1E-55,
       epsrel=1E-10,
       full_output=2)
-    a_result[-1] -= (integral1[0]+integral2[0]) / constant_factor
+    a_result[-1] -= 2*(integral1[0]+integral2[0]) / constant_factor
   else:
     integral = integrate.quad(
-      integrand_matrix,
+      integrand_matrix_s,
       1,
       100,
-      args=(f_a,z_null_ls,el_nr, 2, k, nu_in, 2, p_limit),
+      args=(z_null_ls,el_nr, 2, k, nu_in, 2, p_limit),
       points=z_null_ls,
       limit=200000,
       epsabs=1E-55,
@@ -518,95 +532,134 @@ def test_integral_hönl(nu_in,el_nr):
     a_result[-1] -= (integral[0]) / constant_factor
   if z_null_lp1 >1:
     res = 0
-    for k in range(0,3):
-      integral1 = integrate.quad(
-        integrand_matrix,
-        1,
-        z_null_lp1-epsilon,
-        args=(f_b,z_null_lp1,el_nr, 2, k, nu_in, 2, p_limit),
-        points=z_null_lp1,
-        limit=200000,
-        epsabs=1E-55,
-        epsrel=1E-10,
-        full_output=2)
-      integral2 = integrate.quad(
-        integrand_matrix,
-        z_null_lp1+epsilon,
-        100,
-        args=(f_b,z_null_lp1,el_nr, 2, k, nu_in, 2, p_limit),
-        points=z_null_lp1,
-        limit=200000,
-        epsabs=1E-55,
-        epsrel=1E-10,
-        full_output=2)
-      res += integral1[0]+integral2[0]
-    a_result[-1] -= 2 * (res) / constant_factor
-  else:
-    res = 0
-    for k in range(0,3):
-      integral = integrate.quad(
-      integrand_matrix,
+    integral1 = integrate.quad(
+      integrand_matrix_p,
       1,
-      100,
-      args=(f_b,z_null_lp1,el_nr, 2, k, nu_in, 2, p_limit),
+      z_null_lp1-epsilon,
+      args=(z_null_lp1,el_nr, nu_in, 2, p_limit),
       points=z_null_lp1,
       limit=200000,
       epsabs=1E-55,
       epsrel=1E-10,
       full_output=2)
-      res += integral[0]
+    integral2 = integrate.quad(
+      integrand_matrix_p,
+      z_null_lp1+epsilon,
+      100,
+      args=(z_null_lp1,el_nr, nu_in, 2, p_limit),
+      points=z_null_lp1,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    res += integral1[0]+integral2[0]
+    a_result[-1] -= 2 * (res) / constant_factor
+  else:
+    res = 0
+    integral = integrate.quad(
+      integrand_matrix_p,
+      1,
+      100,
+      args=(z_null_lp1,el_nr, nu_in, 2, p_limit),
+      points=z_null_lp1,
+      limit=200000,
+      epsabs=1E-55,
+      epsrel=1E-10,
+      full_output=2)
+    res += integral[0]
     a_result[-1] -= 2 * res / constant_factor
   if z_null_lp2 >1:
     res = 0
-    for k in range(0,3):
-      integral1 = integrate.quad(
-        integrand_matrix,
+    integral1 = integrate.quad(
+        integrand_matrix_p,
         1,
         z_null_lp2-epsilon,
-        args=(f_b,z_null_lp2,el_nr, 2, k, nu_in, 2, p_limit),
+        args=(z_null_lp2,el_nr, nu_in, 2, p_limit),
         points=z_null_lp2,
         limit=200000,
         epsabs=1E-55,
         epsrel=1E-10,
         full_output=2)
-      integral2 = integrate.quad(
-        integrand_matrix,
+    integral2 = integrate.quad(
+        integrand_matrix_p,
         z_null_lp2+epsilon,
         100,
-        args=(f_b,z_null_lp2,el_nr, 2, k, nu_in, 2, p_limit),
+        args=(z_null_lp2,el_nr, nu_in, 2, p_limit),
         points=z_null_lp2,
         limit=200000,
         epsabs=1E-55,
         epsrel=1E-10,
         full_output=2)
-      res += integral1[0]+integral2[0]
+    res += integral1[0]+integral2[0]
     a_result[-1] -= 4 * (res) / constant_factor
   else:
     res = 0
-    for k in range(0,3):
-      integral = integrate.quad(
-      integrand_matrix,
+    integral = integrate.quad(
+      integrand_matrix_p,
       1,
       100,
-      args=(f_b,z_null_lp2,el_nr, 2, k, nu_in, 2, p_limit),
+      args=(z_null_lp2,el_nr, nu_in, 2, p_limit),
       points=z_null_lp2,
       limit=200000,
       epsabs=1E-55,
       epsrel=1E-10,
       full_output=2)
-      res += integral[0]
+    res += integral[0]
     a_result[-1] -= 4 * res / constant_factor
   fac = 2*math.pi
-  c_result.append(f_a(el_nr,l,0,z_null,nu_in,n_0,p_limit) * fac/constant_factor)
-  for k in range(0,3):
-    c_result[-1] += (f_a(el_nr,2,k,z_null_ls,nu_in,n_0,p_limit) * fac/constant_factor)
-    c_result[-1] += (f_b(el_nr,2,k,z_null_lp1,nu_in,n_0,p_limit) * fac/constant_factor)
-    c_result[-1] += (2* f_b(el_nr,2,k,z_null_lp2,nu_in,n_0,p_limit) * fac/constant_factor)
+  c_result.append(f_a(el_nr,l,0,z_null,nu_in,n_0,p_limit).real * fac/constant_factor)
+  c_result[-1] += (f_a(el_nr,2,1,z_null_ls,nu_in,n_0,p_limit).real * fac/constant_factor)
+  c_result[-1] += 2*((f_c_0(el_nr,0,0,z_null_lp1,nu_in,n_0,p_limit) - 20 * f_c_2(el_nr,2,0,z_null_lp1,nu_in,n_0,p_limit))/3 * fac/constant_factor)
+  c_result[-1] += 4*((f_c_0(el_nr,0,0,z_null_lp1,nu_in,n_0,p_limit) - 20 * f_c_2(el_nr,2,0,z_null_lp1,nu_in,n_0,p_limit))/3 * fac/constant_factor)
 
   lam = speed_of_light / nu_in * 1E10
   fpfdp = br.at_angstrom(lam,'Mo')
   d_result.append(fpfdp[0])
   e_result.append(fpfdp[1])
+
+def test_angular(nu,el_nr, theta0, array):
+  z = h*nu / get_ionization_energy_2p1_2(el_nr)
+  temp1 = f_b(
+    Z=el_nr,
+    l=2,
+    g_k=0,
+    z=z,
+    nu_in = nu,
+    n_0 = 2,
+    p_limit = 3) * alpha_coef(2,1,0,theta0,0) * math.sin(theta0)
+  temp2 = f_b(
+    Z=el_nr,
+    l=2,
+    g_k=1,
+    z=z,
+    nu_in = nu,
+    n_0 = 2,
+    p_limit = 3) * alpha_coef(2,1,1,theta0,0) * math.cos(theta0)
+  temp3 = f_b(
+    Z=el_nr,
+    l=2,
+    g_k=2,
+    z=z,
+    nu_in = nu,
+    n_0 = 2,
+    p_limit = 3) * alpha_coef(2,1,2,theta0,0) * math.sin(theta0)
+  temp4 = f_b(
+    Z=el_nr,
+    l=2,
+    g_k=1,
+    z=z,
+    nu_in = nu,
+    n_0 = 2,
+    p_limit = 3) * beta_coef(2,1,1,theta0,0.5*math.pi) * math.cos(theta0)
+  temp5 = f_b(
+    Z=el_nr,
+    l=2,
+    g_k=2,
+    z=z,
+    nu_in = nu,
+    n_0 = 2,
+    p_limit = 3) * beta_coef(2,1,2,theta0,0.5*math.pi) * math.sin(theta0)
+  array.append(math.sqrt(pow(temp1+temp2+temp3,2)+pow(temp4+temp5,2)))
   
 
 def test_values():
@@ -628,15 +681,83 @@ def test_values():
     print("d: %f"%d_res)
     null = 0
 
+def test_sum(theta0):
+  a = -alpha_coef(0,0,0,theta0,0) * math.cos(theta0)
+  b = -(alpha_coef(2,1,0,theta0,0)*math.sin(theta0) \
+    - 3*alpha_coef(2,1,1,theta0,0) * math.cos(theta0)\
+    - 6*alpha_coef(2,1,2,theta0,0) * math.sin(theta0) 
+    )
+  c0 = -0.5*( \
+    alpha_coef(2,0,0,theta0,0) * math.cos(theta0)\
+  + 3*alpha_coef(2,0,1,theta0,0) * math.sin(theta0)\
+  + 6*beta_coef(2,0,2,theta0,math.pi/2)\
+  - 6*alpha_coef(2,0,2,theta0,0) * math.cos(theta0)
+  )
+  c2 = 1/2 * 0.5 * ( \
+    alpha_coef(2,2,0,theta0,0) * math.cos(theta0)\
+  + 3*alpha_coef(2,2,1,theta0,0) * math.sin(theta0)\
+  + 6*beta_coef(2,2,2,theta0,math.pi/2)\
+  - 6*alpha_coef(2,2,2,theta0,0) * math.cos(theta0)
+  )
+  d = 1/2 * ( \
+    alpha_bar_coef(2,2,0,theta0,math.pi/2) * math.cos(theta0)\
+  + 2*alpha_bar_coef(2,2,1,theta0,math.pi/2) * math.sin(theta0)\
+  + 6*beta_bar_coef(2,2,2,theta0,0)\
+  - 6*alpha_bar_coef(2,2,2,theta0,math.pi/2) * math.cos(theta0)
+  )
+  return (a + b + c0 +c2 + d)/3
+
+result = f_c_0(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_coef(2,0,0,0,0) \
+        -f_c_0(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_coef(2,0,2,0,0))
+
+result2 = f_c_2(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_coef(2,2,0,1,0) \
+        +f_c_2(el_nr,2,1,1.001,end_nu_in,2,2) * beta_coef(2,2,1,1,math.pi/4)*math.sin(1) \
+        -f_c_2(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_coef(2,2,2,1,0) + beta_coef(2,2,2,1,math.pi/4) * math.cos(1))
+
+result3 = f_b(el_nr,2,1,1.001,end_nu_in,2,2) * beta_coef(2,1,1,1,math.pi/2) * math.cos(1) \
+        +f_b(el_nr,2,2,1.001,end_nu_in,2,2) * (beta_coef(2,1,2,1,math.pi/2) *math.sin(1))
+
+result4 = f_d(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_bar_coef(2,2,0,1,math.pi/4) \
+        +f_d(el_nr,2,1,1.001,end_nu_in,2,2) * beta_bar_coef(2,2,1,1,0)*math.sin(1) \
+        +f_d(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_bar_coef(2,2,2,1,math.pi/4) - beta_bar_coef(2,2,2,1,0) * math.cos(1))
+
+
+x = np.linspace(0,2*math.pi,200)
+for t in x:
+  #a_result.append(-test_sum(t))
+  #b_result.append(1/2+pow(math.cos(t),2)/2)
+  #c_result.append(-math.cos(t))
+  d_result.append(beta_coef(2,1,2,t,math.pi/2))
+  e_result.append(-2*pow(math.sin(t),1)*pow(math.cos(t),0))
+
+fig, axes = plt.subplots(1,1)
+  
+#axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="sum")
+#axes.plot(x,b_result,color='g',label="(1+cos2) / 2")
+#axes.plot(x,c_result,color='r',label="cos")
+axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='r',marker='^',label="alpha")
+axes.plot(x,e_result,color='black',label="fit")
+axes.legend()
+  
+plt.show()
+exit()
 for nu in x:
-  #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
-  #test_for_EM_and_Hoenl(el_nr,z,nu_in)
-  #test_for_fb_fc_fd(el_nr,z,nu_in)
+#  #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
+#  #test_for_EM_and_Hoenl(el_nr,z,nu_in)
+#  #test_for_fb_fc_fd(el_nr,z,nu_in)
   test_integral_hönl(nu,el_nr)
-
-
-  #null = 0
+#  
+#  test_angular(nu, el_nr, 0.000001*math.pi, a_result)
+#  test_angular(nu, el_nr, 1/4*math.pi, b_result)
+#  test_angular(nu, el_nr, 1/2*math.pi, c_result)
+#  test_angular(nu, el_nr, 2/3*math.pi, d_result)
+#  e_result.append(b_result[-1]/a_result[-1])
+#  f_result.append(c_result[-1]/a_result[-1])
+#  g_result.append(d_result[-1]/a_result[-1])
+#
+#  #null = 0
 
 #plot_abcd_test()
 #plot_EM_Hoenl_test()
 plot_integral_test(get_ionization_energy_1s(el_nr)/h)
+#plot_angular_test(0)

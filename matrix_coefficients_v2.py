@@ -548,6 +548,19 @@ def integrand_matrix(z,f_function,z0, Z, l, k, nu_in, n_0, p_limit):
   if z<1: return 0
   return 2*z/(z*z-z0*z0)*f_function(Z,l,k,z,nu_in,n_0,p_limit).real
 
+def integrand_matrix_s(z,z0, Z, l,k, nu_in, n_0, p_limit):
+  if z<1: return 0
+  return 2*z/(z*z-z0*z0) * \
+      f_a(Z,l,k,z,nu_in,n_0,p_limit).real 
+
+def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
+  if z<1: return 0
+  return 2*z/(z*z-z0*z0)\
+    *1/3*(\
+      f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
+      f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
+        )
+
 ## end of angle independant part
 
 def print_Js():
