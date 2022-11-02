@@ -3,6 +3,8 @@ from matrix_coefficients_v2 import *
 import matplotlib.pyplot as plt
 from brennan import brennan
 import scipy.integrate as integrate
+from scipy.special import factorial2
+from mpl_toolkits import mplot3d
 
 def getting_agreement():
   import random
@@ -261,13 +263,13 @@ def f_s_2_hoenl(z):
   part3 = 1-numpy.exp(-2*math.pi/sqrt_var)
   return part1*part2/part3
 
-t0 = math.pi/3
-alp = math.pi/1.823
-el_nr = 42
+t0 = 0
+alp = 0
+el_nr = 52
 #nu_in = 3800 * h
-start_nu_in = 0.8*get_ionization_energy_1s(el_nr)/h
+start_nu_in = 0.8*get_ionization_energy_2s(el_nr)/h
 end_nu_in = 1.2*get_ionization_energy_1s(el_nr)/h
-x = np.linspace(start_nu_in,end_nu_in,100)
+x = np.linspace(start_nu_in,end_nu_in,150)
 #x = np.linspace(1.0000000001,20000.0,200000)
 a_result = []
 b_result = []
@@ -451,12 +453,11 @@ def plot_integral_test(edge):
   
   plt.show()
 
-def test_integral_hönl(nu_in,el_nr):
+def test_integral_hönl(nu_in,el_nr, p_limit):
   z_null = h * nu_in / get_ionization_energy_1s(el_nr)
   z_null_ls = h * nu_in / get_ionization_energy_2s(el_nr)
   z_null_lp1 = h * nu_in / get_ionization_energy_2p1_2(el_nr)
   z_null_lp2 = h * nu_in / get_ionization_energy_2p3_2(el_nr)
-  p_limit = 3
   n_0 = 1
   l = 1
   k = 1
@@ -613,9 +614,12 @@ def test_integral_hönl(nu_in,el_nr):
   c_result[-1] += 4*((f_c_0(el_nr,0,0,z_null_lp1,nu_in,n_0,p_limit) - 20 * f_c_2(el_nr,2,0,z_null_lp1,nu_in,n_0,p_limit))/3 * fac/constant_factor)
 
   lam = speed_of_light / nu_in * 1E10
-  fpfdp = br.at_angstrom(lam,'Mo')
+  fpfdp = br.at_angstrom(lam,'Te')
   d_result.append(fpfdp[0])
   e_result.append(fpfdp[1])
+
+def vectorized_test_integration(el_nr):
+  return np.vectorize(lambda n: test_integral_hönl(n,el_nr))
 
 def test_angular(nu,el_nr, theta0, array):
   z = h*nu / get_ionization_energy_2p1_2(el_nr)
@@ -721,31 +725,211 @@ result4 = f_d(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_bar_coef(2,2,0,1,math.pi/4)
         +f_d(el_nr,2,1,1.001,end_nu_in,2,2) * beta_bar_coef(2,2,1,1,0)*math.sin(1) \
         +f_d(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_bar_coef(2,2,2,1,math.pi/4) - beta_bar_coef(2,2,2,1,0) * math.cos(1))
 
+def cos_sin_func(phi, theta0, t, p, al):
+  cosa = np.cos(theta0)
+  sina = np.sin(theta0)
+  return np.sin(t)\
+    * pow(np.cos(t) * (cosa - 1) \
+    + np.sin(t)\
+    * sina * np.cos(phi-al),p)
 
-x = np.linspace(0,2*math.pi,200)
-for t in x:
-  #a_result.append(-test_sum(t))
-  #b_result.append(1/2+pow(math.cos(t),2)/2)
-  #c_result.append(-math.cos(t))
-  d_result.append(beta_coef(2,1,2,t,math.pi/2))
-  e_result.append(-2*pow(math.sin(t),1)*pow(math.cos(t),0))
+def integrate_sin_funct(*args):
+  #n = theta0
+  #m = theta
+  return np.vectorize(lambda n,m: integrate.quad(func=cos_sin_func,
+      a=0,
+      b=2*math.pi,
+      args=(n,m)+args,
+      epsabs = 1E-8,
+      epsrel = 1E-5, 
+      limit = 2000)[0])
 
-fig, axes = plt.subplots(1,1)
+def A(n,m):
+  return (np.cos(n)-1)*np.cos(m)
+
+def B(n,m):
+  return np.sin(n)*np.sin(m)
+
+def phi_integrated(m,n,p):
+  #m = theta
+  #n = theta0
+  return (2*math.pi*np.sin(m)
+    *(sum(pow(A(n,m),p-x) 
+         * scipy.special.binom(p,x)
+         * factorial2(x-1)/(factorial2(x)) 
+         * pow(B(n,m),x) 
+         * delta(x%2,0)
+          for x in range(0,p+1)
+         )
+    )
+  )
+
+def integrate_theta(p):
+  #n = theta0
+  return np.vectorize(lambda n: integrate.quad(func=phi_integrated,
+      a=0,
+      b=math.pi,
+      args=(n,p),
+      epsabs = 1E-8,
+      epsrel = 1E-5, 
+      limit = 2000)[0])
+
+def model(p):
+  #n = theta0
+  #m = theta
+  return np.vectorize(lambda n,m: phi_integrated(m,n,p))
+
+def theta0_function(n,p):
+  if p%2 == 0:
+    return (pow(
+      (pow(np.cos(n)-1,2)
+       +pow(np.sin(n),2))
+      ,p/2) 
+      *4*math.pi / (p+1)
+    )
+  else: return 0
+
+def model2(p):
+  return np.vectorize(lambda n: theta0_function(n,p))
+
+b_ = b(1,0,1)
+lambd = 0.7E-10
+blambd = b_ * lambd
+pi2_blambd = 2 *math.pi / blambd
+
+def final(p):
+  return np.vectorize(lambda n: 
+    np.sum(np.fromiter( (pow(-1,x) * pow(pi2_blambd * np.sin(n/2), 2*x) * (x+1)  \
+        for x in range(p,-1,-1)
+    ), dtype=np.float64))
+  )
+
+threed_plot = False
+theta_integral_plot = False
+test_1s = True
+test_beta = False
+cmaps = ['blue','orange','green','red','black','blue','orange','green','red','black']
+if threed_plot == True:
+  x = np.linspace(0,math.pi,30)
+  y = np.linspace(0,math.pi,30)
+  X,Y = np.meshgrid(x,y)
+  fig = plt.figure()
+  axes = fig.add_subplot(221,projection='3d')
+  axes2 = fig.add_subplot(222,projection='3d')
+  axes3 = fig.add_subplot(223,projection='3d')
+  for p in range(0,3):
+    Z = integrate_sin_funct(p,0)(X,Y)
+    Z2 = model(p)(X,Y)
+    axes.plot_wireframe(X,Y,Z, color = cmaps[p], label="p = %d"%p)
+    axes.scatter3D(X,Y,Z2, cmap = cmaps[p], label="model p=%d"%p)
+  axes.legend()
+  axes.set_xlabel('theta_0')
+  axes.set_ylabel('theta')
+  axes.set_zlabel('Integral over theta')
+  for p in range(3,6):
+    Z = integrate_sin_funct(p,0)(X,Y)
+    Z2 = model(p)(X,Y)
+    axes2.plot_wireframe(X,Y,Z, color = cmaps[p], label="p = %d"%p)
+    axes2.scatter3D(X,Y,Z2, cmap = cmaps[p],label="model p=%d"%p)
+  axes2.legend()
+  axes2.set_xlabel('theta_0')
+  axes2.set_ylabel('theta')
+  axes2.set_zlabel('Integral over theta')
+  for p in range(6,9):
+    Z = integrate_sin_funct(p,0)(X,Y)
+    Z2 = model(p)(X,Y)
+    axes3.plot_wireframe(X,Y,Z, color = cmaps[p], label="p = %d"%p)
+    axes3.scatter3D(X,Y,Z2, cmap = cmaps[p],label="model p=%d"%p)
+  axes3.legend()
+  axes3.set_xlabel('theta_0')
+  axes3.set_ylabel('theta')
+  axes3.set_zlabel('Integral over theta')
+  mng = plt.get_current_fig_manager()
+  mng.window.state('zoomed')
+  plt.show()
+
+if theta_integral_plot == True:
+  x = np.linspace(0,math.pi,100)
+  fig = plt.figure()
+  axes = fig.add_subplot(111)
+  for p in range(0,10,2):
+    Z = final(p)(x)
+    axes.plot(x,Z, label="p = %d"%p)
   
-#axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="sum")
-#axes.plot(x,b_result,color='g',label="(1+cos2) / 2")
-#axes.plot(x,c_result,color='r',label="cos")
-axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='r',marker='^',label="alpha")
-axes.plot(x,e_result,color='black',label="fit")
-axes.legend()
+  axes.legend()
+  axes.set_xlabel('theta_0')
+  axes.set_ylabel('Scattering Power')
+  mng = plt.get_current_fig_manager()
+  mng.window.state('zoomed')
+  plt.show()
   
-plt.show()
-exit()
+if test_1s == True:
+  lam = lambd*1E10
+  thakkars = [[] for x in range(14)]
+  k_vectors = []
+  names = ["H", "C", "O", "P", "Ca", "Os"]
+  file = open("thakkar.dat","r")
+  for line in file.readlines():
+      values = line.split(" ")
+      k_vectors.append(float(values[0]))
+      for i in range(14):
+          thakkars[i].append(float(values[i+1]))
+  thakkar_axis = []
+  for k_point in k_vectors:
+    thakkar_axis.append(k_point*lam*2)
+  
+  x = np.linspace(0,math.pi/2,150)
+  fig = plt.figure()
+  axes = fig.add_subplot(111)
+  Z2 = (0.493*np.exp(-10.511*pow(np.sin(x/2)/lam,2))
+        +0.323*np.exp(-26.126*pow(np.sin(x/2)/lam,2))
+        +0.14*np.exp(-3.142*pow(np.sin(x/2)/lam,2))
+        +0.041*np.exp(-57.8*pow(np.sin(x/2)/lam,2))
+        +0.003)
+  axes.plot(x,Z2,".",label="SFAC")
+  for p in range(10,301,30):
+    print(p)
+    Z = final(p)(x)
+    axes.plot(x,Z, label="t = %d"%p)
+  axes.plot(thakkar_axis,thakkars[0],"--",label="Thakkar")
+  Z3 = 16/pow(4+pow(2*math.pi*np.sin(x/2)/lam,2),2)
+  axes.plot(x,Z3,"-.",label="Thakkar Model")
+  axes.legend()
+  axes.set_xlabel('theta_0')
+  axes.set_ylabel('Scattering power')
+  axes.set_ylim(0,1.1)
+  axes.set_xlim(0,1.6)
+  mng = plt.get_current_fig_manager()
+  mng.window.state('zoomed')
+  plt.show()
+  exit()
+
+if test_beta == True:
+  d_result = []
+  x = np.linspace(0,2*math.pi,200)
+  for t in x:
+    #a_result.append(-test_sum(t))
+    #b_result.append(1/2+pow(math.cos(t),2)/2)
+    #c_result.append(-math.cos(t))
+    d_result.append(beta_coef(2,1,2,t,math.pi/2))
+    e_result.append(-2*pow(math.sin(t),1)*pow(math.cos(t),0))
+  
+  fig, axes = plt.subplots(1,1)
+    
+  #axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="sum")
+  #axes.plot(x,b_result,color='g',label="(1+cos2) / 2")
+  #axes.plot(x,c_result,color='r',label="cos")
+  axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='r',marker='^',label="alpha")
+  axes.plot(x,e_result,color='black',label="fit")
+  axes.legend()
+    
+  plt.show()
+
 for nu in x:
 #  #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
 #  #test_for_EM_and_Hoenl(el_nr,z,nu_in)
 #  #test_for_fb_fc_fd(el_nr,z,nu_in)
-  test_integral_hönl(nu,el_nr)
+  test_integral_hönl(nu,el_nr, 1)
 #  
 #  test_angular(nu, el_nr, 0.000001*math.pi, a_result)
 #  test_angular(nu, el_nr, 1/4*math.pi, b_result)
@@ -756,6 +940,8 @@ for nu in x:
 #  g_result.append(d_result[-1]/a_result[-1])
 #
 #  #null = 0
+
+
 
 #plot_abcd_test()
 #plot_EM_Hoenl_test()
