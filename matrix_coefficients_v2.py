@@ -47,8 +47,11 @@ def k(E):
 def n_prime(E, Z, n,l):
   return 2*b(n,l,Z)/k(E)
 
+def N0_square(b_):
+  return pow(b_,3)/math.pi
+
 def N0(b_):
-  return math.sqrt(pow(b_,3)/math.pi)
+  return math.sqrt(N0_square(b_))
 
 def product_n_prime_from_z(n_0,z,l):
   n_p = n_0/math.sqrt(z-1)
@@ -59,22 +62,6 @@ def product_n_prime_from_z(n_0,z,l):
   denom = 1-math.exp(-2*math.pi*n_p)
   return fact/denom
   
-def N(l, m, b_, n_0, z):
-  if (m > l):
-    return 0
-  result = 2*(2*l+1)*math.factorial(l-m)/math.factorial(l+m) * 2* n_0 * math.pi * el_mass/h/h * b_ * product_n_prime_from_z(n_0,z,l)
-  if m >= 1:
-    result *= 2
-  return math.sqrt(result)
-
-def N_square(l, m, b_, n_0, z):
-  if (m > l):
-    return 0
-  result = 2*(2*l+1)*math.factorial(l-m)/math.factorial(l+m) * 2 * n_0 * math.pi * el_mass/h/h * b_ * product_n_prime_from_z(n_0,z,l)
-  if m >= 1:
-    result *= 2
-  return result
-
 def N_square_from_z(l, m, b_, n_0, z):
   if (m > l):
     return 0
@@ -82,6 +69,12 @@ def N_square_from_z(l, m, b_, n_0, z):
   if m >= 1:
     result *= 2
   return result
+
+def N(l, m, b_, n_0, z):
+  return math.sqrt(N_square_from_z(l,m,b_,n_0,z))
+
+def N_square(l, m, b_, n_0, z):
+  return N_square_from_z(l,m,b_,n_0,z)
 
 def N_lm_from_z(l,m,z,b_,n_0):
   return N(l,m,b_,n_0, z)
@@ -255,11 +248,6 @@ def J2(p,l):
   
 ################################# END OF CALC Js ###################################    
   
-def polynom(k, eta):
-  if k == 0: return 0
-  elif k == 1: return math.sqrt(1-eta*eta)
-  else: return (2*k-1)/(k-1) * eta * polynom(k-1,eta) - k/(k-1) * polynom(k-2,eta)
-
 def C_l_from_z(b_, z, n_0, l, nu, p_limit):
   k_ = b_*math.sqrt(z-1)
   part1 = b_/pow(-2*k_,l+1)
@@ -329,67 +317,67 @@ def B0_from_z(b_, z, n_0, l, nu, p_limit):
     sum += n1 * (2*b_*J1 * K1 - J2 * K2)
   return part1 * sum
 
-#Start of final matrixelement calculation
+def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_/pow(-2*k_,l+1)
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J = J1(p,l)
+  if (J == 0):
+    return 0.0
+  K1 = K_recursive_from_z(p,l,b_,z, n_0)
+  K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
+  K2_mod = b_/2*K2
+  return part1 * n1 * J * (K1-K2_mod)
+
+def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_/2/pow(-2*k_,l+1)
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J = J1(p,l)
+  if (J == 0):
+    return 0.0
+  K1 = K_recursive_from_z(p,l,b_,z, n_0)
+  return part1 * n1 * J * K1
   
-def A_a_1(Z, l, E, nu, p_limit):
-  b_ = b(2, 0, Z)
-  k_ = k(E)
-  N_zero = N0(b_)
-  Nlm = N(l, 0, b_, k_)
-  C1 = C_1(b_, k_, l, nu, p_limit)
-  #print("N_0: {:.2e}  Nlm: {:.2e}   C1:{:.2e}".format(N_zero,Nlm,C1))
-  return N_zero * Nlm * C1
+def B2_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_*b_/(4*pow(-2*k_,l+1))
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J = J2(p,l)
+  if (J == 0):
+    return 0.0
+  K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  return part1 * n1 * J * K1
 
-def A_b_1(Z, l, E, nu, p_limit):
-  b_ = b(2, 1, Z)
-  k_ = k(E)
-  N_zero = N0(b_)
-  Nlm = N(l, 1, b_, k_)
-  B1 = B_1(b_, k_, l, nu, p_limit)
-  #print("N_0: {:.2e}  Nlm: {:.2e}   B1:{:.2e}".format(N_zero,Nlm,B1))
-  return N_zero * Nlm * B1
+def B1_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_*b_/(2*pow(-2*k_,l+1))
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J = J1(p+1,l)
+  if J == 0:
+    return 0.0
+  K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  return part1 * n1 * J * K1
+  
+def B0_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_/pow(-2*k_,l+1)
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J1 = J0_hat(p,l)
+  J2 = J0_bar(p,l)
+  if J1 == 0 and J2 == 0:
+    return 0.0
+  K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  K2 = K_recursive_from_z(p,l,b_,z,n_0)
+  return part1 * n1 * (2*b_*J1 * K1 - J2 * K2)
 
-def A_c_0(Z, l, E, nu, p_limit):
-  b_ = b(2, 2, Z)
-  k_ = k(E)
-  N_zero = N0(b_)
-  Nlm = N(l, 0, b_, k_)
-  B0 = B_0(b_, k_, l, nu, p_limit)
-  #print("N_0: {:.2e}  Nlm: {:.2e}   B0:{:.2e}".format(N_zero,Nlm,B0))
-  return N_zero * Nlm * B0
-
-def A_c_2(Z, l, E, nu, p_limit):
-  b_ = b(2, 2, Z)
-  k_ = k(E)
-  N_zero = N0(b_)
-  Nlm = N(l, 2, b_, k_)
-  B2 = B_2(b_, k_, l, nu, p_limit)
-  #print("N_0: {:.2e}  Nlm: {:.2e}   B2:{:.2e}".format(N_zero,Nlm,B2))
-  return N_zero * Nlm * B2
-
-def A_d_2(Z, l, E, nu, p_limit):
-  b_ = b(2, 2, Z)
-  k_ = k(E)
-  N_zero = N0(b_)
-  Nlm = N(l, 2, b_, k_)
-  B2 = B_2(b_, k_, l, nu, p_limit)
-  #print("N_0: {:.2e}  Nlm: {:.2e}   B0:{:.2e}".format(N_zero,Nlm,B2))
-  return N_zero*Nlm * B2
-
+#Start of final matrixelement calculation
 #Start of calculation of products of matrix elements
-
-def A_product(z,l,E,nu,p_limit, theta0, alpha):
-  b_ = b(1, l, z)
-  k_ = k(E)
-  alpha_l00 = legendre_plynomials.alpha_coef(l,0,0,theta0,alpha)
-  beta_l00 = legendre_plynomials.beta_coef(l,0,0,theta0,alpha)
-  N2N2A = pow(N0(b_),2) * pow(N(l, 0, b_, k_),2) * A(b_, k_, l, nu, p_limit)
-  return (N2N2A*alpha_l00,N2N2A*beta_l00)
 
 def A_a_1_product(z,l,E,nu,p_limit, theta0, alpha):
   alpha_l11 = legendre_plynomials.alpha_coef(l,1,1,theta0,alpha)
   beta_l11 = legendre_plynomials.beta_coef(l,1,1,theta0,alpha)
-  NNC = pow(abs(A_a_1(z,l,E,nu,p_limit)),2)
+  NNC = pow(abs(C_l_from_z(z,l,E,nu,p_limit)),2)
   return (NNC*alpha_l11,NNC*beta_l11)
 
 def A_b_1_product(z,l,E,nu,p_limit, theta0, alpha):
@@ -400,13 +388,15 @@ def A_b_1_product(z,l,E,nu,p_limit, theta0, alpha):
   beta_l21 = legendre_plynomials.beta_coef(l,1,2,theta0,alpha)
   b_ = b(2, 1, z)
   k_ = k(E)
-  N2N2B1 = pow(N0(b_),2) * pow(N(l, 1, b_, k_),2) * B_1(b_, k_, l, nu, p_limit)
+  N2N2B1 = pow(N0(b_),2) * pow(N(l, 1, b_, n_0, z),2) * B_1(b_, k_, l, nu, p_limit)
   Bl0star = B_0(b_,k_,l,nu,p_limit).conjugate()
   Bl1star = B_1(b_,k_,l,nu,p_limit).conjugate()
   Bl2star = B_2(b_,k_,l,nu,p_limit).conjugate()
   st0 = np.sin(theta0)
   ct0 = np.cos(theta0)
-  parallel = N2N2B1*((alpha_l01*Bl0star+alpha_l21*Bl2star)*st0+alpha_l11*Bl1star*ct0)
+  parallel = N2N2B1*((-st0*alpha_l01*Bl0star\
+                      +alpha_l21*Bl2star)*ct0\
+                      -alpha_l11*Bl1star*st0)
   orthogonal = N2N2B1*(beta_l11*Bl1star*ct0+beta_l21*Bl2star*st0)
   return (parallel,orthogonal)
 
@@ -560,6 +550,95 @@ def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
       f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
       f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
         )
+
+
+def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
+  if z <= 1: return 0
+  b_ = b(n_0,0,Z)
+  prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
+  result = []
+  for j in range(p+1):
+    if n_0 == 1:
+      matrix_value1 = A_l_from_z_for_p(b_,z,n_0,l,nu_in,j)
+      matrix_value2 = A_l_from_z_for_p(b_,z,n_0,l,nu_in,p-j)
+    elif n_0 == 2:
+      matrix_value1 = C_l_from_z_for_p(b_,z,n_0,l,nu_in,j)
+      matrix_value2 = C_l_from_z_for_p(b_,z,n_0,l,nu_in,p-j)
+    postfactor = matrix_value1 * matrix_value2.conjugate()
+    result.append(prefactor * postfactor)
+  return result
+
+def f_b_for_p(Z,l,g_k,z,nu_in,n_0,p):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
+  result = []
+  if g_k == 0: 
+    conjugate_function = B0_from_z_for_p
+  elif g_k == 1:
+    conjugate_function = B1_from_z_for_p
+  elif g_k == 2:
+    conjugate_function = B2_from_z_for_p
+  for j in range(p+1):
+    matrix_value1 = B1_from_z_for_p(b_,z,n_0,l,nu_in,j)
+    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
+    postfactor = matrix_value1 * matrix_value2.conjugate()
+    result.append(prefactor * postfactor)
+  return result
+
+def f_c_0_for_p(Z,l,g_k,z,nu_in,n_0,p):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  prefactor = N0_square(b_) * N_square(l,0,b_,n_0,z)
+  result = []
+  if g_k == 0: 
+    conjugate_function = B0_from_z_for_p
+  elif g_k == 1:
+    conjugate_function = B1_from_z_for_p
+  elif g_k == 2:
+    conjugate_function = B2_from_z_for_p
+  for j in range(p+1):
+    matrix_value1 = B0_from_z_for_p(b_,z,n_0,l,nu_in,j)
+    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
+    postfactor = matrix_value1 * matrix_value2.conjugate()
+    result.append(prefactor * postfactor)
+  return result
+
+def f_c_2_for_p(Z,l,g_k,z,nu_in,n_0,p):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  prefactor = N0_square(b_) * N_square(l,2,b_,n_0,z)
+  result = []
+  if g_k == 0: 
+    conjugate_function = B0_from_z_for_p
+  elif g_k == 1:
+    conjugate_function = B1_from_z_for_p
+  elif g_k == 2:
+    conjugate_function = B2_from_z_for_p
+  for j in range(p+1):
+    matrix_value1 = B2_from_z_for_p(b_,z,n_0,l,nu_in,j)
+    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
+    postfactor = matrix_value1 * matrix_value2.conjugate()
+    result.append(prefactor * postfactor)
+  return result
+
+def f_d_for_p(Z,l,g_k,z,nu_in,n_0,p):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  prefactor = N0_square(b_) * N_square(l,2,b_,n_0,z)
+  result = []
+  if g_k == 0: 
+    conjugate_function = B0_from_z_for_p
+  elif g_k == 1:
+    conjugate_function = B1_from_z_for_p
+  elif g_k == 2:
+    conjugate_function = B2_from_z_for_p
+  for j in range(p+1):
+    matrix_value1 = B2_from_z_for_p(b_,z,n_0,l,nu_in,j)
+    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
+    postfactor = matrix_value1 * matrix_value2.conjugate()
+    result.append(prefactor * postfactor)
+  return result
 
 ## end of angle independant part
 

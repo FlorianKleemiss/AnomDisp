@@ -199,13 +199,35 @@ def calc_S_values(theta0, alpha, l_max, p_max, z, z2, nu_in, el_nr):
       d+=Psi_parallel_d(l,2,k,theta0,alpha) * f_d(el_nr,l,k,z,z2,nu_in,p_max)
   return a,b,c,d
 
-def f_s_1(z):
+def f_s_1_EM(z):
   part1 = 512*(z+3)/(3*pow(z,4))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+def f_s_2_1_EM(z):
+  part1 = 512*(z-2)*(z+3)/(15*pow(z,6))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+def f_s_2_2_EM(z):
+  part1 = 2048*pow(z-1,2)*(z+3)/(15*pow(z,7))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+def f_p_1_EM(z):
+  part1 = 512*(z+8.0/3.0)/(3*pow(z,5))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+def f_p_2_1_EM(z):
+  part1 = 512*(z-2)*(z+8.0/3.0)/(15*pow(z,7))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+def f_p_2_2_EM(z):
+  part1 = 1048*(11*z-6)*(z+3)/(45*pow(z,7))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
 
 def f_p_1(z):
   part1 = 512*(z+8/3)/(3*pow(z,5))
@@ -241,36 +263,25 @@ def f_l2_c0(z):
 
 def f_s_1_hoenl(z):
   part1 = 64/(3*pow(z,3))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-4/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-2*math.pi/sqrt_var)
-  return part1*part2/part3
-  
-def f_s_2(z):
-  part1 = 2048*pow(z-1,2)*(z+3)/(15*pow(z,7))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,1)
+  return part1*part2
 
-def f_s_2_hoenl(z):
+def f_s_2_1_hoenl(z):
+  part1 = 256*(z-2)/(15*pow(z,5))
+  part2 = sugiura_exps(z,1)
+  return part1*part2
+
+def f_s_2_2_hoenl(z):
   part1 = 256*(4*z-3)/(15*pow(z,5))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-4/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-2*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,1)
+  return part1*part2
 
-t0 = 0
-alp = 0
-el_nr = 52
-#nu_in = 3800 * h
-start_nu_in = 0.8*get_ionization_energy_2s(el_nr)/h
-end_nu_in = 1.2*get_ionization_energy_1s(el_nr)/h
-x = np.linspace(start_nu_in,end_nu_in,150)
-#x = np.linspace(1.0000000001,20000.0,200000)
+def x2(nu_in,n_0, el_nr, l_0):
+  return pow(n_0* q(nu_in)/b(n_0, l_0, el_nr), 2)
+
+def xn(nu_in,n_0, el_nr, l_0, n):
+  return pow(n_0* q(nu_in)/b(n_0, l_0, el_nr), n)
+
 a_result = []
 b_result = []
 c_result = []
@@ -280,8 +291,9 @@ f_result = []
 g_result = []
 h_result = []
 i_result = []
-def x2(nu_in,n_0, el_nr, l_0):
-  return pow( n_0* q(nu_in)/b(n_0, l_0, el_nr),2)
+j_result = []
+k_result = []
+l_result = []
 constant_factor = 4*math.pi*math.pi*el_mass/h/h
 br = brennan()
 
@@ -422,20 +434,6 @@ def plot_EM_Hoenl_test():
   #axes.plot(x,g_result,'--',label="f_table1")
   axes.legend()
   #axes[1].legend()
-  
-  plt.show()
-
-def plot_angular_test(edge):
-  fig, axes = plt.subplots(1,1)
-  
-  axes.scatter(x,a_result,s=10,facecolors='none',edgecolors='b',marker='^',label="theta0 = 0")
-  axes.scatter(x,b_result,s=10,facecolors='none',edgecolors='r',marker='^',label="0.25 pi")
-  axes.scatter(x,c_result,s=10,facecolors='none',edgecolors='g',marker='^',label="0.5 pi")
-  axes.scatter(x,d_result,s=10,facecolors='none',edgecolors='black',marker='^',label="2/3 pi")
-  axes.plot(x,e_result)
-  axes.plot(x,f_result)
-  axes.plot(x,g_result)
-  axes.legend()
   
   plt.show()
 
@@ -618,9 +616,6 @@ def test_integral_hönl(nu_in,el_nr, p_limit):
   d_result.append(fpfdp[0])
   e_result.append(fpfdp[1])
 
-def vectorized_test_integration(el_nr):
-  return np.vectorize(lambda n: test_integral_hönl(n,el_nr))
-
 def test_angular(nu,el_nr, theta0, array):
   z = h*nu / get_ionization_energy_2p1_2(el_nr)
   temp1 = f_b(
@@ -664,7 +659,6 @@ def test_angular(nu,el_nr, theta0, array):
     n_0 = 2,
     p_limit = 3) * beta_coef(2,1,2,theta0,0.5*math.pi) * math.sin(theta0)
   array.append(math.sqrt(pow(temp1+temp2+temp3,2)+pow(temp4+temp5,2)))
-  
 
 def test_values():
   nu_in = get_ionization_energy_2s(el_nr) * h
@@ -711,19 +705,6 @@ def test_sum(theta0):
   )
   return (a + b + c0 +c2 + d)/3
 
-result = f_c_0(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_coef(2,0,0,0,0) \
-        -f_c_0(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_coef(2,0,2,0,0))
-
-result2 = f_c_2(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_coef(2,2,0,1,0) \
-        +f_c_2(el_nr,2,1,1.001,end_nu_in,2,2) * beta_coef(2,2,1,1,math.pi/4)*math.sin(1) \
-        -f_c_2(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_coef(2,2,2,1,0) + beta_coef(2,2,2,1,math.pi/4) * math.cos(1))
-
-result3 = f_b(el_nr,2,1,1.001,end_nu_in,2,2) * beta_coef(2,1,1,1,math.pi/2) * math.cos(1) \
-        +f_b(el_nr,2,2,1.001,end_nu_in,2,2) * (beta_coef(2,1,2,1,math.pi/2) *math.sin(1))
-
-result4 = f_d(el_nr,2,0,1.001,end_nu_in,2,2) * alpha_bar_coef(2,2,0,1,math.pi/4) \
-        +f_d(el_nr,2,1,1.001,end_nu_in,2,2) * beta_bar_coef(2,2,1,1,0)*math.sin(1) \
-        +f_d(el_nr,2,2,1.001,end_nu_in,2,2) * (alpha_bar_coef(2,2,2,1,math.pi/4) - beta_bar_coef(2,2,2,1,0) * math.cos(1))
 
 def cos_sin_func(phi, theta0, t, p, al):
   cosa = np.cos(theta0)
@@ -792,21 +773,8 @@ def theta0_function(n,p):
 def model2(p):
   return np.vectorize(lambda n: theta0_function(n,p))
 
-b_ = b(1,0,1)
-lambd = 0.7E-10
-blambd = b_ * lambd
-pi2_blambd = 2 *math.pi / blambd
-
-def final(p):
-  return np.vectorize(lambda n: 
-    np.sum(np.fromiter( (pow(-1,x) * pow(pi2_blambd * np.sin(n/2), 2*x) * (x+1)  \
-        for x in range(p,-1,-1)
-    ), dtype=np.float64))
-  )
-
 threed_plot = False
-theta_integral_plot = False
-test_1s = True
+test_1s = False
 test_beta = False
 cmaps = ['blue','orange','green','red','black','blue','orange','green','red','black']
 if threed_plot == True:
@@ -848,57 +816,86 @@ if threed_plot == True:
   mng.window.state('zoomed')
   plt.show()
 
-if theta_integral_plot == True:
-  x = np.linspace(0,math.pi,100)
-  fig = plt.figure()
-  axes = fig.add_subplot(111)
-  for p in range(0,10,2):
-    Z = final(p)(x)
-    axes.plot(x,Z, label="p = %d"%p)
-  
-  axes.legend()
-  axes.set_xlabel('theta_0')
-  axes.set_ylabel('Scattering Power')
-  mng = plt.get_current_fig_manager()
-  mng.window.state('zoomed')
-  plt.show()
-  
 if test_1s == True:
-  lam = lambd*1E10
-  thakkars = [[] for x in range(14)]
-  k_vectors = []
-  names = ["H", "C", "O", "P", "Ca", "Os"]
-  file = open("thakkar.dat","r")
-  for line in file.readlines():
-      values = line.split(" ")
-      k_vectors.append(float(values[0]))
-      for i in range(14):
-          thakkars[i].append(float(values[i+1]))
-  thakkar_axis = []
-  for k_point in k_vectors:
-    thakkar_axis.append(k_point*lam*2)
+  b_ = b(1,0,1)
+  lambd = 0.7E-10
+  blambd = b_ * lambd
+  pi2_blambd = 2 *math.pi / blambd
+  pi2_b = 2 *math.pi / b_
+  lam = lambd*1E10 #this is in angstrom
+  lam_bohr = lambd/a0
+  def final(p):
+    return np.vectorize(lambda n: 
+      np.sum(np.fromiter( (pow(-1,x) * pow(pi2_b * n * 1E10, 2*x) * (x+1)  \
+        for x in range(p,-1,-1)
+      ), dtype=np.float64))
+    )
+  def sin_t_l_function(t,l):
+    return np.round(np.sin(t/2)/l,4)
+  def stl_to_t0(stl,l):
+    return np.arcsin(stl*l)*2
   
-  x = np.linspace(0,math.pi/2,150)
+  stl = np.array([0.01,0.02,0.03,0.04,0.05, 
+         0.06,0.07,0.08,0.09,0.10, 
+         0.11,0.12,0.13,0.14,0.15, 
+         0.16,0.17,0.18,0.19,0.20, 
+         0.22,0.24,0.25,0.26,0.28,0.30, 
+         0.32,0.34,0.35,0.36,0.38,0.40, 
+         0.42,0.44,0.45,0.46,0.48,0.50,
+         0.55,0.60,0.65,0.70,0.80,0.90,1.00])
+  
+  scat = np.array([0.998,0.991,0.980,0.966,0.947, 
+         0.925,0.900,0.872,0.842,0.811, 
+         0.778,0.744,0.710,0.676,0.641, 
+         0.608,0.574,0.542,0.511,0.481, 
+         0.424,0.373,0.350,0.328,0.287,0.251, 
+         0.220,0.193,0.180,0.169,0.148,0.130,
+         0.115,0.101,0.095,0.090,0.079,0.071,
+         0.053,0.040,0.031,0.024,0.015,0.010,0.007])
+  
+  stl2 = np.array([0.0   ,0.0215,0.0429,0.0644,0.0859,
+                   0.1073,0.1288,0.1503,0.1718,0.1932,
+                   0.2147,0.2576,0.3006,0.3435,0.3864,
+                   0.4294,0.4723,0.5153,0.5582,0.6011,
+                   0.6441,0.6870,0.7300,0.7729,0.8158,
+                   0.8588,0.9017,0.9447,0.9876,1.0305])
+  
+  scat2 = np.array([1.0  ,0.9924,0.9704,0.9352,0.8892,
+                   0.8350,0.7752,0.7125,0.6492,0.5871,
+                   0.5277,0.4201,0.3301,0.2573,0.1998,
+                   0.1552,0.1208,0.0945,0.0744,0.0592,
+                   0.0474,0.0383,0.0311,0.0254,0.0208,
+                   0.0171,0.0140,0.0116,0.0096,0.0080])
+    
+  x = np.linspace(0,1.5,150)
   fig = plt.figure()
   axes = fig.add_subplot(111)
-  Z2 = (0.493*np.exp(-10.511*pow(np.sin(x/2)/lam,2))
-        +0.323*np.exp(-26.126*pow(np.sin(x/2)/lam,2))
-        +0.14*np.exp(-3.142*pow(np.sin(x/2)/lam,2))
-        +0.041*np.exp(-57.8*pow(np.sin(x/2)/lam,2))
-        +0.003)
+  axes.plot(stl,scat,"--",label="ITC")
+  axes.plot(stl2,scat2,"--",label="ITC_bound")
+  Z2 = ( 0.493002*np.exp(-10.5109 * pow(x, 2))
+        +0.322912*np.exp(-26.1257 * pow(x, 2))
+        +0.140191*np.exp(-3.14236 * pow(x, 2))
+        +0.040810*np.exp(-57.7997 * pow(x, 2))
+        +0.003038)
   axes.plot(x,Z2,".",label="SFAC")
-  for p in range(10,301,30):
+  for p in range(50,301,150):
     print(p)
     Z = final(p)(x)
     axes.plot(x,Z, label="t = %d"%p)
-  axes.plot(thakkar_axis,thakkars[0],"--",label="Thakkar")
-  Z3 = 16/pow(4+pow(2*math.pi*np.sin(x/2)/lam,2),2)
+  #axes.plot(thakkar_axis,thakkars[0],"--",label="Thakkar")
+  #Z3 = 16/pow(4+pow(2*math.pi*np.sin(x/2)/lam,2),2)
+  x_in_meter = x*1E10
+  temp_k = 4*math.pi*a0*x_in_meter
+  Z3 = 16/pow(4+pow(temp_k,2),2)
   axes.plot(x,Z3,"-.",label="Thakkar Model")
+  temp_z = 1.15
+  Z4 = 16*pow(temp_z,4)/pow(pow(2*temp_z,2)+pow(temp_k,2),2)
+  axes.scatter(x,Z4,label="Thakkar Model Extended")
   axes.legend()
-  axes.set_xlabel('theta_0')
+  axes.set_xlabel('sin (theta) / lambda [Ang^-1]')
   axes.set_ylabel('Scattering power')
   axes.set_ylim(0,1.1)
-  axes.set_xlim(0,1.6)
+  axes.set_xlim(0,1.5)
   mng = plt.get_current_fig_manager()
   mng.window.state('zoomed')
   plt.show()
@@ -925,25 +922,166 @@ if test_beta == True:
     
   plt.show()
 
-for nu in x:
-#  #a_,b_,c_,d_ = calc_S_values(t0, alp, 2,4,z,z2,nu_in,el_nr)
-#  #test_for_EM_and_Hoenl(el_nr,z,nu_in)
-#  #test_for_fb_fc_fd(el_nr,z,nu_in)
-  test_integral_hönl(nu,el_nr, 1)
-#  
-#  test_angular(nu, el_nr, 0.000001*math.pi, a_result)
-#  test_angular(nu, el_nr, 1/4*math.pi, b_result)
-#  test_angular(nu, el_nr, 1/2*math.pi, c_result)
-#  test_angular(nu, el_nr, 2/3*math.pi, d_result)
-#  e_result.append(b_result[-1]/a_result[-1])
-#  f_result.append(c_result[-1]/a_result[-1])
-#  g_result.append(d_result[-1]/a_result[-1])
-#
-#  #null = 0
+t0 = 0
+alp = 0
+el_nr = 52
+x = None
 
+integration_test = False
+EM_Hoenl_test = False
+higher_p_test = True
 
+if integration_test == True:
+  start_nu_in = 0.8*get_ionization_energy_2s(el_nr)/h
+  end_nu_in = 1.2*get_ionization_energy_1s(el_nr)/h
+  x = np.linspace(start_nu_in,end_nu_in,150)
+  for nu in x:
+    test_integral_hönl(nu,el_nr, 1)
+  plot_integral_test(get_ionization_energy_1s(el_nr)/h)
 
-#plot_abcd_test()
-#plot_EM_Hoenl_test()
-plot_integral_test(get_ionization_energy_1s(el_nr)/h)
-#plot_angular_test(0)
+if EM_Hoenl_test == True:
+  nu_in = 1.05*get_ionization_energy_1s(el_nr)/h
+  x = np.linspace(1.0001,5.0001,150)
+  for z in x:
+    test_for_EM_and_Hoenl(el_nr,z,nu_in)
+  plot_EM_Hoenl_test()
+
+if higher_p_test == True:
+  nu_in = 1.05*get_ionization_energy_1s(el_nr)/h
+  x = np.linspace(1.0001,5.0001,150)
+  l_max = 5
+  k_ = 0
+  x2_ = xn(nu_in,1,el_nr,0,2)
+  x2_2 = xn(nu_in,2,el_nr,0, 2)
+  t0 = alp = 0
+  ct0 = ca = np.cos(t0)
+  st0 = sa = np.sin(t0)
+
+  if True:
+    a_result = [0.0 for r in range(x.size)]
+    b_result = [0.0 for r in range(x.size)]
+    c_result = [0.0 for r in range(x.size)]
+    b0_result = [0.0 for r in range(x.size)]
+    b1_result = [0.0 for r in range(x.size)]
+    b2_result = [0.0 for r in range(x.size)]
+    d_result = [0.0 for r in range(x.size)]
+    e_result = [0.0 for r in range(x.size)]
+    e0_result = [0.0 for r in range(x.size)]
+    e1_result = [0.0 for r in range(x.size)]
+    e2_result = [0.0 for r in range(x.size)]
+    f_result = [0.0 for r in range(x.size)]
+  
+    p0_result = [0.0 for r in range(x.size)]
+    p2_0_result = [0.0 for r in range(x.size)]
+    p2_1_result = [0.0 for r in range(x.size)]
+    p4_0_result = [0.0 for r in range(x.size)]
+    p4_1_result = [0.0 for r in range(x.size)]
+    p4_2_result = [0.0 for r in range(x.size)]
+  
+    g_result = [0.0 for r in range(x.size)]
+    h_result = [0.0 for r in range(x.size)]
+    i_result = [0.0 for r in range(x.size)]
+    j_result = [0.0 for r in range(x.size)]
+    k_result = [0.0 for r in range(x.size)]
+    l_result = [0.0 for r in range(x.size)]
+  
+    m_result = [0.0 for r in range(x.size)]
+    n_result = [0.0 for r in range(x.size)]
+    o_result = [0.0 for r in range(x.size)]
+  for i,z in enumerate(x):
+    for l in range(l_max+1):
+      res_0 = f_a_for_p(el_nr,l,k_,z,nu_in,1,0)[0]
+      res_2 = f_a_for_p(el_nr,l,k_,z,nu_in,1,2)
+      res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,1,4)
+      a_result[i] += (res_0)
+      b_result[i] += ((res_2[0]+res_2[2]))
+      c_result[i] += (res_2[1])
+      b0_result[i] += ((res_4[0]+res_4[-1]))
+      b1_result[i] += ((res_4[1]+res_4[-2]))
+      b2_result[i] += ((res_4[2]))
+      res_0 = f_a_for_p(el_nr,l,k_,z,nu_in,2,0)[0]
+      res_2 = f_a_for_p(el_nr,l,k_,z,nu_in,2,2)
+      res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,2,4)
+      d_result[i] += (res_0)
+      e_result[i] += ((res_2[0]+res_2[2]))
+      f_result[i] += (res_2[1])
+      e0_result[i] += ((res_4[0]+res_4[-1]))
+      e1_result[i] += ((res_4[1]+res_4[-2]))
+      e2_result[i] += ((res_4[2]))
+
+      for _k in range(3):
+        b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,0)[0]
+        c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,0)[0] 
+        c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,0)[0]
+        d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,0)[0]
+        if _k == 0:
+          b_l   *= -st0 * alpha_coef(l,1,_k,t0,alp)
+          c_0_l *= ct0 * alpha_coef(l,0,_k,t0,alp) * ca
+          c_2_l *= ct0 * alpha_coef(l,2,_k,t0,alp) * ca
+          d_l   *= ct0 * alpha_bar_coef(l,2,_k,t0,alp) * sa
+        elif _k == 1:
+          b_l   *= ct0 * alpha_coef(l,1,_k,t0,alp)
+          c_0_l *= st0 * alpha_coef(l,0,_k,t0,alp) * ca
+          c_2_l *= st0 * alpha_coef(l,2,_k,t0,alp) * ca
+          d_l   *= st0 * alpha_bar_coef(l,2,_k,t0,alp) * sa
+        elif _k == 2:
+          b_l   *= -st0 * alpha_coef(l,1,_k,t0,alp)
+          c_0_l *= ct0 * alpha_coef(l,0,_k,t0,alp) * ca - sa * beta_coef(l,0,_k,t0,alp)
+          c_2_l *= ct0 * alpha_coef(l,2,_k,t0,alp) * ca - sa * beta_coef(l,2,_k,t0,alp)
+          d_l   *= ct0 * alpha_bar_coef(l,2,_k,t0,alp) * sa + ca * beta_bar_coef(l,2,_k,t0,alp)
+        res_0 = 1.0/3.0 * (b_l + c_0_l + c_2_l + d_l)
+        p0_result[i] += res_0
+        #res_2 = f_a_for_p(el_nr,l,k,z,nu_in,2,2)
+        #res_4 = f_a_for_p(el_nr,l,k,z,nu_in,2,4)
+
+    g_result[i] += (f_s_1_hoenl(z)*constant_factor)
+    h_result[i] += (f_s_2_1_hoenl(z)*constant_factor*x2_)
+    i_result[i] += (f_s_2_2_hoenl(z)*constant_factor*x2_)
+
+    j_result[i] += (f_s_1_EM(z)*constant_factor)
+    k_result[i] += (f_s_2_1_EM(z)*constant_factor*x2_2)
+    l_result[i] += (f_s_2_2_EM(z)*constant_factor*x2_2)
+
+    m_result[i] += (f_p_1_EM(z)*constant_factor)
+    n_result[i] += (f_p_2_1_EM(z)*constant_factor*x2_2)
+    o_result[i] += (f_p_2_2_EM(z)*constant_factor*x2_2)
+    p2_0_result[i] = m_result[i] / p0_result[i]
+  
+  fig, axes = plt.subplots(2,2)
+  axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
+  axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
+  axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
+  axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
+  axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
+  axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
+  axes[0,0].plot(x,a_result,color='b',label="p=0, 0/0")
+  axes[0,0].plot(x,b_result,color='g',label="p=2, 0/2 + 2/0")
+  axes[0,0].plot(x,c_result,color='r',label="p=2, 1/1")
+  axes[0,0].plot(x,b0_result,label="p=4, 0/4 + 4/0")
+  axes[0,0].plot(x,b1_result,label="p=4, 1/3 + 3/1")
+  axes[0,0].plot(x,b2_result,label="p=4, 2/2")
+  axes[1,0].plot(x,d_result,color='b',label="p=0, 0/0")
+  axes[1,0].plot(x,e_result,color='g',label="p=2, 0/2 + 2/0")
+  axes[1,0].plot(x,f_result,color='r',label="p=2, 1/1")
+  axes[1,0].plot(x,e0_result,label="p=4, 0/4 + 4/0")
+  axes[1,0].plot(x,e1_result,label="p=4, 1/3 + 3/1")
+  axes[1,0].plot(x,e2_result,label="p=4, 2/2")
+  axes[1,0].legend()
+  axes[1,0].axhline(0,1,5,ls='--')
+  axes[0,0].legend()
+  axes[0,0].axhline(0,1,5,ls='--')
+
+  axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)")
+  axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)")
+  axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)")
+  axes[0,1].plot(x,p0_result,color='b',label="p=0, 0/0")
+  axes[0,1].plot(x,p2_0_result,color='g',label="p=2, 0/2 + 2/0")
+  #axes[0,1].plot(x,p2_1_result,color='r',label="p=2, 1/1")
+  #axes[0,1].plot(x,p4_0_result,label="p=4, 0/4 + 4/0")
+  #axes[0,1].plot(x,p4_1_result,label="p=4, 1/3 + 3/1")
+  #axes[0,1].plot(x,p4_2_result,label="p=4, 2/2")
+  axes[0,1].legend()
+  mng = plt.get_current_fig_manager()
+  mng.window.state('zoomed')
+  plt.show()
+
