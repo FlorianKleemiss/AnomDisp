@@ -215,12 +215,12 @@ def f_s_2_2_EM(z):
   return part1*part2
 
 def f_p_1_EM(z):
-  part1 = 512*(z+8.0/3.0)/(3*pow(z,5))
+  part1 = 512*(z+8./3.)/(3*pow(z,5))
   part2 = sugiura_exps(z,2)
   return part1*part2
 
 def f_p_2_1_EM(z):
-  part1 = 512*(z-2)*(z+8.0/3.0)/(15*pow(z,7))
+  part1 = 512*(z-2)*(z+8./3.)/(15*pow(z,7))
   part2 = sugiura_exps(z,2)
   return part1*part2
 
@@ -231,35 +231,23 @@ def f_p_2_2_EM(z):
 
 def f_p_1(z):
   part1 = 512*(z+8/3)/(3*pow(z,5))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,2)
+  return part1*part2
 
 def f_l0(z):
   part1 = 512/(9*pow(z,4))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,2)
+  return part1*part2
 
 def f_l2(z):
   part1 = 2*8192*(z+3)/(45*pow(z,5))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,2)
+  return part1*part2
 
 def f_l2_c0(z):
   part1 = -pow(2,14)*(z+3)/(45*pow(z,5))
-  z_1=z-1
-  sqrt_var = numpy.sqrt(z_1)
-  part2 = numpy.exp(-8/sqrt_var*numpy.arctan(sqrt_var))
-  part3 = 1-numpy.exp(-4*math.pi/sqrt_var)
-  return part1*part2/part3
+  part2 = sugiura_exps(z,2)
+  return part1*part2
 
 def f_s_1_hoenl(z):
   part1 = 64/(3*pow(z,3))
@@ -947,15 +935,37 @@ if EM_Hoenl_test == True:
   plot_EM_Hoenl_test()
 
 if higher_p_test == True:
-  nu_in = 1.05*get_ionization_energy_1s(el_nr)/h
+  nu_in = 0.5*get_ionization_energy_1s(el_nr)/h
   x = np.linspace(1.0001,5.0001,150)
   l_max = 5
   k_ = 0
   x2_ = xn(nu_in,1,el_nr,0,2)
   x2_2 = xn(nu_in,2,el_nr,0, 2)
   t0 = alp = 0
-  ct0 = ca = np.cos(t0)
-  st0 = sa = np.sin(t0)
+
+  
+  temp_matrix = []
+  def apply_angle_part(b_l,c_0_l,c_2_l,d_l,_k, theta0, alpha, l):
+    ct0 = np.cos(theta0)
+    st0 = np.sin(theta0)
+    ca = np.cos(alpha)
+    sa = np.sin(alpha)
+    if _k == 0:
+      b_l   *= -st0 * alpha_coef(l,1,0,theta0,alpha)
+      c_0_l *=  ct0 * alpha_coef(l,0,0,theta0,alpha) * ca
+      c_2_l *=  ct0 * alpha_coef(l,2,0,theta0,alpha) * ca
+      d_l   *=  ct0 * alpha_bar_coef(l,2,0,theta0,alpha) * sa
+    elif _k == 1:
+      b_l   *= ct0 * alpha_coef(l,1,1,theta0,alpha)
+      c_0_l *= st0 * alpha_coef(l,0,1,theta0,alpha) * ca
+      c_2_l *= st0 * alpha_coef(l,2,1,theta0,alpha) * ca
+      d_l   *= st0 * alpha_bar_coef(l,2,1,theta0,alpha) * sa
+    elif _k == 2:
+      b_l   *= -st0 * alpha_coef(l,1,2,theta0,alpha)
+      c_0_l *=  ct0 * alpha_coef(l,0,2,theta0,alpha) * ca - sa * beta_coef(l,0,2,theta0,alpha)
+      c_2_l *=  ct0 * alpha_coef(l,2,2,theta0,alpha) * ca - sa * beta_coef(l,2,2,theta0,alpha)
+      d_l   *=  ct0 * alpha_bar_coef(l,2,2,theta0,alpha) * sa + ca * beta_bar_coef(l,2,2,theta0,alpha)
+    return b_l,c_0_l,c_2_l,d_l
 
   if True:
     a_result = [0.0 for r in range(x.size)]
@@ -989,6 +999,7 @@ if higher_p_test == True:
     n_result = [0.0 for r in range(x.size)]
     o_result = [0.0 for r in range(x.size)]
   for i,z in enumerate(x):
+    #print("l= k= | b_l c_0_l c_2_l d_l")
     for l in range(l_max+1):
       res_0 = f_a_for_p(el_nr,l,k_,z,nu_in,1,0)[0]
       res_2 = f_a_for_p(el_nr,l,k_,z,nu_in,1,2)
@@ -1008,31 +1019,33 @@ if higher_p_test == True:
       e0_result[i] += ((res_4[0]+res_4[-1]))
       e1_result[i] += ((res_4[1]+res_4[-2]))
       e2_result[i] += ((res_4[2]))
-
+      
       for _k in range(3):
         b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,0)[0]
         c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,0)[0] 
         c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,0)[0]
         d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,0)[0]
-        if _k == 0:
-          b_l   *= -st0 * alpha_coef(l,1,_k,t0,alp)
-          c_0_l *= ct0 * alpha_coef(l,0,_k,t0,alp) * ca
-          c_2_l *= ct0 * alpha_coef(l,2,_k,t0,alp) * ca
-          d_l   *= ct0 * alpha_bar_coef(l,2,_k,t0,alp) * sa
-        elif _k == 1:
-          b_l   *= ct0 * alpha_coef(l,1,_k,t0,alp)
-          c_0_l *= st0 * alpha_coef(l,0,_k,t0,alp) * ca
-          c_2_l *= st0 * alpha_coef(l,2,_k,t0,alp) * ca
-          d_l   *= st0 * alpha_bar_coef(l,2,_k,t0,alp) * sa
-        elif _k == 2:
-          b_l   *= -st0 * alpha_coef(l,1,_k,t0,alp)
-          c_0_l *= ct0 * alpha_coef(l,0,_k,t0,alp) * ca - sa * beta_coef(l,0,_k,t0,alp)
-          c_2_l *= ct0 * alpha_coef(l,2,_k,t0,alp) * ca - sa * beta_coef(l,2,_k,t0,alp)
-          d_l   *= ct0 * alpha_bar_coef(l,2,_k,t0,alp) * sa + ca * beta_bar_coef(l,2,_k,t0,alp)
-        res_0 = 1.0/3.0 * (b_l + c_0_l + c_2_l + d_l)
-        p0_result[i] += res_0
-        #res_2 = f_a_for_p(el_nr,l,k,z,nu_in,2,2)
-        #res_4 = f_a_for_p(el_nr,l,k,z,nu_in,2,4)
+        b_l,c_0_l,c_2_l,d_l = apply_angle_part(b_l,c_0_l,c_2_l,d_l,_k,t0,alp, l)
+        p0_result[i] += 1./3. * (b_l + c_0_l + c_2_l + d_l)
+        
+        b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,2)
+        c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,2) 
+        c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,2)
+        d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,2)
+        for runny in range(len(b_l)):
+          b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part(b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny],_k,t0,alp, l)
+        p2_0_result[i] += 1./3. * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
+        p2_1_result[i] += 1./3. * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
+        
+        b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,4)
+        c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,4) 
+        c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,4)
+        d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,4)
+        for runny in range(len(b_l)):
+          b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part(b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny],_k,t0,alp, l)
+        p4_0_result[i] += 1./3. * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
+        p4_1_result[i] += 1./3. * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
+        p4_2_result[i] += 1./3. * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
 
     g_result[i] += (f_s_1_hoenl(z)*constant_factor)
     h_result[i] += (f_s_2_1_hoenl(z)*constant_factor*x2_)
@@ -1045,7 +1058,6 @@ if higher_p_test == True:
     m_result[i] += (f_p_1_EM(z)*constant_factor)
     n_result[i] += (f_p_2_1_EM(z)*constant_factor*x2_2)
     o_result[i] += (f_p_2_2_EM(z)*constant_factor*x2_2)
-    p2_0_result[i] = m_result[i] / p0_result[i]
   
   fig, axes = plt.subplots(2,2)
   axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
@@ -1057,30 +1069,31 @@ if higher_p_test == True:
   axes[0,0].plot(x,a_result,color='b',label="p=0, 0/0")
   axes[0,0].plot(x,b_result,color='g',label="p=2, 0/2 + 2/0")
   axes[0,0].plot(x,c_result,color='r',label="p=2, 1/1")
-  axes[0,0].plot(x,b0_result,label="p=4, 0/4 + 4/0")
-  axes[0,0].plot(x,b1_result,label="p=4, 1/3 + 3/1")
-  axes[0,0].plot(x,b2_result,label="p=4, 2/2")
+  axes[0,0].plot(x,b0_result,linestyle='dotted',label="p=4, 0/4 + 4/0")
+  axes[0,0].plot(x,b1_result,linestyle='dotted',label="p=4, 1/3 + 3/1")
+  axes[0,0].plot(x,b2_result,linestyle='dotted',label="p=4, 2/2")
   axes[1,0].plot(x,d_result,color='b',label="p=0, 0/0")
   axes[1,0].plot(x,e_result,color='g',label="p=2, 0/2 + 2/0")
   axes[1,0].plot(x,f_result,color='r',label="p=2, 1/1")
-  axes[1,0].plot(x,e0_result,label="p=4, 0/4 + 4/0")
-  axes[1,0].plot(x,e1_result,label="p=4, 1/3 + 3/1")
-  axes[1,0].plot(x,e2_result,label="p=4, 2/2")
+  axes[1,0].plot(x,e0_result,linestyle='dotted',label="p=4, 0/4 + 4/0")
+  axes[1,0].plot(x,e1_result,linestyle='dotted',label="p=4, 1/3 + 3/1")
+  axes[1,0].plot(x,e2_result,linestyle='dotted',label="p=4, 2/2")
   axes[1,0].legend()
-  axes[1,0].axhline(0,1,5,ls='--')
+  axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
   axes[0,0].legend()
-  axes[0,0].axhline(0,1,5,ls='--')
+  axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
 
   axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)")
   axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)")
   axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)")
   axes[0,1].plot(x,p0_result,color='b',label="p=0, 0/0")
   axes[0,1].plot(x,p2_0_result,color='g',label="p=2, 0/2 + 2/0")
-  #axes[0,1].plot(x,p2_1_result,color='r',label="p=2, 1/1")
-  #axes[0,1].plot(x,p4_0_result,label="p=4, 0/4 + 4/0")
-  #axes[0,1].plot(x,p4_1_result,label="p=4, 1/3 + 3/1")
-  #axes[0,1].plot(x,p4_2_result,label="p=4, 2/2")
+  axes[0,1].plot(x,p2_1_result,color='r',label="p=2, 1/1")
+  axes[0,1].plot(x,p4_0_result,linestyle='dotted',label="p=4, 0/4 + 4/0")
+  axes[0,1].plot(x,p4_1_result,linestyle='dotted',label="p=4, 1/3 + 3/1")
+  axes[0,1].plot(x,p4_2_result,linestyle='dotted',label="p=4, 2/2")
   axes[0,1].legend()
+  axes[0,1].axhline(y=0,linestyle='dashed',color='gray')
   mng = plt.get_current_fig_manager()
   mng.window.state('zoomed')
   plt.show()
