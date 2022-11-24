@@ -13,6 +13,7 @@ speed_of_light = 2.99792458E8 #m/s
 r_0 = pow(el_charge,2)/el_charge/pow(speed_of_light,2)
 r_0_for_nu = pow(el_charge,2)/el_charge
 angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
+barn2bohr = 2.80028520539078E+7
 
 kpcor =  [ 0.0,    0.0,                                                                                                                                                                                                                   0.0,
           1E-3,    0.0,                                                                                                                                                                              1E-3,  1E-3,  2E-3,  3E-3,  4E-3,  4E-3,

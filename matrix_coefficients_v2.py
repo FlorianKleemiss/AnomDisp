@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import legendre_plynomials
 from constants_and_atomic_properties import *
 
 def z_EE(E,E2):
@@ -116,17 +115,6 @@ def g_from_M(M, xhi, j):
     sum += M[j,i]
   return sum
   
-##def K_recursive(p, l, k, b, n_0):
-##  if l > p+1:
-##    return 0
-##  np4 = n_0*b/k/4 #n'/4
-##  M = prepare_M(p,l,np4)
-##  part1 = -complex(0,2*math.pi) / pow(complex(0,2*k),p+2-l)
-##  g = g_from_M(M, complex(0,np4), p+1-l)
-##  part2 = g * pow(1/(-pow(np4,2)-0.25),(p+2))
-##  ex = math.exp(-8*np4 * math.atan(1/(2*np4)))
-##  return part1 * part2 * ex
-
 def K_recursive_from_z(p, l, b_, z, n_0):
   if l > p+1:
     return 0
@@ -186,7 +174,7 @@ def value_from_W(W,b,l,M):
   return sum
 
 def J(a,b,c,l, Matrix = None):
-  M = a+c+20
+  M = a+c+5
   if Matrix is None:
     Matrix = make_matrix_W(a,c, M)
   result = value_from_W(Matrix,b,l,M)
@@ -199,7 +187,7 @@ def J0_hat(p,l):
     return 1/15 * delta(l,1) - 1/35 * delta(l,3)
   elif p == 2:
     return 1/15 * delta(l,0) + 1/105 * delta(l,2) - 4/315 * delta(l,4)
-  elif p ==3:
+  elif p == 3:
     return 1/35 * delta(l,1) - 1/315 * delta(l,3) - 4/693 * delta(l,5)
   else:
     return 0.25 * J(2,p,0,l)
@@ -370,96 +358,6 @@ def B0_from_z_for_p(b_, z, n_0, l, nu, p):
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p,l,b_,z,n_0)
   return part1 * n1 * (2*b_*J1 * K1 - J2 * K2)
-
-#Start of final matrixelement calculation
-#Start of calculation of products of matrix elements
-
-def A_a_1_product(z,l,E,nu,p_limit, theta0, alpha):
-  alpha_l11 = legendre_plynomials.alpha_coef(l,1,1,theta0,alpha)
-  beta_l11 = legendre_plynomials.beta_coef(l,1,1,theta0,alpha)
-  NNC = pow(abs(C_l_from_z(z,l,E,nu,p_limit)),2)
-  return (NNC*alpha_l11,NNC*beta_l11)
-
-def A_b_1_product(z,l,E,nu,p_limit, theta0, alpha):
-  alpha_l21 = legendre_plynomials.alpha_coef(l,1,2,theta0,alpha)
-  alpha_l11 = legendre_plynomials.alpha_coef(l,1,1,theta0,alpha)
-  alpha_l01 = legendre_plynomials.alpha_coef(l,1,0,theta0,alpha)
-  beta_l11 = legendre_plynomials.beta_coef(l,1,1,theta0,alpha)
-  beta_l21 = legendre_plynomials.beta_coef(l,1,2,theta0,alpha)
-  b_ = b(2, 1, z)
-  k_ = k(E)
-  N2N2B1 = pow(N0(b_),2) * pow(N(l, 1, b_, n_0, z),2) * B_1(b_, k_, l, nu, p_limit)
-  Bl0star = B_0(b_,k_,l,nu,p_limit).conjugate()
-  Bl1star = B_1(b_,k_,l,nu,p_limit).conjugate()
-  Bl2star = B_2(b_,k_,l,nu,p_limit).conjugate()
-  st0 = np.sin(theta0)
-  ct0 = np.cos(theta0)
-  parallel = N2N2B1*((-st0*alpha_l01*Bl0star\
-                      +alpha_l21*Bl2star)*ct0\
-                      -alpha_l11*Bl1star*st0)
-  orthogonal = N2N2B1*(beta_l11*Bl1star*ct0+beta_l21*Bl2star*st0)
-  return (parallel,orthogonal)
-
-def A_c_0_product(z,l,E,nu,p_limit, theta0, alpha):
-  alpha_l20 = legendre_plynomials.alpha_coef(l,0,2,theta0,alpha)
-  alpha_l10 = legendre_plynomials.alpha_coef(l,0,1,theta0,alpha)
-  alpha_l00 = legendre_plynomials.alpha_coef(l,0,0,theta0,alpha)
-  beta_l10 = legendre_plynomials.beta_coef(l,0,1,theta0,alpha)
-  beta_l20 = legendre_plynomials.beta_coef(l,0,2,theta0,alpha)
-  b_ = b(2, 1, z)
-  k_ = k(E)
-  N2N2B0 = pow(N0(b_),2) * pow(N(l, 0, b_, k_),2) * B_0(b_, k_, l, nu, p_limit)
-  Bl0star = B_0(b_,k_,l,nu,p_limit).conjugate()
-  Bl1star = B_1(b_,k_,l,nu,p_limit).conjugate()
-  Bl2star = B_2(b_,k_,l,nu,p_limit).conjugate()
-  st0 = np.sin(theta0)
-  ct0 = np.cos(theta0)
-  sa = np.sin(alpha)
-  ca = np.cos(alpha)
-  parallel = N2N2B0*(-alpha_l00*Bl0star*ct0*ca+alpha_l10*Bl1star*st0*ca+Bl2star*(beta_l20*sa-alpha_l20*ct0*ca))
-  orthogonal = N2N2B0*(Bl0star*alpha_l00*sa+Bl1star*beta_l10*st0*ca - Bl2star*(alpha_l20*sa+beta_l20*ct0*ca))
-  return (parallel,orthogonal)
-
-def A_c_2_product(z,l,E,nu,p_limit, theta0, alpha):
-  alpha_l22 = legendre_plynomials.alpha_coef(l,2,2,theta0,alpha)
-  alpha_l12 = legendre_plynomials.alpha_coef(l,2,1,theta0,alpha)
-  alpha_l02 = legendre_plynomials.alpha_coef(l,2,0,theta0,alpha)
-  beta_l12 =  legendre_plynomials.beta_coef( l,2,1,theta0,alpha)
-  beta_l22 =  legendre_plynomials.beta_coef( l,2,2,theta0,alpha)
-  b_ = b(2, 1, z)
-  k_ = k(E)
-  N2N2B2 = pow(N0(b_),2) * pow(N(l, 0, b_, k_),2) * B_2(b_, k_, l, nu, p_limit)
-  Bl0star = B_0(b_,k_,l,nu,p_limit).conjugate()
-  Bl1star = B_1(b_,k_,l,nu,p_limit).conjugate()
-  Bl2star = B_2(b_,k_,l,nu,p_limit).conjugate()
-  st0 = np.sin(theta0)
-  ct0 = np.cos(theta0)
-  sa = np.sin(alpha)
-  ca = np.cos(alpha)
-  parallel   = N2N2B2*(-alpha_l02*Bl0star*ct0*ca+alpha_l12*Bl1star*st0*ca+Bl2star*(beta_l22*sa-alpha_l22*ct0*ca))
-  orthogonal = N2N2B2*(Bl0star*alpha_l02*sa+Bl1star*beta_l12*st0*ca - Bl2star*(alpha_l22*sa+beta_l22*ct0*ca))
-  return (parallel,orthogonal)
-
-def A_d_2_product(z,l,E,nu,p_limit, theta0, alpha):
-  alpha_l22 = legendre_plynomials.alpha_bar_coef(l,2,2,theta0,alpha)
-  alpha_l12 = legendre_plynomials.alpha_bar_coef(l,2,1,theta0,alpha)
-  alpha_l02 = legendre_plynomials.alpha_bar_coef(l,2,0,theta0,alpha)
-  beta_l12 =  legendre_plynomials.beta_bar_coef( l,2,1,theta0,alpha)
-  beta_l22 =  legendre_plynomials.beta_bar_coef( l,2,2,theta0,alpha)
-  b_ = b(2, 2, z)
-  k_ = k(E)
-  N2N2B2 = pow(N0(b_),2) * pow(N(l, 0, b_, k_),2) * B_2(b_, k_, l, nu, p_limit)
-  Bl0star = B_0(b_,k_,l,nu,p_limit).conjugate()
-  Bl1star = B_1(b_,k_,l,nu,p_limit).conjugate()
-  Bl2star = B_2(b_,k_,l,nu,p_limit).conjugate()
-  st0 = np.sin(theta0)
-  ct0 = np.cos(theta0)
-  sa = np.sin(alpha)
-  ca = np.cos(alpha)
-  parallel   = N2N2B2*(-alpha_l02*Bl0star*ct0*sa+alpha_l12*Bl1star*st0*sa+Bl2star*(beta_l22*ca-alpha_l22*ct0*sa))
-  orthogonal = N2N2B2*(Bl0star*alpha_l02*ca+Bl1star*beta_l12*st0*sa - Bl2star*(alpha_l22*ca+beta_l22*ct0*sa))
-  return (parallel,orthogonal)
-
 ################## END of matrix element calculation
 
 ## Start of f functions for angle independant part of matrix products:
@@ -550,7 +448,6 @@ def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
       f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
       f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
         )
-
 
 def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
   if z <= 1: return 0
@@ -653,51 +550,6 @@ def f_d_for_p(Z,l,g_k,z,nu_in,n_0,p):
 def print_Js():
   p_limit = 6
   l_limit = 6
-  ##Js = np.zeros((4,l_limit,p_limit))
-  ##for l in range(l_limit):
-  ##  for p in range(p_limit):
-  ##    try:
-  ##      Js[0,l,p] = J1(p,l)
-  ##    except:
-  ##      Js[0,l,p] = 0.12345678
-  ##    try:
-  ##      Js[1,l,p] = J2(p,l)
-  ##    except:
-  ##      Js[1,l,p] = 0.12345678
-  ##    try:
-  ##      Js[2,l,p] = J0_hat(p,l)
-  ##    except:
-  ##      Js[2,l,p] = 0.12345678
-  ##    try:
-  ##      Js[3,l,p] = J0_bar(p,l)
-  ##    except:
-  ##      Js[3,l,p] = 0.12345678
-  ##string = "   p= "
-  ##for p in range(p_limit):
-  ##  string += "{:8d}".format(p)
-  ##string += "\n"
-  ##for l in range(l_limit):
-  ##  string += "l = {:4d}: ".format(l)
-  ##  for type in range(4):
-  ##    for p in range(p_limit):
-  ##      if Js[type,l,p] != 0.12345678:
-  ##        string += "{:+7.3f} ".format(Js[type,l,p])
-  ##      else:
-  ##        string += " ------ "
-  ##    if type == 0:
-  ##      string += " J1"
-  ##    elif type == 1:
-  ##      string += " J2"
-  ##    elif type == 2:
-  ##      string += " J0_hat"
-  ##    elif type == 3:
-  ##      string += " J0_bar"
-  ##    string += "\n"
-  ##    if type != 3:
-  ##      string += "          "
-  ##print(string)
-  ##print('***'*30)
-  #HERE WE USE THE GENERAL EQUATION
   Js = np.zeros((4,l_limit,p_limit))
   M = 2+2+20
   Matrix00 = make_matrix_W(0,0, M)
@@ -732,82 +584,3 @@ def print_Js():
         string += "          "
     string += "\n"
   print(string)
-
-def test():      
-  Z = 42
-  n = 10
-  #l = 2
-  
-  #E = 200000*Ryd_ener/n/n
-  Ek = get_ionization_energy_1s(Z) #K-Absorption edge of Mo
-  Ed = get_ionization_energy_2s(Z) #L3-Absorption edge of Mo
-  Ec = get_ionization_energy_2p1_2(Z) #L2-Absorption edge of Mo
-  Eb = get_ionization_energy_2p3_2(Z) #L1-Absorption edge of Mo
-  p_limit = 5
-  minimal = 0.99*Eb/h
-  maximal = 1.2*Ed/h
-  stepsize = 1.0E15
-  l_start = 1
-  l_end = 8
-  import matplotlib.pyplot as plt
-  fig, axs = plt.subplots(l_end-l_start,2,sharex=True)
-  E=20 #this is E_gamma' in EM
-  theta0 = math.pi/3
-  alp = math.pi/1.823
-  factor = h/(4*math.pi*math.pi*el_mass)
-  for l in range(l_start,l_end):
-    x = []
-    ya = []
-    yb = []
-    yc = []
-    yd = []
-    yai = []
-    ybi = []
-    yci = []
-    ydi = []
-    for step in range(int(minimal), int(maximal), int(stepsize)):
-      x.append(step)
-      Aa  = A_a_1_product(Z, l, E, step, p_limit, theta0, alp)
-      Ab  = A_b_1_product(Z, l, E, step, p_limit, theta0, alp)
-      Ac  = A_c_0_product(Z, l, E, step, p_limit, theta0, alp)
-      Ac2 = A_c_2_product(Z, l, E, step, p_limit, theta0, alp)
-      Ad  = A_d_2_product(Z, l, E, step, p_limit, theta0, alp)
-      ya.append( (factor/(((Eb+E)/h)-step))*(Aa[0].real+Aa[1].real)/2)
-      yb.append( (factor/(((Ec+E)/h)-step))*(Ab[0].real+Ab[1].real)/2)
-      yc.append( (factor/(((Ed+E)/h)-step))*(Ac[0].real+Ac[1].real+Ac2[0].real+Ac2[1].real)/2)
-      yd.append( (factor/(((Ed+E)/h)-step))*(Ad[0].real+Ad[1].real)/2)
-  
-      yai.append( (factor/(((Ed+E)/h)-step))*(Aa[0].imag+Aa[1].imag)/2)
-      ybi.append( (factor/(((Ec+E)/h)-step))*(Ab[0].imag+Ab[1].imag)/2)
-      yci.append( (factor/(((Ed+E)/h)-step))*(Ac[0].imag+Ac[1].imag+Ac2[0].imag+Ac2[1].imag)/2)
-      ydi.append( (factor/(((Ed+E)/h)-step))*(Ad[0].imag+Ad[1].imag)/2)
-    
-    axs[l-l_start,0].plot(x,ya,'+:')
-    axs[l-l_start,0].plot(x,yb,'+:')
-    axs[l-l_start,0].plot(x,yc,'+:')
-    axs[l-l_start,0].plot(x,yd,'+:')
-  
-    axs[l-l_start,1].plot(x,yai,'+:',label="a")
-    axs[l-l_start,1].plot(x,ybi,'+:',label="b")
-    axs[l-l_start,1].plot(x,yci,'+:',label="c")
-    axs[l-l_start,1].plot(x,ydi,'+:',label="d")
-    #axs[l-4,0].axvline(x=nuk, color="gray", linestyle=":")
-    #axs[l-4,1].axvline(x=nuk, color="gray", linestyle=":")
-    axs[l-l_start,0].set(ylabel="l=%d"%l)
-    axs[l-l_start,0].axvline(x=Eb/h, color="gray", linestyle=":")
-    axs[l-l_start,1].axvline(x=Eb/h, color="gray", linestyle=":")
-    axs[l-l_start,0].axvline(x=Ec/h, color="gray", linestyle=":")
-    axs[l-l_start,1].axvline(x=Ec/h, color="gray", linestyle=":")
-    axs[l-l_start,0].axvline(x=Ed/h, color="gray", linestyle=":")
-    axs[l-l_start,1].axvline(x=Ed/h, color="gray", linestyle=":")
-
-  axs[0, 1].set_title('Imag')
-  axs[0, 0].set_title('Real')
-  axs[0, 1].legend(loc='upper right')
-  axs[l_end-2, 0].set(xlabel='Frequency [1/s]')
-  axs[l_end-2, 1].set(xlabel='Frequency [1/s]')
-  plt.show()
-
-if __name__ == "__main__":
-  #print_Js()
-  test()
