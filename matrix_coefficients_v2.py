@@ -174,65 +174,70 @@ def value_from_W(W,b,l,M):
   return sum
 
 def J(a,b,c,l, Matrix = None):
-  M = a+c+5
+  M = a+c+l
   if Matrix is None:
     Matrix = make_matrix_W(a,c, M)
   result = value_from_W(Matrix,b,l,M)
   return result
 
+
+W20 = make_matrix_W(2, 0, 20)
 def J0_hat(p,l):
   if p == 0:
     return 1/3 * delta(l,0) - 1/15 * delta(l,2)
-  elif p == 1:
-    return 1/15 * delta(l,1) - 1/35 * delta(l,3)
-  elif p == 2:
-    return 1/15 * delta(l,0) + 1/105 * delta(l,2) - 4/315 * delta(l,4)
-  elif p == 3:
-    return 1/35 * delta(l,1) - 1/315 * delta(l,3) - 4/693 * delta(l,5)
+  #elif p == 1:
+  #  return 1/15 * delta(l,1) - 1/35 * delta(l,3)
+  #elif p == 2:
+  #  return 1/15 * delta(l,0) + 1/105 * delta(l,2) - 4/315 * delta(l,4)
+  #elif p == 3:
+  #  return 1/35 * delta(l,1) - 1/315 * delta(l,3) - 4/693 * delta(l,5)
   else:
-    return 0.25 * J(2,p,0,l)
-    
+    return 0.25 * J(2,p,0,l, W20)
+ 
+W00 = make_matrix_W(0, 0, 20)    
 def J0_bar(p,l):
   if p == 0:
     return 2 * delta(l,0)
-  elif p == 1:
-    return 2/3 * delta(l,1)
-  elif p == 2:
-    return 2/3 * delta(l,0) + 4/15 * delta(l,2)
-  elif p == 3:
-    return 2/5 * delta(l,1) + 4/35 * delta(l,3)
-  elif p == 4:
-    return 2/5 * delta(l,0) + 8/35 * delta(l,2) + 16/315 * delta(l,4)
-  elif p == 5:
-    return 2/7 * delta(l,1) + 8/63 * delta(l,3) + 16/693 * delta(l,5)
+  #elif p == 1:
+  #  return 2/3 * delta(l,1)
+  #elif p == 2:
+  #  return 2/3 * delta(l,0) + 4/15 * delta(l,2)
+  #elif p == 3:
+  #  return 2/5 * delta(l,1) + 4/35 * delta(l,3)
+  #elif p == 4:
+  #  return 2/5 * delta(l,0) + 8/35 * delta(l,2) + 16/315 * delta(l,4)
+  #elif p == 5:
+  #  return 2/7 * delta(l,1) + 8/63 * delta(l,3) + 16/693 * delta(l,5)
   else:
-    return J(0,p,0,l)
+    return J(0,p,0,l,W00)
 
+W11 = make_matrix_W(1, 1, 20)
 def J1(p,l):
   if p == 0:
     return 4/3 * delta(l,1)
-  elif p == 1:
-    return 4/5 * delta(l,2)
-  elif p == 2:
-    return 4/15 * delta(l,1) + 16/35 * delta(l,3)
-  elif p == 3:
-    return 12/35 * delta(l,2) + 16/63 * delta(l,4)
-  elif p == 4:
-    return 4/35 * delta(l,1) + 32/105 * delta(l,3) + 32/231 * delta(l,5)
+  #elif p == 1:
+  #  return 4/5 * delta(l,2)
+  #elif p == 2:
+  #  return 4/15 * delta(l,1) + 16/35 * delta(l,3)
+  #elif p == 3:
+  #  return 12/35 * delta(l,2) + 16/63 * delta(l,4)
+  #elif p == 4:
+  #  return 4/35 * delta(l,1) + 32/105 * delta(l,3) + 32/231 * delta(l,5)
   else:
-    return J(1,p,1,l)
-  
+    return J(1,p,1,l,W11)
+
+W22 = make_matrix_W(2, 2, 20)  
 def J2(p,l):
   if p == 0:
     return 16/5 * delta(l,2)
-  elif p == 1:
-    return 16/7 * delta(l,3)
-  elif p == 2:
-    return 16/35 * delta(l,2) + 32/21 * delta(l,4)
-  elif p == 3:
-    return 16/21 * delta(l,3) + 32/33 * delta(l,5)
+  #elif p == 1:
+  #  return 16/7 * delta(l,3)
+  #elif p == 2:
+  #  return 16/35 * delta(l,2) + 32/21 * delta(l,4)
+  #elif p == 3:
+  #  return 16/21 * delta(l,3) + 32/33 * delta(l,5)
   else:
-    return J(2,p,2,l)
+    return J(2,p,2,l,W22)
   
 ################################# END OF CALC Js ###################################    
   
@@ -305,18 +310,6 @@ def B0_from_z(b_, z, n_0, l, nu, p_limit):
     sum += n1 * (2*b_*J1 * K1 - J2 * K2)
   return part1 * sum
 
-def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = b_/pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J1(p,l)
-  if (J == 0):
-    return 0.0
-  K1 = K_recursive_from_z(p,l,b_,z, n_0)
-  K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
-  K2_mod = b_/2*K2
-  return part1 * n1 * J * (K1-K2_mod)
-
 def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
   part1 = b_/2/pow(-2*k_,l+1)
@@ -326,7 +319,34 @@ def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
     return 0.0
   K1 = K_recursive_from_z(p,l,b_,z, n_0)
   return part1 * n1 * J * K1
-  
+
+def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_/pow(-2*k_,l+1)
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J = J1(p,l)
+  if (J == 0):
+    return 0.0
+  K1 = K_recursive_from_z(p, l, b_, z, n_0)
+  K2 = K_recursive_from_z(p+1, l, b_, z, n_0)
+  K2_mod = b_/2*K2
+  return part1 * n1 * J * (K1-K2_mod)
+
+def E_l_from_z_for_p(b_, z, n_0, l, nu, p):
+  k_ = b_*math.sqrt(z-1)
+  part1 = b_/2/pow(-2*k_,l+1)
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  J = J1(p,l)
+  if (J == 0):
+    return 0.0
+  K1 = K_recursive_from_z(p, l, b_, z, n_0)
+  K2 = K_recursive_from_z(p+1, l, b_, z, n_0)
+  K3 = K_recursive_from_z(p+2, l, b_, z, n_0)
+  K1_mod = 3*K1
+  K2_mod = -10*b_/3*K2
+  K3_mod = 2*b_/3*K3
+  return part1 * n1 * J * (K1_mod+K2_mod+K3_mod)
+
 def B2_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
   part1 = b_*b_/(4*pow(-2*k_,l+1))
@@ -458,6 +478,8 @@ def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
     func = A_l_from_z_for_p
   elif n_0 == 2:
     func = C_l_from_z_for_p
+  elif n_0 == 3:
+    func = E_l_from_z_for_p
   for j in range(p+1):
     matrix_value1 = func(b_,z,n_0,l,nu_in,j)
     matrix_value2 = func(b_,z,n_0,l,nu_in,p-j)

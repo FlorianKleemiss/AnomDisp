@@ -13,6 +13,14 @@
             "python.defaultInterpreterPath": "d:\\python38x64\\python.exe"
         },
         {
+          "name": "Play with coefficients",
+          "type": "python",
+          "request": "launch",
+          "program": "playing_with_coefficients.py",
+          "console": "integratedTerminal",
+          "python.defaultInterpreterPath": "d:\\python38x64\\python.exe"
+        },
+        {
             "name": "cl.exe build and debug active file",
             "type": "cppvsdbg",
             "request": "launch",
