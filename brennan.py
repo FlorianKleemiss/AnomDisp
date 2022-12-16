@@ -1,3 +1,4 @@
+import math
 def sort(n,a,b):
   for i in range(n):
     for j in range(i+1,n):
@@ -39,7 +40,6 @@ def sigma0(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
     return [icount,(xsect_int[icount] * bind_nrg_au* bind_nrg_au* bind_nrg_au/(x*x)-bind_nrg_au*xsect_barns*energy_au*energy_au)/prod]
   
 def sigma1(x,bind_nrg_au,xsect_int,energy_au,icount):
-  import math
   icount -= 1
   return [icount,0.5*xsect_int[icount] * bind_nrg_au* bind_nrg_au* bind_nrg_au/ (math.sqrt(x)*(energy_au*energy_au*x*x-bind_nrg_au*bind_nrg_au*x))]
 
@@ -53,7 +53,6 @@ def sigma2(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
   elif abs(xsect_int[icount]-xsect_barns) < 1E-31:
     result = -2.0*xsect_int[icount]*bind_nrg_au/(x*x*x)
   else:
-    import math
     x3 = math.pow(x,3)
     denom = x3*math.pow(energy_au,2)-(math.pow(bind_nrg_au,2)/x)
     if abs(denom) < 1E-31:
@@ -63,7 +62,6 @@ def sigma2(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
   return[icount,result]
 
 def sigma3(x,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount):
-  import math
   icount -= 1
   x2 = math.pow(x,2)
   return [icount,math.pow(bind_nrg_au,3) * (xsect_int[icount]-xsect_edge_au*x2)/ (x2*(x2*math.pow(energy_au,2)-math.pow(bind_nrg_au,2)))]
@@ -86,7 +84,6 @@ def gauss(sigma,xsect_barns,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount
   return aa
 
 def mcm(z,energy):
-  import math
   barns2electron = 1.43110541E-8
   p1 = math.log(energy)
   p2 = p1*p1
@@ -139,6 +136,13 @@ def aknint(log_energy, n, log_nrg, log_xsect):
 
 class brennan:
   def __init__(self):
+    self.au = 2.80028520539078E+7 #Factor between barns to bohr
+    self.alpha = 7.2973525693E-3 #fine structure constant alpha
+    self.inv_fine_struct = 1/self.alpha
+    self.fine_pi = self.inv_fine_struct / (2*math.pow(math.pi,2)) #fine structure constant in pre calculated form for later
+    self.inv_fine_struct /= 4*math.pi #Modification to save time later
+    self.keV_per_hartree = 0.027211386245988
+    self.angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
     #List of Element labels to be converted into Z
     self.elements = ["DUMMY","H",                                                                                                                                              "He",
                      "Li","Be",                                                                                                                        "B", "C", "N", "O", "F","Ne",
@@ -3050,20 +3054,13 @@ class brennan:
                     [0.585494578    , 12.4282341    , 169.844070    , 1460.21033    , 8725.37793    , 54.2631149    , 17623.1504    , 145704.859    , 1739226.38    , 11441855.0    ]]
 
   def at_angstrom(self, wavelength, element):
-    import math
-    au = 2.80028520539078E+7 #Factor between barns to bohr
-    alpha = 7.2973525693E-3 #fine structure constant alpha
-    inv_fine_struct = 1/alpha
-    fine_pi = inv_fine_struct / (2*math.pow(math.pi,2)) #fine structure constant in pre calculated form for later
-    inv_fine_struct /= 4*math.pi #Modification to save time later
+    
     z = self.elements.index(element)
     #print("Element number is: "+str(z))
-    keV_per_hartree = 0.027211386245988
-    angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
-    energy = angstrom2eV / wavelength / 1000 #convert wavelength to keV(division by 1000)
+    energy = self.angstrom2eV / wavelength / 1000 #convert wavelength to keV(division by 1000)
     #print("Energy in keV: "+str(energy))
     log_energy = math.log(energy)
-    energy_au = energy / keV_per_hartree #convert energy to a.u. through divison of keV per hartree
+    energy_au = energy / self.keV_per_hartree #convert energy to a.u. through divison of keV per hartree
     #print("Energy in a.u.: "+str(energy_au))
     result = [0.0,0.0]
     if z<3:
@@ -3084,14 +3081,14 @@ class brennan:
         nrg_s = [0] * 11
         log_nrg = [0] * 11
         
-        bind_nrg_au = self.bind_nrg[z][i]/keV_per_hartree
+        bind_nrg_au = self.bind_nrg[z][i]/self.keV_per_hartree
         if self.funtype[z][i] == 0:
-          xsect_edge_au = self.xsc[z][i][10]/au
+          xsect_edge_au = self.xsc[z][i][10]/self.au
           nparms = 11
         else:
           nparms = 10
         for j in range(5):
-          xsect_int[j] = self.xsc[z][i][j+5]/au
+          xsect_int[j] = self.xsc[z][i][j+5]/self.au
           nrg_int[j] = self.nrg[z][i][j]
           nrg_s[j] = self.nrg[0][0][j]
         for j in range(nparms):
@@ -3115,20 +3112,20 @@ class brennan:
             i_zero += 1
           i_nxsect = nparms - i_zero - 1
           xsect_barns = aknint(log_energy,i_nxsect,log_nrg[i_zero:],log_xsect[i_zero:])
-          xsect_barns = math.exp(xsect_barns)/au
+          xsect_barns = math.exp(xsect_barns)/self.au
           
-          fpp_orb = inv_fine_struct * xsect_barns * energy_au #took /4pi to the top in inv_fine_struct
+          fpp_orb = self.inv_fine_struct * xsect_barns * energy_au #took /4pi to the top in inv_fine_struct
           
           var = energy_au-bind_nrg_au
           if var == 0.0:
             var = 1.0
-          fp_corr = -0.5 * xsect_barns * energy_au * fine_pi * math.log((energy_au + bind_nrg_au)/var)
+          fp_corr = -0.5 * xsect_barns * energy_au * self.fine_pi * math.log((energy_au + bind_nrg_au)/var)
         
         if self.bind_nrg[z][i] > energy and self.funtype[z][i] == 0:
-          fp_orb = gauss(3,xsect_barns,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount) * fine_pi
-          fp_corr = 0.5 * xsect_edge_au * bind_nrg_au * bind_nrg_au * math.log((-bind_nrg_au+energy_au)/(-bind_nrg_au-energy_au)) / energy_au * fine_pi
+          fp_orb = gauss(3,xsect_barns,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount) * self.fine_pi
+          fp_corr = 0.5 * xsect_edge_au * bind_nrg_au * bind_nrg_au * math.log((-bind_nrg_au+energy_au)/(-bind_nrg_au-energy_au)) / energy_au * self.fine_pi
         else:
-          fp_orb = gauss(self.funtype[z][i],xsect_barns,bind_nrg_au,xsect_int,energy_au,0.0,icount) * fine_pi         
+          fp_orb = gauss(self.funtype[z][i],xsect_barns,bind_nrg_au,xsect_int,energy_au,0.0,icount) * self.fine_pi         
         
         result[0] += fp_orb + fp_corr
         result[1] += fpp_orb
