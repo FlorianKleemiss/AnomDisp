@@ -382,7 +382,7 @@ def B0_from_z_for_p(b_, z, n_0, l, nu, p):
 
 def D2_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(6)*b_*b_/(4*pow(-2*k_,l+1))
+  part1 = math.sqrt(2./3.)*b_*b_/(4*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J = J2(p,l)
   if (J == 0):
@@ -393,7 +393,7 @@ def D2_from_z_for_p(b_, z, n_0, l, nu, p):
 
 def D1_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(6)*b_*b_/(2*pow(-2*k_,l+1))
+  part1 = math.sqrt(2./3.)*b_*b_/(2*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J = J1(p+1,l)
   if J == 0:
@@ -404,7 +404,7 @@ def D1_from_z_for_p(b_, z, n_0, l, nu, p):
   
 def D0_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(6)*b_/pow(-2*k_,l+1)
+  part1 = math.sqrt(2./3.)*b_/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J0_hat(p,l) #J(2,p,0,l)
   J2 = J0_bar(p,l) #J(0,p,0,l)

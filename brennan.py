@@ -3054,7 +3054,15 @@ class brennan:
                     [0.585494578    , 12.4282341    , 169.844070    , 1460.21033    , 8725.37793    , 54.2631149    , 17623.1504    , 145704.859    , 1739226.38    , 11441855.0    ]]
 
   def at_angstrom(self, wavelength, element):
-    
+    """Generates the dispersion correction coefficients f' and f'' at a given wavelength for a given elemnt symbol
+
+    Args:
+        wavelength (float): Wavelength for which computation shoudl be carried out in Angstrom
+        element (string): Element symbol of the periodic table
+
+    Returns:
+        [float,float]: f' and f'' values calculated 
+    """
     z = self.elements.index(element)
     #print("Element number is: "+str(z))
     energy = self.angstrom2eV / wavelength / 1000 #convert wavelength to keV(division by 1000)
@@ -3062,7 +3070,7 @@ class brennan:
     log_energy = math.log(energy)
     energy_au = energy / self.keV_per_hartree #convert energy to a.u. through divison of keV per hartree
     #print("Energy in a.u.: "+str(energy_au))
-    result = [0.0,0.0]
+    result = [0.0, 0.0]
     if z<3:
       result = mcm(z,energy)
     else:
@@ -3135,3 +3143,17 @@ class brennan:
       #print("Fprime corr:"+"{:25.8e}".format(self.total_cor[z]))
     
     return result
+  
+  def get_mu_at_angstrom(self, wavelength, element):
+    """Generates linear absorption coefficient mu at a given wavelength
+
+    Args:
+        wavelength (float): wavlenegth in Angstrom of incident beam for which the calcualtion is carried out 
+        element (string): Element symbol in the periodic table
+        
+    Returns:
+        mu (float): Linear absorption coefficient in barns/Atom
+    """
+    fp, fdp = self.at_angstrom(wavelength,element)
+    mu = fdp * 458,2 * wavelength
+    return mu
