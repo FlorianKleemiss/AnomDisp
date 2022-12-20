@@ -4138,15 +4138,35 @@ class brennan:
     mu = self.convert_fdp_to_mu(wavelength,fdp+ray+comp)
     print(f"{fp:16.7f} {fdp:16.7f} {mu:16.7f}")
   
-  def convert_fdp_to_mu(self, wavelength, fdp):
+  def convert_fdp_to_mu(self, wavelength, fdp, element):
     """Generates Mu from given fdp at given wavelength
 
     Args:
         wavelength (float): wavlenegth in Angstrom of incident beam for which the calcualtion is carried out 
         fdp (float): value of f'' at the given wavelength
+        element (string): Element symbol in the periodic table
         
     Returns:
         mu (float): Linear absorption coefficient in barns/Atom
     """
-    mu = fdp /self.angstrom2eV * wavelength /self.barns_to_electrons
+    z = self.elements.index(element) - 1
+    energy = self.angstrom2eV / wavelength / 1000
+    l_energy = math.log(energy)
+    l_energy2 = l_energy * l_energy
+    l_energy3 = l_energy2 * l_energy
+    ray = self.barns_to_electrons * energy * 1000. \
+      * math.exp(\
+        self.ray[z*4] \
+        + self.ray[z*4+1] * l_energy \
+        + self.ray[z*4+2] * l_energy2 \
+        + self.ray[z*4+3] * l_energy3
+      )
+    comp = self.barns_to_electrons * energy * 1000. \
+      * math.exp(\
+        self.comp[z*4] \
+        + self.comp[z*4+1] * l_energy \
+        + self.comp[z*4+2] * l_energy2 \
+        + self.comp[z*4+3] * l_energy3
+      )
+    mu = (fdp + ray + comp) /self.angstrom2eV * wavelength /self.barns_to_electrons
     return mu
