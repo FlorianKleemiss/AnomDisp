@@ -143,7 +143,6 @@ class brennan:
     self.inv_fine_struct /= 4*math.pi #Modification to save time later
     self.keV_per_hartree = 0.027211386245988
     self.angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
-    #List of Element labels to be converted into Z
     
     self.f_to_mu = 4208.031548 #mu in millimeter
     self.barns_to_electrons = 1.43110541E-8
@@ -515,8 +514,8 @@ class brennan:
                     [0,0,0,0,2,2,2,2,2,2,2,2,2,2],#In
                     [0,0,0,0,2,2,2,2,2,2,2,2,2,2],#Sn
                     [0,0,0,0,2,2,2,2,2,2,2,2,2,2],#Sb
-                    [0,0,0,0,2,2,2,2,2,2,2,2,2,2],#Te
-                    [0,0,0,0,2,2,2,2,2,2,2,2,2,2],#I
+                    [0,0,0,0,0,2,2,2,2,2,2,2,2,2],#Te
+                    [0,0,0,0,0,2,2,2,2,2,2,2,2,2],#I
                     [0,0,0,0,0,2,2,2,2,2,2,2,2,2],#Xe
                     [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2],#Cs
                     [0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2],#Ba
@@ -841,7 +840,7 @@ class brennan:
                     [40.3988914    , 1.66940069    ,0.355599999    ,0.150239483    ,9.786649048E-02],
                     [40.3988914    , 1.66940069    ,0.355599999    ,0.150239483    ,9.786649048E-02]]
     # RB
-    self.nrg[37] = [[324.017792    ,  65.8664780   ,  30.3993988   ,  19.7595100   ,  15.9478130   , 15.2148991],
+    self.nrg[37] = [[324.017792    , 65.8664780    , 30.3993988    , 19.7595100    , 15.9478130    , 15.2148991],
                     [44.0225258    ,  8.94891739   ,  4.13019991   ,  2.68461657   ,  2.16674209   ,  2.06716514],
                     [39.7334671    ,  8.07703590   ,  3.72779989   ,  2.42305779   ,  1.95563912   ,  1.86576390],
                     [38.4650841    ,  7.81919861   ,  3.60879993   ,  2.34570813   ,  1.89321065   ,  1.80620444],
@@ -1894,7 +1893,7 @@ class brennan:
                     [20.6577549    ,0.853638947    ,0.181834131    ,7.682414353E-02,5.004349723E-02],
                     [12.9717808    ,0.536032021    ,0.114180483    ,4.824076593E-02,3.142419457E-02],
                     [9.23429012    ,0.381587923    ,8.128226548E-02,3.434140980E-02,2.237010561E-02]]
-    # U  ELEMEN][ #][2  = 
+    # U 
     self.nrg[92] = [[533.762024    , 240.655319    , 163.491714    , 131.810898    , 118.416931    ],
                     [463.810791    , 94.2836533    , 43.5148010    , 28.2844772    , 22.8282757    , 21.7791576],
                     [446.547974    , 90.7744598    , 41.8951988    , 27.2317429    , 21.9786186    , 20.9685478],
@@ -3363,27 +3362,37 @@ class brennan:
         mu (float): Linear absorption coefficient in barns/Atom
     """
     fp, fdp = self.at_angstrom(wavelength,element)
-    z = self.elements.index(element) - 1
-    energy = self.angstrom2eV / wavelength / 1000
-    l_energy = math.log(energy)
-    l_energy2 = l_energy * l_energy
-    l_energy3 = l_energy2 * l_energy
-    ray = self.barns_to_electrons * energy * 1000. \
-      * math.exp(\
-        self.ray[z*4] \
-        + self.ray[z*4+1] * l_energy \
-        + self.ray[z*4+2] * l_energy2 \
-        + self.ray[z*4+3] * l_energy3
-      )
-    comp = self.barns_to_electrons * energy * 1000. \
-      * math.exp(\
-        self.comp[z*4] \
-        + self.comp[z*4+1] * l_energy \
-        + self.comp[z*4+2] * l_energy2 \
-        + self.comp[z*4+3] * l_energy3
-      )
-    mu = self.convert_fdp_to_mu(wavelength,fdp+ray+comp)
+    mu = self.convert_fdp_to_mu(wavelength,fdp,element)
     return mu
+  
+  def get_mu_pure_at_angstrom(self, wavelength, element):
+    """Generates linear absorption coefficient mu at a given wavelength without ray and comp contributions
+
+    Args:
+        wavelength (float): wavlenegth in Angstrom of incident beam for which the calcualtion is carried out 
+        element (string): Element symbol in the periodic table
+        
+    Returns:
+        mu (float): Linear absorption coefficient in barns/Atom
+    """
+    fp, fdp = self.at_angstrom(wavelength,element)
+    energy = self.angstrom2eV / wavelength
+    mu = (fdp/(energy * self.barns_to_electrons))
+    return mu
+  
+  def fp_fdp_mu_at_angstrom(self, wavelength, element):
+    """Generates f' f'' and linear absorption coefficient µ at a given wavelength
+
+    Args:
+        wavelength (float): wavlenegth in Angstrom of incident beam for which the calcualtion is carried out 
+        element (string): Element symbol in the periodic table
+        
+    Returns:
+        [fp,fdp,mu] (float): f', f" in electrons and Linear absorption coefficient in barns/Atom
+    """
+    fp, fdp = self.at_angstrom(wavelength,element)
+    mu = self.convert_fdp_to_mu(wavelength,fdp,element)
+    return [fp,fdp,mu]
   
   def print_at_angstrom(self, wavelength, element):
     """Generates linear absorption coefficient mu at a given wavelength
@@ -3393,28 +3402,86 @@ class brennan:
         element (string): Element symbol in the periodic table
     """
     fp, fdp = self.at_angstrom(wavelength,element)
+    mu = self.get_mu_at_angstrom(wavelength,fdp,element)
+    print(f"{fp:16.7f} {fdp:16.7f} {mu:16.7f}")
+  
+  def get_ray_at_angstrom_in_electrons(self,wl,element):
+    """Generates Rayleigh Scattering contribution at given wavelength
+
+    Args:
+        wl (float): incoming wavelength in angstrom
+        element (string): element symbol
+
+    Returns:
+        ray: Rayghleigh scattering contribution in electrons
+    """
+
     z = self.elements.index(element) - 1
-    energy = self.angstrom2eV / wavelength / 1000
-    l_energy = math.log(energy)
+    energy = self.angstrom2eV / wl
+    l_energy = math.log(energy/1000)
     l_energy2 = l_energy * l_energy
     l_energy3 = l_energy2 * l_energy
-    ray = self.barns_to_electrons * energy * 1000. \
-      * math.exp(\
+    ray = math.exp(\
         self.ray[z*4] \
         + self.ray[z*4+1] * l_energy \
         + self.ray[z*4+2] * l_energy2 \
         + self.ray[z*4+3] * l_energy3
       )
-    comp = self.barns_to_electrons * energy * 1000. \
-      * math.exp(\
+    return ray * energy * self.barns_to_electrons
+  
+  def get_comp_at_angstrom_in_electrons(self,wl,element):
+    """Generates Compton Scattering contribution at given wavelength
+
+    Args:
+        wl (float): incoming wavelength in angstrom
+        element (string): element symbol
+
+    Returns:
+        comp: compton scattering contribution in electrons
+    """
+    z = self.elements.index(element) - 1
+    energy = self.angstrom2eV / wl
+    l_energy = math.log(energy/1000)
+    l_energy2 = l_energy * l_energy
+    l_energy3 = l_energy2 * l_energy
+    comp = math.exp(\
         self.comp[z*4] \
         + self.comp[z*4+1] * l_energy \
         + self.comp[z*4+2] * l_energy2 \
         + self.comp[z*4+3] * l_energy3
       )
-    mu = self.convert_fdp_to_mu(wavelength,fdp+ray+comp)
-    print(f"{fp:16.7f} {fdp:16.7f} {mu:16.7f}")
+    return comp * energy * self.barns_to_electrons
   
+  def get_raycomp_at_angstrom(self,wl,element):
+    """Generates a list of Rayleigh and Compton scattering contribution at a given wavelength in Angstrom for a given element
+
+    Args:
+        wl (float): Wavelength of incoming X-ray in Angstrom
+        element (string): Label of the element
+
+    Returns:
+        [ray,comp]: reayleigh and compton scattering power in barns/atom
+    """
+
+    z = self.elements.index(element) - 1
+    energy = self.angstrom2eV / wl
+    l_energy = math.log(energy/1000)
+    l_energy2 = l_energy * l_energy
+    l_energy3 = l_energy2 * l_energy
+    comp = math.exp(\
+        self.comp[z*4] \
+        + self.comp[z*4+1] * l_energy \
+        + self.comp[z*4+2] * l_energy2 \
+        + self.comp[z*4+3] * l_energy3
+      )
+    ray = math.exp(\
+        self.ray[z*4] \
+        + self.ray[z*4+1] * l_energy \
+        + self.ray[z*4+2] * l_energy2 \
+        + self.ray[z*4+3] * l_energy3
+      )
+    return [ray,comp]
+
   def convert_fdp_to_mu(self, wavelength, fdp, element):
     """Generates Mu from given fdp at given wavelength
 
@@ -3426,24 +3493,7 @@ class brennan:
     Returns:
         mu (float): Linear absorption coefficient in barns/Atom
     """
-    z = self.elements.index(element) - 1
-    energy = self.angstrom2eV / wavelength / 1000
-    l_energy = math.log(energy)
-    l_energy2 = l_energy * l_energy
-    l_energy3 = l_energy2 * l_energy
-    ray = self.barns_to_electrons * energy * 1000. \
-      * math.exp(\
-        self.ray[z*4] \
-        + self.ray[z*4+1] * l_energy \
-        + self.ray[z*4+2] * l_energy2 \
-        + self.ray[z*4+3] * l_energy3
-      )
-    comp = self.barns_to_electrons * energy * 1000. \
-      * math.exp(\
-        self.comp[z*4] \
-        + self.comp[z*4+1] * l_energy \
-        + self.comp[z*4+2] * l_energy2 \
-        + self.comp[z*4+3] * l_energy3
-      )
-    mu = (fdp + ray + comp) /self.angstrom2eV * wavelength /self.barns_to_electrons
+    energy = self.angstrom2eV / wavelength
+    ray, comp = self.get_raycomp_at_angstrom(wavelength,element)
+    mu = (fdp/(energy * self.barns_to_electrons) + ray + comp)
     return mu
