@@ -7,10 +7,10 @@ from constants_and_atomic_properties import *
 import matplotlib.pyplot as plt
 Z = elements[50]
 bren = brennan()
-minimal = 100
+minimal = 200
 maximal = 2000
 stepsize = 1
-for i in range(50,92):
+for i in range(50,60):
   Z = elements[i]
   x = []
   y = []
