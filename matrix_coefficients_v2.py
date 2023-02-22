@@ -144,6 +144,13 @@ def make_matrix_W(a,c, M):
   elif c == 2:
     Q[c,0] = 3
     Q[c,2] = -3
+  elif c == 3:
+    Q[c,0] = 15
+    Q[c,2] = -15
+  elif c == 4:
+    Q[c,0] = 105
+    Q[c,2] = -210
+    Q[c,4] = 105
   for s in range(0,M+1):
     if Q[c,s] != 0:
       Q[c+1,s+1] = (2*c+1) * Q[c,s]
@@ -241,195 +248,198 @@ def J2(p,l):
 W31 = make_matrix_W(3, 1, 20)
 W33 = make_matrix_W(3, 3, 20)
 ################################# END OF CALC Js ###################################    
+if True:
+  def C_l_from_z(b_, z, n_0, l, nu, p_limit):
+    k_ = b_*math.sqrt(z-1)
+    part1 = b_/pow(-2*k_,l+1)
+    sum = 0
+    for p in range(p_limit):
+      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+      J_ = J(1,p,1,l,W11)
+      if (J_ == 0):
+        continue
+      K1 = K_recursive_from_z(p,l,b_,z, n_0)
+      K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
+      K2_mod = b_/2*K2
+      sum += n1 * J_ * (K1-K2_mod)
+    return part1 * sum
   
-def C_l_from_z(b_, z, n_0, l, nu, p_limit):
-  k_ = b_*math.sqrt(z-1)
-  part1 = b_/pow(-2*k_,l+1)
-  sum = 0
-  for p in range(p_limit):
-    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-    J = J1(p,l)
-    if (J == 0):
-      continue
-    K1 = K_recursive_from_z(p,l,b_,z, n_0)
-    K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
-    K2_mod = b_/2*K2
-    sum += n1 * J * (K1-K2_mod)
-  return part1 * sum
-
-def A_l_from_z(b_, z, n_0, l, nu, p_limit):
-  k_ = b_*math.sqrt(z-1)
-  part1 = b_/2/pow(-2*k_,l+1)
-  sum = 0
-  for p in range(p_limit):
-    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-    J = J1(p,l)
-    if (J == 0):
-      continue
-    K1 = K_recursive_from_z(p,l,b_,z, n_0)
-    sum += n1 * J * K1
-  return part1 * sum
+  def A_l_from_z(b_, z, n_0, l, nu, p_limit):
+    k_ = b_*math.sqrt(z-1)
+    part1 = b_/2/pow(-2*k_,l+1)
+    sum = 0
+    for p in range(p_limit):
+      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+      J = J(1,p,1,l,W11)
+      if (J == 0):
+        continue
+      K1 = K_recursive_from_z(p,l,b_,z, n_0)
+      sum += n1 * J * K1
+    return part1 * sum
+    
+  def B2_from_z(b_, z, n_0, l, nu, p_limit):
+    k_ = b_*math.sqrt(z-1)
+    part1 = b_*b_/(4*pow(-2*k_,l+1))
+    sum = 0
+    for p in range(p_limit):
+      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+      J = J2(p,l)
+      if (J == 0):
+        continue
+      K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+      sum += n1 * J * K1
+    return part1 * sum
   
-def B2_from_z(b_, z, n_0, l, nu, p_limit):
-  k_ = b_*math.sqrt(z-1)
-  part1 = b_*b_/(4*pow(-2*k_,l+1))
-  sum = 0
-  for p in range(p_limit):
-    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-    J = J2(p,l)
-    if (J == 0):
-      continue
-    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-    sum += n1 * J * K1
-  return part1 * sum
-
-def B1_from_z(b_, z, n_0, l, nu, p_limit):
-  k_ = b_*math.sqrt(z-1)
-  part1 = b_*b_/(2*pow(-2*k_,l+1))
-  sum = 0
-  for p in range(p_limit):
-    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-    J = J1(p+1,l)
-    if J == 0:
-      continue
-    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-    sum += n1 * J * K1
-  return part1 * sum
-  
-def B0_from_z(b_, z, n_0, l, nu, p_limit):
-  k_ = b_*math.sqrt(z-1)
-  part1 = b_/pow(-2*k_,l+1)
-  sum = 0
-  for p in range(p_limit):
-    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-    J1 = J0_hat(p,l)
-    J2 = J0_bar(p,l)
-    if J1 == 0 and J2 == 0:
-      continue
-    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-    K2 = K_recursive_from_z(p,l,b_,z,n_0)
-    sum += n1 * (2*b_*J1 * K1 - J2 * K2)
-  return part1 * sum
+  def B1_from_z(b_, z, n_0, l, nu, p_limit):
+    k_ = b_*math.sqrt(z-1)
+    part1 = b_*b_/(2*pow(-2*k_,l+1))
+    sum = 0
+    for p in range(p_limit):
+      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+      J = J1(p+1,l)
+      if J == 0:
+        continue
+      K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+      sum += n1 * J * K1
+    return part1 * sum
+    
+  def B0_from_z(b_, z, n_0, l, nu, p_limit):
+    k_ = b_*math.sqrt(z-1)
+    part1 = b_/pow(-2*k_,l+1)
+    sum = 0
+    for p in range(p_limit):
+      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+      J1 = J0_hat(p,l)
+      J2 = J0_bar(p,l)
+      if J1 == 0 and J2 == 0:
+        continue
+      K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+      K2 = K_recursive_from_z(p,l,b_,z,n_0)
+      sum += n1 * (2*b_*J1 * K1 - J2 * K2)
+    return part1 * sum
 
 def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
   part1 = b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J1(p,l)
-  if (J == 0):
+  J_ = J(1,p,1,l,W11)
+  if (J_ == 0):
     return 0.0
   K1 = K_recursive_from_z(p,l,b_,z, n_0)
-  return part1 * n1 * J * K1
+  return part1 * n1 * J_ * K1
 
 def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
   part1 = b_/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J1(p,l)
-  if (J == 0):
+  J_ = J(1,p,1,l,W11)
+  if (J_ == 0):
     return 0.0
   K1 = K_recursive_from_z(p, l, b_, z, n_0)
   K2 = K_recursive_from_z(p+1, l, b_, z, n_0)
   K2_mod = b_/2*K2
-  return part1 * n1 * J * (K1-K2_mod)
+  return part1 * n1 * J_ * (K1-K2_mod)
 
 def E_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
   part1 = b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J1(p,l)
-  if (J == 0):
+  J_ = J(1,p,1,l,W11)
+  if (J_ == 0):
     return 0.0
   K1 = K_recursive_from_z(p, l, b_, z, n_0)
   K2 = K_recursive_from_z(p+1, l, b_, z, n_0)
   K3 = K_recursive_from_z(p+2, l, b_, z, n_0)
-  K1_mod = 3*K1
-  K2_mod = -10*b_/3*K2
-  K3_mod = 2*b_/3*K3
-  return part1 * n1 * J * (K1_mod+K2_mod+K3_mod)
+  return part1 * n1 * J_ * (3*K1-10*b_/3*K2+2*b_*b_/3*K3)
 
 def B2_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = b_*b_/(4*pow(-2*k_,l+1))
+  part1 = -b_*b_/(4*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J2(p,l)
-  if (J == 0):
+  J_ = J(2,p,2,l,W22)
+  if (J_ == 0):
     return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-  return part1 * n1 * J * K1
+  return part1 * n1 * J_ * K1
 
 def B1_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = b_*b_/(2*pow(-2*k_,l+1))
+  part1 = -b_*b_/(2*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J1(p+1,l)
-  if J == 0:
+  J_ = J(1,p+1,1,l,W11)
+  if J_ == 0:
     return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-  return part1 * n1 * J * K1
+  return part1 * n1 * J_ * K1
   
 def B0_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = b_/pow(-2*k_,l+1)
+  part1 = -b_/(2*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J1 = J0_hat(p,l)
-  J2 = J0_bar(p,l)
+  J1 = J(2,p,0,l,W20)
+  J2 = J(0,p,0,l,W00)
   if J1 == 0 and J2 == 0:
     return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p,l,b_,z,n_0)
-  return part1 * n1 * (2*b_*J1 * K1 - J2 * K2)
+  return part1 * n1 * (-2 * J2 * K2 + b_* J1 * K1)
 
 def D2_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_*b_/(4*pow(-2*k_,l+1))
+  part1 = -math.sqrt(2./3.)*b_*b_/(4*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J2(p,l)
-  if (J == 0):
+  J_ = J(2,p,2,l,W22)
+  if (J_ == 0):
     return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * J * (3*K1 - b_ * K2)
+  return part1 * n1 * J_ * (3*K1 - b_ * K2)
 
 def D1_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_*b_/(2*pow(-2*k_,l+1))
+  part1 = -math.sqrt(2./3.)*b_*b_/(2*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J = J1(p+1,l)
-  if J == 0:
+  J_ = J(1,p+1,1,l,W11)
+  if J_ == 0:
     return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * J * (3 * K1 - b_ * K2)
+  return part1 * n1 * J_ * (3 * K1 - b_ * K2)
   
 def D0_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_/pow(-2*k_,l+1)
+  part1 = -math.sqrt(2./3.)*b_/(2*pow(-2*k_,l+1))
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J1 = J0_hat(p,l) #J(2,p,0,l)
-  J2 = J0_bar(p,l) #J(0,p,0,l)
+  J1 = J(2,p,0,l,W20) 
+  J2 = J(0,p,0,l,W00) 
   if J1 == 0 and J2 == 0:
     return 0.0
   K1 = K_recursive_from_z(p,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K3 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (J2*(-4*K1 + 2*b_*K2) + b_*J1 * (3*K2-b_*K3))
+  return part1 * n1 * (J2*(-4*K1 + 2*b_*K2) + b_ * J1 * (3*K2-b_*K3))
 
 def G0_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_*b_/2/pow(-2*k_,l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  J1 = J0_hat(p+1,l) #J(2,p,0,l)
-  J2 = J0_bar(p+1,l) #J(0,p,0,l)
+  J1 = J(2,p+1,0,l,W20) 
+  J2 = J(0,p+1,0,l,W00)
   if J1 == 0 and J2 == 0:
     return 0.0
-  K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-  K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (J2*-2*K1 + b_*J1*K2)
+  if J1 > 0:
+    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  else:
+    K1 = 0
+  if J2 > 0:
+    K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
+  else:
+    K2 = 0
+  return part1 * n1 * (-2*J2*K1 + b_*J1*K2)
 
 def G1_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_*b_/2/pow(-2*k_,l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(1,p,1,l,W11)
   J2 = J(3,p,1,l,W31)
@@ -437,11 +447,11 @@ def G1_from_z_for_p(b_, z, n_0, l, nu, p):
     return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (J1*-1*K1 + b_/4.*J2*K2)
+  return part1 * n1 * (-J1*K1 + b_/4.*J2*K2)
 
 def G2_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_*b_*b_/4/pow(-2*k_,l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_*b_/4/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(2,p+1,2,l,W22)
   if J1 == 0:
@@ -451,7 +461,7 @@ def G2_from_z_for_p(b_, z, n_0, l, nu, p):
 
 def G3_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(2./3.)*b_*b_*b_/8/pow(-2*k_,l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_*b_/8/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(3,p,3,l,W33)
   if J1 == 0:
@@ -461,7 +471,7 @@ def G3_from_z_for_p(b_, z, n_0, l, nu, p):
 
 def G4_from_z_for_p(b_, z, n_0, l, nu, p): #'This is G_tilde'
   k_ = b_*math.sqrt(z-1)
-  part1 = math.sqrt(1./2.)*b_*b_/2/pow(-2*k_,l+1)
+  part1 = -math.sqrt(1./2.)*b_*b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(1,p,1,l,W11)
   J2 = J(1,p+2,1,l,W11)
