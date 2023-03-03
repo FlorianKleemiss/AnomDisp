@@ -231,13 +231,13 @@ def f_s_1_WA(z):
 
 def f_s_2_1_WA(z):
   #return 4*(z-2)*(3*z+4)/(3*z-2)/z/z/5/9*f_s_1_WA(z)
-  part1 = 32*pow(3*z+4,2)*(z+8)*(z-2)/(5*pow(z,8))
+  part1 = 256*pow(3*z+4,2)*(z+8)*(z-2)/(45*pow(z,8))
   part2 = sugiura_exps(z,3)
   return part1*part2
 
 def f_s_2_2_WA(z):
   #return 2*(4*z+5)*(3*z-4)/(3*z+4)/z/z/5/9*f_s_1_WA(z)
-  part1 = 32*(3*z-4)*(z+8)*(4*z+5)*(3*z-4)/(5*pow(z,8))
+  part1 = 256*(3*z-4)*(z+8)*(4*z+5)*(3*z-4)/(45*pow(z,8))
   part2 = sugiura_exps(z,3)
   return part1*part2
 
