@@ -241,6 +241,23 @@ def f_s_2_2_WA(z):
   part2 = sugiura_exps(z,3)
   return part1*part2
 
+def f_p_1_WA(z):
+  part1 = 64*pow(3*z+4,2)*(z+8)/(pow(z,6))
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+def f_p_2_1_WA(z):
+  #return 4*(z-2)*(3*z+4)/(3*z-2)/z/z/5/9*f_s_1_WA(z)
+  part1 = 256*pow(3*z+4,2)*(z+8)*(z-2)/(45*pow(z,8))
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+def f_p_2_2_WA(z):
+  #return 2*(4*z+5)*(3*z-4)/(3*z+4)/z/z/5/9*f_s_1_WA(z)
+  part1 = 256*(3*z-4)*(z+8)*(4*z+5)*(3*z-4)/(45*pow(z,8))
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
 def xn(nu_in,n_0, el_nr, l_0, n):
   return pow(n_0* q(nu_in)/b(n_0, l_0, el_nr), n)
 def x2(nu_in,n_0, el_nr, l_0):
@@ -863,677 +880,856 @@ def apply_angle_part_p(b_l,c_0_l,c_2_l,d_l,_k, theta0, alpha, l):
     d_l   *=  ct0 * alpha_bar_coef(l,2,2,theta0,alpha) * sa + ca * beta_bar_coef(l,2,2,theta0,alpha)
   return b_l,c_0_l,c_2_l,d_l
 
+def apply_angle_part_d(f_0_l, f_2_l, e_l, g_1_l, g_3_l, h_l, i_1_l, i_3_l,_k, theta0, alpha, l):
+  ct0 = np.cos(theta0)
+  c2t0 = np.cos(2*theta0)
+  st0 = np.sin(theta0)
+  s2t0 = np.sin(2*theta0)
+  ca = np.cos(alpha)
+  c2a = np.cos(2*alpha)
+  sa = np.sin(alpha)
+  s2a = np.sin(2*alpha)
+  if _k == 0:
+    f_0_l *=  c2t0 * alpha_coef(l,0,0,theta0,alpha) * ca
+    f_2_l *=  c2t0 * alpha_coef(l,2,0,theta0,alpha) * ca
+    e_l   *=  c2t0 * sa * alpha_bar_coef(l,2,0,theta0,alpha)
+    g_1_l *=  0.5*s2t0 * alpha_bar_coef(l,1,0,theta0,alpha) * s2a
+    g_3_l *=  0.5*s2t0 * alpha_bar_coef(l,3,0,theta0,alpha) * s2a
+    h_l   *=  -np.sqrt(3.0)/2.0 * s2t0 * alpha_coef(l,1,0,theta0,alpha)
+    i_1_l *=  0.5*s2t0*c2a *alpha_coef(l,1,0,theta0,alpha)
+    i_3_l *=  0.5*s2t0*c2a *alpha_coef(l,3,0,theta0,alpha)
+  elif _k == 1:
+    f_0_l *=  st0*sa * beta_coef(l,0,1,theta0,alpha) -0.5*s2t0*ca*alpha_coef(l,0,1,theta0,alpha)
+    f_2_l *=  st0*sa * beta_coef(l,2,1,theta0,alpha) -0.5*s2t0*ca*alpha_coef(l,2,1,theta0,alpha)
+    e_l   *= -st0*ca * beta_bar_coef(l,2,1,theta0,alpha) -0.5*s2t0*sa*alpha_bar_coef(l,2,1,theta0,alpha)
+    g_1_l *=  ct0*c2a * beta_bar_coef(l,1,1,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,1,1,theta0,alpha)
+    g_3_l *=  ct0*c2a * beta_bar_coef(l,3,1,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,3,1,theta0,alpha)
+    h_l   *=  np.sqrt(3.0)*0.5*st0*st0 * alpha_coef(l,1,1,theta0,alpha)
+    i_1_l *= -ct0*s2a * beta_coef(l,1,1,theta0,alpha) +(1-0.5*st0*st0)*c2a*alpha_coef(l,1,1,theta0,alpha)
+    i_3_l *= -ct0*s2a * beta_coef(l,3,1,theta0,alpha) +(1-0.5*st0*st0)*c2a*alpha_coef(l,3,1,theta0,alpha)
+  elif _k == 2:
+    f_0_l *=  c2t0*ca * alpha_coef(l,0,2,theta0,alpha) -ct0*sa*beta_coef(l,0,2,theta0,alpha)
+    f_2_l *=  c2t0*ca * alpha_coef(l,2,2,theta0,alpha) -ct0*sa*beta_coef(l,2,2,theta0,alpha)
+    e_l   *=  c2t0*sa * alpha_bar_coef(l,2,2,theta0,alpha) +ct0*ca*beta_bar_coef(l,2,2,theta0,alpha)
+    g_1_l *=  0.5*s2t0*s2a * alpha_bar_coef(l,1,2,theta0,alpha) +st0*c2a*beta_bar_coef(l,1,2,theta0,alpha)
+    g_3_l *=  0.5*s2t0*s2a * alpha_bar_coef(l,3,2,theta0,alpha) +st0*c2a*beta_bar_coef(l,3,2,theta0,alpha)
+    h_l   *=  -np.sqrt(3.0)*0.5*s2t0 * alpha_coef(l,1,2,theta0,alpha)
+    i_1_l *=  0.5*s2t0*c2a * alpha_coef(l,1,2,theta0,alpha) -st0*s2a*beta_coef(l,1,2,theta0,alpha)
+    i_3_l *=  0.5*s2t0*c2a * alpha_coef(l,3,2,theta0,alpha) -st0*s2a*beta_coef(l,3,2,theta0,alpha)
+  elif _k == 3:
+    f_0_l *=  st0*sa * beta_coef(l,0,3,theta0,alpha) -0.5*s2t0*ca*alpha_coef(l,0,3,theta0,alpha)
+    f_2_l *=  st0*sa * beta_coef(l,2,3,theta0,alpha) -0.5*s2t0*ca*alpha_coef(l,2,3,theta0,alpha)
+    e_l   *= -st0*ca * beta_bar_coef(l,2,3,theta0,alpha) -0.5*s2t0*sa*alpha_bar_coef(l,2,3,theta0,alpha)
+    g_1_l *=  ct0*c2a * beta_bar_coef(l,1,3,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,1,3,theta0,alpha)
+    g_3_l *=  ct0*c2a * beta_bar_coef(l,3,3,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,3,3,theta0,alpha)
+    h_l   *=  np.sqrt(3.0)*0.5*st0*st0 * alpha_coef(l,1,3,theta0,alpha)
+    i_1_l *= -ct0*s2a * beta_coef(l,1,3,theta0,alpha) +(1-0.5*st0*st0)*c2a*alpha_coef(l,1,3,theta0,alpha)
+    i_3_l *= -ct0*s2a * beta_coef(l,3,3,theta0,alpha) +(1-0.5*st0*st0)*c2a*alpha_coef(l,3,3,theta0,alpha)
+  elif _k == 4:
+    f_0_l *=  0.5*np.sqrt(3.0) *s2t0*ca * alpha_coef(l,0,1,theta0,alpha) 
+    f_2_l *=  0.5*np.sqrt(3.0) *s2t0*ca * alpha_coef(l,2,1,theta0,alpha) 
+    e_l   *=  np.sqrt(3.0)*0.5*s2t0*sa * alpha_bar_coef(l,2,1,theta0,alpha)
+    g_1_l *=  np.sqrt(3.0)*0.5*st0*st0*s2a * alpha_bar_coef(l,1,1,theta0,alpha)
+    g_3_l *=  np.sqrt(3.0)*0.5*st0*st0*s2a * alpha_bar_coef(l,3,1,theta0,alpha)
+    h_l   *=  (1.5*ct0*ct0-0.5) * alpha_coef(l,1,1,theta0,alpha)
+    i_1_l *=  np.sqrt(3.0)*0.5*st0*st0*c2a *alpha_coef(l,1,1,theta0,alpha)
+    i_3_l *=  np.sqrt(3.0)*0.5*st0*st0*c2a *alpha_coef(l,3,1,theta0,alpha)
+  return f_0_l, f_2_l, e_l, g_1_l, g_3_l, h_l, i_1_l, i_3_l
+
 t0 = 0
 alp = 0
 el_nr = 52
 x = None
-
-integration_test = False
-EM_Hoenl_test = False
-higher_p_test = False
-M_shell_test = True
-
-if integration_test == True:
-  start_nu_in = 0.8*get_ionization_energy_2s(el_nr)/h
-  end_nu_in = 1.2*get_ionization_energy_1s(el_nr)/h
-  x = np.linspace(start_nu_in,end_nu_in,150)
-  for nu in x:
-    test_integral_hönl(nu,el_nr, 1)
-  plot_integral_test(get_ionization_energy_1s(el_nr)/h)
-
-if EM_Hoenl_test == True:
-  nu_in = 1.05*get_ionization_energy_1s(el_nr)/h
-  x = np.linspace(1.0001,5.0001,150)
-  for z in x:
-    test_for_EM_and_Hoenl(el_nr,z,nu_in)
-  plot_EM_Hoenl_test()
-
-if higher_p_test == True:
-  nu_in = 0.8*get_ionization_energy_1s(el_nr)/h
-  x = np.linspace(1.0001,5.0001,100)
-  l_max = 7
-  k_ = 0
-  x2_ = xn(nu_in, 1, el_nr, 0, 2)
-  x2_2 = xn(nu_in, 2, el_nr, 0, 2)
-  from time import time
-  numpy.random.seed(int(np.ceil(time())))
-  t0 = numpy.random.random(1)[0] * 2 * math.pi
-  alp = numpy.random.random(1)[0] * math.pi
-  third = 1./3.
-  res_2 = [0,0,0]
-  res_4 = [0,0,0,0,0]
-  res_6 = [0,0,0,0,0,0,0]
-
-  if True:
-    a_result  = np.zeros_like(x)
-    b_result  = np.zeros_like(x)
-    c_result  = np.zeros_like(x)
-    b0_result = np.zeros_like(x)
-    b1_result = np.zeros_like(x)
-    b2_result = np.zeros_like(x)
-    k_s       = np.zeros_like(x)
-    d_result  = np.zeros_like(x)
-    e_result  = np.zeros_like(x)
-    e0_result = np.zeros_like(x)
-    e1_result = np.zeros_like(x)
-    e2_result = np.zeros_like(x)
-    l_s       = np.zeros_like(x)
-    f_result  = np.zeros_like(x)
+if __name__ == "__main__":
+  integration_test = False
+  EM_Hoenl_test = False
+  higher_p_test = False
+  M_shell_test = True
   
-    p0_result   = np.zeros_like(x)
-    p2_0_result = np.zeros_like(x)
-    p2_1_result = np.zeros_like(x)
-    p4_0_result = np.zeros_like(x)
-    p4_1_result = np.zeros_like(x)
-    p4_2_result = np.zeros_like(x)
-    p6_0_result = np.zeros_like(x)
-    p6_1_result = np.zeros_like(x)
-    p6_2_result = np.zeros_like(x)
-    p6_3_result = np.zeros_like(x)
-    l_p         = np.zeros_like(x)
+  if integration_test == True:
+    start_nu_in = 0.8*get_ionization_energy_2s(el_nr)/h
+    end_nu_in = 1.2*get_ionization_energy_1s(el_nr)/h
+    x = np.linspace(start_nu_in,end_nu_in,150)
+    for nu in x:
+      test_integral_hönl(nu,el_nr, 1)
+    plot_integral_test(get_ionization_energy_1s(el_nr)/h)
+  
+  if EM_Hoenl_test == True:
+    nu_in = 1.05*get_ionization_energy_1s(el_nr)/h
+    x = np.linspace(1.0001,5.0001,150)
+    for z in x:
+      test_for_EM_and_Hoenl(el_nr,z,nu_in)
+    plot_EM_Hoenl_test()
+  
+  if higher_p_test == True:
+    nu_in = 0.8*get_ionization_energy_1s(el_nr)/h
+    x = np.linspace(1.0001,5.0001,100)
+    l_max = 7
+    k_ = 0
+    x2_ = xn(nu_in, 1, el_nr, 0, 2)
+    x2_2 = xn(nu_in, 2, el_nr, 0, 2)
+    from time import time
+    numpy.random.seed(int(np.ceil(time())))
+    t0 = numpy.random.random(1)[0] * 2 * math.pi
+    alp = numpy.random.random(1)[0] * math.pi
+    third = 1./3.
+    res_2 = [0,0,0]
+    res_4 = [0,0,0,0,0]
+    res_6 = [0,0,0,0,0,0,0]
+  
+    if True:
+      a_result  = np.zeros_like(x)
+      b_result  = np.zeros_like(x)
+      c_result  = np.zeros_like(x)
+      b0_result = np.zeros_like(x)
+      b1_result = np.zeros_like(x)
+      b2_result = np.zeros_like(x)
+      k_s       = np.zeros_like(x)
+      d_result  = np.zeros_like(x)
+      e_result  = np.zeros_like(x)
+      e0_result = np.zeros_like(x)
+      e1_result = np.zeros_like(x)
+      e2_result = np.zeros_like(x)
+      l_s       = np.zeros_like(x)
+      f_result  = np.zeros_like(x)
     
-    p0_result_M   = np.zeros_like(x)
-    p2_0_result_M = np.zeros_like(x)
-    p2_1_result_M = np.zeros_like(x)
-    p4_0_result_M = np.zeros_like(x)
-    p4_1_result_M = np.zeros_like(x)
-    p4_2_result_M = np.zeros_like(x)
-    p6_0_result_M = np.zeros_like(x)
-    p6_1_result_M = np.zeros_like(x)
-    p6_2_result_M = np.zeros_like(x)
-    p6_3_result_M = np.zeros_like(x)
-    l_p_M         = np.zeros_like(x)
-  
-    g_result = np.zeros_like(x)
-    h_result = np.zeros_like(x)
-    i_result = np.zeros_like(x)
-    j_result = np.zeros_like(x)
-    k_result = np.zeros_like(x)
-    l_result = np.zeros_like(x)
-  
-    m_result = np.zeros_like(x)
-    n_result = np.zeros_like(x)
-    o_result = np.zeros_like(x)
-  for i,z in enumerate(x):
-    for l in range(l_max+1):
-      res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 0)[0]
-      res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
-      res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 2)
-      for runny in range(len(res_2)):
-        res_2[runny] = apply_angle_part_s(res_2[runny].real,t0,alp, l)
-      #res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,1,4)
-      #for runny in range(len(res_4)):
-      #  res_4[runny] = apply_angle_part_s(res_4[runny].real,t0,alp, l)
-      a_result[i] += (res_0)
-      b_result[i] += ((res_2[0]+res_2[2]))
-      c_result[i] += (res_2[1])
-      #b0_result[i] += ((res_4[0]+res_4[-1]))
-      #b1_result[i] += ((res_4[1]+res_4[-2]))
-      #b2_result[i] += ((res_4[2]))
-      res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 0)[0]
-      res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
-      res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 2)
-      for runny in range(len(res_2)):
-        res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
-      #res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,2,4)
-      #for runny in range(len(res_4)):
-      #  res_4[runny] = apply_angle_part_s(res_4[runny].real,t0,alp, l)
-      d_result[i] += (res_0)
-      e_result[i] += ((res_2[0]+res_2[2]))
-      f_result[i] += (res_2[1])
-      #e0_result[i] += ((res_4[0]+res_4[-1]))
-      #e1_result[i] += ((res_4[1]+res_4[-2]))
-      #e2_result[i] += ((res_4[2]))
+      p0_result   = np.zeros_like(x)
+      p2_0_result = np.zeros_like(x)
+      p2_1_result = np.zeros_like(x)
+      p4_0_result = np.zeros_like(x)
+      p4_1_result = np.zeros_like(x)
+      p4_2_result = np.zeros_like(x)
+      p6_0_result = np.zeros_like(x)
+      p6_1_result = np.zeros_like(x)
+      p6_2_result = np.zeros_like(x)
+      p6_3_result = np.zeros_like(x)
+      l_p         = np.zeros_like(x)
       
-      for _k in range(3):
-        b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0] 
-        c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        b_l,c_0_l,c_2_l,d_l = apply_angle_part_p(b_l.real, c_0_l.real, c_2_l.real, d_l.real, _k, t0, alp, l)
-        p0_result[i] += third * (b_l + c_0_l + c_2_l + d_l)
+      p0_result_M   = np.zeros_like(x)
+      p2_0_result_M = np.zeros_like(x)
+      p2_1_result_M = np.zeros_like(x)
+      p4_0_result_M = np.zeros_like(x)
+      p4_1_result_M = np.zeros_like(x)
+      p4_2_result_M = np.zeros_like(x)
+      p6_0_result_M = np.zeros_like(x)
+      p6_1_result_M = np.zeros_like(x)
+      p6_2_result_M = np.zeros_like(x)
+      p6_3_result_M = np.zeros_like(x)
+      l_p_M         = np.zeros_like(x)
+    
+      g_result = np.zeros_like(x)
+      h_result = np.zeros_like(x)
+      i_result = np.zeros_like(x)
+      j_result = np.zeros_like(x)
+      k_result = np.zeros_like(x)
+      l_result = np.zeros_like(x)
+    
+      m_result = np.zeros_like(x)
+      n_result = np.zeros_like(x)
+      o_result = np.zeros_like(x)
+    for i,z in enumerate(x):
+      for l in range(l_max+1):
+        res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 0)[0]
+        res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
+        res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 2)
+        for runny in range(len(res_2)):
+          res_2[runny] = apply_angle_part_s(res_2[runny].real,t0,alp, l)
+        #res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,1,4)
+        #for runny in range(len(res_4)):
+        #  res_4[runny] = apply_angle_part_s(res_4[runny].real,t0,alp, l)
+        a_result[i] += (res_0)
+        b_result[i] += ((res_2[0]+res_2[2]))
+        c_result[i] += (res_2[1])
+        #b0_result[i] += ((res_4[0]+res_4[-1]))
+        #b1_result[i] += ((res_4[1]+res_4[-2]))
+        #b2_result[i] += ((res_4[2]))
+        res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 0)[0]
+        res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
+        res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 2)
+        for runny in range(len(res_2)):
+          res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
+        #res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,2,4)
+        #for runny in range(len(res_4)):
+        #  res_4[runny] = apply_angle_part_s(res_4[runny].real,t0,alp, l)
+        d_result[i] += (res_0)
+        e_result[i] += ((res_2[0]+res_2[2]))
+        f_result[i] += (res_2[1])
+        #e0_result[i] += ((res_4[0]+res_4[-1]))
+        #e1_result[i] += ((res_4[1]+res_4[-2]))
+        #e2_result[i] += ((res_4[2]))
         
-        b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 2) 
-        c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        for runny in range(len(b_l)):
-          b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real, 
-                                                                               c_0_l[runny].real,
-                                                                               c_2_l[runny].real,
-                                                                               d_l[runny].real,
-                                                                               _k, t0, alp, l)
-        p2_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
-        p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
+        for _k in range(3):
+          b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0] 
+          c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          b_l,c_0_l,c_2_l,d_l = apply_angle_part_p(b_l.real, c_0_l.real, c_2_l.real, d_l.real, _k, t0, alp, l)
+          p0_result[i] += third * (b_l + c_0_l + c_2_l + d_l)
+          
+          b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 2) 
+          c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          for runny in range(len(b_l)):
+            b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real, 
+                                                                                 c_0_l[runny].real,
+                                                                                 c_2_l[runny].real,
+                                                                                 d_l[runny].real,
+                                                                                 _k, t0, alp, l)
+          p2_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
+          p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
+          
+          #b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,4)
+          #c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,4) 
+          #c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,4)
+          #d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,4)
+          #for runny in range(len(b_l)):
+          #  b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real,
+          #                                                                       c_0_l[runny].real,
+          #                                                                       c_2_l[runny].real,
+          #                                                                       d_l[runny].real,
+          #                                                                       _k, t0, alp, l)
+          #p4_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
+          #p4_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
+          #p4_2_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
+  
+          #b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,6)
+          #c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,6) 
+          #c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,6)
+          #d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,6)
+          #for runny in range(len(b_l)):
+          #  b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real,
+          #                                                                       c_0_l[runny].real,
+          #                                                                       c_2_l[runny].real,
+          #                                                                       d_l[runny].real,
+          #                                                                       _k, t0, alp, l)
+          #p6_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
+          #p6_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
+          #p6_1_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2] + b_l[-3] + c_0_l[-3] + c_2_l[-3] + d_l[-3])
+          #p6_3_result[i] += third * (b_l[3] + c_0_l[3] + c_2_l[3] + d_l[3])
+          
+        #for p = 0 using the 0 angle applying a common angle function later
+        b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 2, 0)[0].real 
+        c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 2, 0)[0].real 
+        c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
+        d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
+        p0_result_M[i] += apply_angle_part_s(third * (  b_l   * alpha_coef(l, 1, 1, 0, 0)
+                                                      + c_0_l * alpha_coef(l, 0, 0, 0, 0)
+                                                      + c_2_l * alpha_coef(l, 2, 2, 0, 0)
+                                                      + d_l   * beta_bar_coef(l, 2, 2, 0, 0))
+                                             , t0, alp, 1)
         
-        #b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,4)
-        #c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,4) 
-        #c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,4)
-        #d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,4)
+        #for p = 2 using the 0 angle applying a common angle function later
+        b_l     =   f_b_for_p(el_nr,l,1,z,nu_in,2,2) 
+        c_0_l   = f_c_0_for_p(el_nr,l,0,z,nu_in,2,2) 
+        c_2_l   = f_c_2_for_p(el_nr,l,2,z,nu_in,2,2) 
+        d_l     =   f_d_for_p(el_nr,l,2,z,nu_in,2,2) 
+        res_2[0] = apply_angle_part_s(third * (  b_l[0].real       * alpha_coef(l, 1, 1, 0, 0) 
+                                               + c_0_l[0].real     * alpha_coef(l, 0, 0, 0, 0)
+                                               + c_2_l[0].real     * alpha_coef(l, 2, 2, 0, 0)
+                                               + d_l[0].real       * beta_bar_coef(l, 2, 2, 0, 0))
+                                            , t0, alp, 1)
+        res_2[2] = apply_angle_part_s(third * (  b_l[2].real       * alpha_coef(l, 1, 1, 0, 0) 
+                                               + c_0_l[2].real     * alpha_coef(l, 0, 0, 0, 0)
+                                               + c_2_l[2].real     * alpha_coef(l, 2, 2, 0, 0)
+                                               + d_l[2].real       * beta_bar_coef(l, 2, 2, 0, 0))
+                                            , t0, alp, 1)
+        res_2[1] = apply_angle_part_s(third * (  b_l[1].real       * alpha_coef(l, 1, 1, 0, 0)
+                                               + c_0_l[1].real     * alpha_coef(l, 0, 0, 0, 0)
+                                               + c_2_l[1].real     * alpha_coef(l, 2, 2, 0, 0)
+                                               + d_l[1].real       * beta_bar_coef(l, 2, 2, 0, 0))
+                                            , t0, alp, 2)
+        p2_0_result_M[i] += ((res_2[0]+res_2[-1]))
+        p2_1_result_M[i] += ((res_2[1]))
+        
+        #for p = 4 using the 0 angle applying a common angle function later
+        #b_l     =   f_b_for_p(el_nr,l,1,z,nu_in,2,4) 
+        #c_0_l   = f_c_0_for_p(el_nr,l,0,z,nu_in,2,4) 
+        #c_2_l   = f_c_2_for_p(el_nr,l,0,z,nu_in,2,4) 
+        #c_0_l_2 = f_c_0_for_p(el_nr,l,2,z,nu_in,2,4) 
+        #c_2_l_2 = f_c_2_for_p(el_nr,l,2,z,nu_in,2,4) 
+        #d_l     =   f_d_for_p(el_nr,l,2,z,nu_in,2,4) 
         #for runny in range(len(b_l)):
-        #  b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real,
-        #                                                                       c_0_l[runny].real,
-        #                                                                       c_2_l[runny].real,
-        #                                                                       d_l[runny].real,
-        #                                                                       _k, t0, alp, l)
-        #p4_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
-        #p4_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
-        #p4_2_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
-
-        #b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,6)
-        #c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,6) 
-        #c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,6)
-        #d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,6)
+        #  res_4[runny] = apply_angle_part_s(third * (  b_l[runny].real     * alpha_coef(l,1,1,0,0) 
+        #                                             + c_0_l[runny].real   * alpha_coef(l,0,0,0,0)
+        #                                             + c_2_l[runny].real   * alpha_coef(l,2,0,0,0)
+        #                                             + c_0_l_2[runny].real * alpha_coef(l,0,2,0,0)
+        #                                             + c_2_l_2[runny].real * alpha_coef(l,2,2,0,0)
+        #                                             + d_l[runny].real     * beta_bar_coef(l,2,2,0,0))
+        #                                    , t0, alp, 3)
+        #p4_0_result_M[i] += ((res_4[0]+res_4[-1]))
+        #p4_1_result_M[i] += ((res_4[1]+res_4[-2]))
+        #p4_2_result_M[i] += ((res_4[2]))
+        
+        #for p = 6 using the 0 angle applying a common angle function later
+        #b_l     =   f_b_for_p(el_nr,l,1,z,nu_in,2,6) 
+        #c_0_l   = f_c_0_for_p(el_nr,l,0,z,nu_in,2,6) 
+        #c_2_l   = f_c_2_for_p(el_nr,l,0,z,nu_in,2,6) 
+        #c_0_l_2 = f_c_0_for_p(el_nr,l,2,z,nu_in,2,6) 
+        #c_2_l_2 = f_c_2_for_p(el_nr,l,2,z,nu_in,2,6) 
+        #d_l     =   f_d_for_p(el_nr,l,2,z,nu_in,2,6) 
         #for runny in range(len(b_l)):
-        #  b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real,
-        #                                                                       c_0_l[runny].real,
-        #                                                                       c_2_l[runny].real,
-        #                                                                       d_l[runny].real,
-        #                                                                       _k, t0, alp, l)
-        #p6_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
-        #p6_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
-        #p6_1_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2] + b_l[-3] + c_0_l[-3] + c_2_l[-3] + d_l[-3])
-        #p6_3_result[i] += third * (b_l[3] + c_0_l[3] + c_2_l[3] + d_l[3])
+        #  res_6[runny] = apply_angle_part_s(third * (  b_l[runny].real     * alpha_coef(l,1,1,0,0) 
+        #                                             + c_0_l[runny].real   * alpha_coef(l,0,0,0,0)
+        #                                             + c_2_l[runny].real   * alpha_coef(l,2,0,0,0)
+        #                                             + c_0_l_2[runny].real * alpha_coef(l,0,2,0,0)
+        #                                             + c_2_l_2[runny].real * alpha_coef(l,2,2,0,0)
+        #                                             + d_l[runny].real     * beta_bar_coef(l,2,2,0,0))
+        #                                    , t0, alp, 4)
+        #p6_0_result_M[i] += ((res_6[0]+res_6[-1]))
+        #p6_1_result_M[i] += ((res_6[1]+res_6[-2]))
+        #p6_2_result_M[i] += ((res_6[2]+res_6[-3]))
+        #p6_3_result_M[i] += ((res_6[3]))
         
-      #for p = 0 using the 0 angle applying a common angle function later
-      b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 2, 0)[0].real 
-      c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 2, 0)[0].real 
-      c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
-      d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
-      p0_result_M[i] += apply_angle_part_s(third * (  b_l   * alpha_coef(l, 1, 1, 0, 0)
-                                                    + c_0_l * alpha_coef(l, 0, 0, 0, 0)
-                                                    + c_2_l * alpha_coef(l, 2, 2, 0, 0)
-                                                    + d_l   * beta_bar_coef(l, 2, 2, 0, 0))
-                                           , t0, alp, 1)
+  
+      k_s[i] = a_result[i] + b_result[i] + c_result[i] + b0_result[i] + b1_result[i] + b2_result[i]
+      l_s[i] = d_result[i] + e_result[i] + f_result[i] + e0_result[i] + e1_result[i] + e2_result[i]
+      l_p[i] = p0_result[i] + p2_0_result[i] + p2_1_result[i] + p4_0_result[i] + p4_1_result[i] + p4_2_result[i]
+      l_p_M[i] = p0_result_M[i] + p2_0_result_M[i] + p2_1_result_M[i] + p4_0_result_M[i] + p4_1_result_M[i] + p4_2_result_M[i]
       
-      #for p = 2 using the 0 angle applying a common angle function later
-      b_l     =   f_b_for_p(el_nr,l,1,z,nu_in,2,2) 
-      c_0_l   = f_c_0_for_p(el_nr,l,0,z,nu_in,2,2) 
-      c_2_l   = f_c_2_for_p(el_nr,l,2,z,nu_in,2,2) 
-      d_l     =   f_d_for_p(el_nr,l,2,z,nu_in,2,2) 
-      res_2[0] = apply_angle_part_s(third * (  b_l[0].real       * alpha_coef(l, 1, 1, 0, 0) 
-                                             + c_0_l[0].real     * alpha_coef(l, 0, 0, 0, 0)
-                                             + c_2_l[0].real     * alpha_coef(l, 2, 2, 0, 0)
-                                             + d_l[0].real       * beta_bar_coef(l, 2, 2, 0, 0))
-                                          , t0, alp, 1)
-      res_2[2] = apply_angle_part_s(third * (  b_l[2].real       * alpha_coef(l, 1, 1, 0, 0) 
-                                             + c_0_l[2].real     * alpha_coef(l, 0, 0, 0, 0)
-                                             + c_2_l[2].real     * alpha_coef(l, 2, 2, 0, 0)
-                                             + d_l[2].real       * beta_bar_coef(l, 2, 2, 0, 0))
-                                          , t0, alp, 1)
-      res_2[1] = apply_angle_part_s(third * (  b_l[1].real       * alpha_coef(l, 1, 1, 0, 0)
-                                             + c_0_l[1].real     * alpha_coef(l, 0, 0, 0, 0)
-                                             + c_2_l[1].real     * alpha_coef(l, 2, 2, 0, 0)
-                                             + d_l[1].real       * beta_bar_coef(l, 2, 2, 0, 0))
-                                          , t0, alp, 2)
-      p2_0_result_M[i] += ((res_2[0]+res_2[-1]))
-      p2_1_result_M[i] += ((res_2[1]))
+      g_result[i] += apply_angle_part_s(f_s_1_hoenl(z)  *constant_factor    , t0, alp, 1)
+      h_result[i] += apply_angle_part_s(f_s_2_1_hoenl(z)*constant_factor*x2_, t0, alp, 1)
+      i_result[i] += apply_angle_part_s(f_s_2_2_hoenl(z)*constant_factor*x2_, t0, alp, 2)
+  
+      j_result[i] += apply_angle_part_s(f_s_1_EM(z)  *constant_factor     , t0, alp, 1)
+      k_result[i] += apply_angle_part_s(f_s_2_1_EM(z)*constant_factor*x2_2, t0, alp, 1)
+      l_result[i] += apply_angle_part_s(f_s_2_2_EM(z)*constant_factor*x2_2, t0, alp, 2)
+  
+      m_result[i] += apply_angle_part_s(f_p_1_EM(z)  *constant_factor     , t0, alp, 1)
+      n_result[i] += apply_angle_part_s(f_p_2_1_EM(z)*constant_factor*x2_2, t0, alp, 1)
+      o_result[i] += apply_angle_part_s(f_p_2_2_EM(z)*constant_factor*x2_2, t0, alp, 2)
+    
+    fig, axes = plt.subplots(2,2)
+    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
+    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
+    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
+    axes[0,0].plot(x,a_result,color='b')
+    axes[0,0].plot(x,b_result,color='g')
+    axes[0,0].plot(x,c_result,color='r')
+    #axes[0,0].plot(x,b0_result,linestyle='dotted')
+    #axes[0,0].plot(x,b1_result,linestyle='dotted')
+    #axes[0,0].plot(x,b2_result,linestyle='dotted')
+    axes[0,0].plot(x,k_s,color='black')
+    axes[0,0].legend()
+    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
+  
+    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
+    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
+    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
+    axes[1,0].plot(x,d_result,color='b')
+    axes[1,0].plot(x,e_result,color='g')
+    axes[1,0].plot(x,f_result,color='r')
+    #axes[1,0].plot(x,e0_result,linestyle='dotted')
+    #axes[1,0].plot(x,e1_result,linestyle='dotted')
+    #axes[1,0].plot(x,e2_result,linestyle='dotted')
+    axes[1,0].plot(x,l_s,color='black')
+    axes[1,0].legend()
+    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
+    
+    axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)").legend_elements()
+    axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)").legend_elements()
+    axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)").legend_elements()
+    ours1, = axes[0,1].plot(x,p0_result,color='b')
+    ours2, = axes[0,1].plot(x,p2_0_result,color='g')
+    ours3, = axes[0,1].plot(x,p2_1_result,color='r')
+    #ours4, = axes[0,1].plot(x,p4_0_result,linestyle='dotted')
+    #ours5, = axes[0,1].plot(x,p4_1_result,linestyle='dotted')
+    #ours6, = axes[0,1].plot(x,p4_2_result,linestyle='dotted')
+    #ours7, = axes[0,1].plot(x,p6_0_result,linestyle='dashed')
+    #ours8, = axes[0,1].plot(x,p6_1_result,linestyle='dashed')
+    #ours9, = axes[0,1].plot(x,p6_2_result,linestyle='dashed')
+    #ours10, = axes[0,1].plot(x,p6_3_result,linestyle='dashed')
+    ours11, = axes[0,1].plot(x,l_p,color='black')
+    axes[0,1].legend()
+    axes[0,1].axhline(y=0,linestyle='dashed',color='gray')
+    legend1 = axes[1,1].legend(
+                    handles=[ours1,
+                             ours2,ours3,
+                             #ours4,ours5,ours6,
+                             #ours7,ours8,ours9,ours10,
+                             ours11],
+                    labels=["0/0",
+                            "0/2 + 2/0","1/1",
+                            #"0/4 + 4/0","1/3 + 3/1","2/2",
+                            #"0/6 + 6/0","1/5 + 5/1","2/4 + 4/2","3/3",
+                            "sum"],
+                    loc = 'upper left',
+                    bbox_to_anchor=(-0.15,1.0))
+    
+    axes[1,1].plot(x,p0_result,color='b')
+    axes[1,1].plot(x,p2_0_result,color='g')
+    axes[1,1].plot(x,p2_1_result,color='r')
+    #axes[1,1].plot(x,p4_0_result,linestyle='dotted')
+    #axes[1,1].plot(x,p4_1_result,linestyle='dotted')
+    #axes[1,1].plot(x,p4_2_result,linestyle='dotted')
+    axes[1,1].plot(x,l_p,color='black')
+    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 with M")
+    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
+    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
+    #axes[1,1].scatter(x,p4_0_result_M,s=20,facecolors='none',edgecolor='b',marker='o',label="p=4 0/4 with M")
+    #axes[1,1].scatter(x,p4_1_result_M,s=20,facecolors='none',edgecolor='orange',marker='o',label="p=4 1/3 with M")
+    #axes[1,1].scatter(x,p4_2_result_M,s=20,facecolors='none',edgecolor='g',marker='o',label="p=4 2/2 with M")
+    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
+    axes[1,1].legend(loc='upper right')
+    axes[1,1].add_artist(legend1)
+  
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')
+    plt.subplots_adjust(left=0.025, bottom=0.04, right=1.0, top=1.0, wspace=0.15, hspace=0.05)
+    fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
+    plt.show()
+  
+  if M_shell_test == True:
+    nu_in = 1.2 * get_ionization_energy_1s(el_nr) / h
+    x = np.linspace(1.0001, 5.0001, 100)
+    l_max = 7
+    k_ = 0
+    x1_2 = xn(nu_in, 1, el_nr, 0, 2)
+    x2_2 = xn(nu_in, 2, el_nr, 0, 2)
+    x3_2 = xn(nu_in, 3, el_nr, 0, 2)
+    from time import time
+    numpy.random.seed(int(np.ceil(time())))
+    t0 = numpy.random.random(1)[0] * 2 * math.pi
+    alp = numpy.random.random(1)[0] * math.pi
+    third = 1./3.
+    res_2 = [0, 0, 0]
+  
+    if True:
+      #K-shell
+      a_result = np.zeros_like(x)
+      b_result = np.zeros_like(x)
+      c_result = np.zeros_like(x)
+      k_s      = np.zeros_like(x)
       
-      #for p = 4 using the 0 angle applying a common angle function later
-      #b_l     =   f_b_for_p(el_nr,l,1,z,nu_in,2,4) 
-      #c_0_l   = f_c_0_for_p(el_nr,l,0,z,nu_in,2,4) 
-      #c_2_l   = f_c_2_for_p(el_nr,l,0,z,nu_in,2,4) 
-      #c_0_l_2 = f_c_0_for_p(el_nr,l,2,z,nu_in,2,4) 
-      #c_2_l_2 = f_c_2_for_p(el_nr,l,2,z,nu_in,2,4) 
-      #d_l     =   f_d_for_p(el_nr,l,2,z,nu_in,2,4) 
-      #for runny in range(len(b_l)):
-      #  res_4[runny] = apply_angle_part_s(third * (  b_l[runny].real     * alpha_coef(l,1,1,0,0) 
-      #                                             + c_0_l[runny].real   * alpha_coef(l,0,0,0,0)
-      #                                             + c_2_l[runny].real   * alpha_coef(l,2,0,0,0)
-      #                                             + c_0_l_2[runny].real * alpha_coef(l,0,2,0,0)
-      #                                             + c_2_l_2[runny].real * alpha_coef(l,2,2,0,0)
-      #                                             + d_l[runny].real     * beta_bar_coef(l,2,2,0,0))
-      #                                    , t0, alp, 3)
-      #p4_0_result_M[i] += ((res_4[0]+res_4[-1]))
-      #p4_1_result_M[i] += ((res_4[1]+res_4[-2]))
-      #p4_2_result_M[i] += ((res_4[2]))
+      #L-shell
+      l_s      = np.zeros_like(x)
+      d_result = np.zeros_like(x)
+      e_result = np.zeros_like(x)
+      f_result = np.zeros_like(x)
+    
+      p0_result   = np.zeros_like(x)
+      p2_0_result = np.zeros_like(x)
+      p2_1_result = np.zeros_like(x)
+      l_p         = np.zeros_like(x)
       
-      #for p = 6 using the 0 angle applying a common angle function later
-      #b_l     =   f_b_for_p(el_nr,l,1,z,nu_in,2,6) 
-      #c_0_l   = f_c_0_for_p(el_nr,l,0,z,nu_in,2,6) 
-      #c_2_l   = f_c_2_for_p(el_nr,l,0,z,nu_in,2,6) 
-      #c_0_l_2 = f_c_0_for_p(el_nr,l,2,z,nu_in,2,6) 
-      #c_2_l_2 = f_c_2_for_p(el_nr,l,2,z,nu_in,2,6) 
-      #d_l     =   f_d_for_p(el_nr,l,2,z,nu_in,2,6) 
-      #for runny in range(len(b_l)):
-      #  res_6[runny] = apply_angle_part_s(third * (  b_l[runny].real     * alpha_coef(l,1,1,0,0) 
-      #                                             + c_0_l[runny].real   * alpha_coef(l,0,0,0,0)
-      #                                             + c_2_l[runny].real   * alpha_coef(l,2,0,0,0)
-      #                                             + c_0_l_2[runny].real * alpha_coef(l,0,2,0,0)
-      #                                             + c_2_l_2[runny].real * alpha_coef(l,2,2,0,0)
-      #                                             + d_l[runny].real     * beta_bar_coef(l,2,2,0,0))
-      #                                    , t0, alp, 4)
-      #p6_0_result_M[i] += ((res_6[0]+res_6[-1]))
-      #p6_1_result_M[i] += ((res_6[1]+res_6[-2]))
-      #p6_2_result_M[i] += ((res_6[2]+res_6[-3]))
-      #p6_3_result_M[i] += ((res_6[3]))
+      p0_result_M   = np.zeros_like(x)
+      p2_0_result_M = np.zeros_like(x)
+      p2_1_result_M = np.zeros_like(x)
+      l_p_M         = np.zeros_like(x)
       
-
-    k_s[i] = a_result[i] + b_result[i] + c_result[i] + b0_result[i] + b1_result[i] + b2_result[i]
-    l_s[i] = d_result[i] + e_result[i] + f_result[i] + e0_result[i] + e1_result[i] + e2_result[i]
-    l_p[i] = p0_result[i] + p2_0_result[i] + p2_1_result[i] + p4_0_result[i] + p4_1_result[i] + p4_2_result[i]
-    l_p_M[i] = p0_result_M[i] + p2_0_result_M[i] + p2_1_result_M[i] + p4_0_result_M[i] + p4_1_result_M[i] + p4_2_result_M[i]
-    
-    g_result[i] += apply_angle_part_s(f_s_1_hoenl(z)  *constant_factor    , t0, alp, 1)
-    h_result[i] += apply_angle_part_s(f_s_2_1_hoenl(z)*constant_factor*x2_, t0, alp, 1)
-    i_result[i] += apply_angle_part_s(f_s_2_2_hoenl(z)*constant_factor*x2_, t0, alp, 2)
-
-    j_result[i] += apply_angle_part_s(f_s_1_EM(z)  *constant_factor     , t0, alp, 1)
-    k_result[i] += apply_angle_part_s(f_s_2_1_EM(z)*constant_factor*x2_2, t0, alp, 1)
-    l_result[i] += apply_angle_part_s(f_s_2_2_EM(z)*constant_factor*x2_2, t0, alp, 2)
-
-    m_result[i] += apply_angle_part_s(f_p_1_EM(z)  *constant_factor     , t0, alp, 1)
-    n_result[i] += apply_angle_part_s(f_p_2_1_EM(z)*constant_factor*x2_2, t0, alp, 1)
-    o_result[i] += apply_angle_part_s(f_p_2_2_EM(z)*constant_factor*x2_2, t0, alp, 2)
-  
-  fig, axes = plt.subplots(2,2)
-  axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
-  axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
-  axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
-  axes[0,0].plot(x,a_result,color='b')
-  axes[0,0].plot(x,b_result,color='g')
-  axes[0,0].plot(x,c_result,color='r')
-  #axes[0,0].plot(x,b0_result,linestyle='dotted')
-  #axes[0,0].plot(x,b1_result,linestyle='dotted')
-  #axes[0,0].plot(x,b2_result,linestyle='dotted')
-  axes[0,0].plot(x,k_s,color='black')
-  axes[0,0].legend()
-  axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
-
-  axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
-  axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
-  axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
-  axes[1,0].plot(x,d_result,color='b')
-  axes[1,0].plot(x,e_result,color='g')
-  axes[1,0].plot(x,f_result,color='r')
-  #axes[1,0].plot(x,e0_result,linestyle='dotted')
-  #axes[1,0].plot(x,e1_result,linestyle='dotted')
-  #axes[1,0].plot(x,e2_result,linestyle='dotted')
-  axes[1,0].plot(x,l_s,color='black')
-  axes[1,0].legend()
-  axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
-  
-  axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)").legend_elements()
-  axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)").legend_elements()
-  axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)").legend_elements()
-  ours1, = axes[0,1].plot(x,p0_result,color='b')
-  ours2, = axes[0,1].plot(x,p2_0_result,color='g')
-  ours3, = axes[0,1].plot(x,p2_1_result,color='r')
-  #ours4, = axes[0,1].plot(x,p4_0_result,linestyle='dotted')
-  #ours5, = axes[0,1].plot(x,p4_1_result,linestyle='dotted')
-  #ours6, = axes[0,1].plot(x,p4_2_result,linestyle='dotted')
-  #ours7, = axes[0,1].plot(x,p6_0_result,linestyle='dashed')
-  #ours8, = axes[0,1].plot(x,p6_1_result,linestyle='dashed')
-  #ours9, = axes[0,1].plot(x,p6_2_result,linestyle='dashed')
-  #ours10, = axes[0,1].plot(x,p6_3_result,linestyle='dashed')
-  ours11, = axes[0,1].plot(x,l_p,color='black')
-  axes[0,1].legend()
-  axes[0,1].axhline(y=0,linestyle='dashed',color='gray')
-  legend1 = axes[1,1].legend(
-                  handles=[ours1,
-                           ours2,ours3,
-                           #ours4,ours5,ours6,
-                           #ours7,ours8,ours9,ours10,
-                           ours11],
-                  labels=["0/0",
-                          "0/2 + 2/0","1/1",
-                          #"0/4 + 4/0","1/3 + 3/1","2/2",
-                          #"0/6 + 6/0","1/5 + 5/1","2/4 + 4/2","3/3",
-                          "sum"],
-                  loc = 'upper left',
-                  bbox_to_anchor=(-0.15,1.0))
-  
-  axes[1,1].plot(x,p0_result,color='b')
-  axes[1,1].plot(x,p2_0_result,color='g')
-  axes[1,1].plot(x,p2_1_result,color='r')
-  #axes[1,1].plot(x,p4_0_result,linestyle='dotted')
-  #axes[1,1].plot(x,p4_1_result,linestyle='dotted')
-  #axes[1,1].plot(x,p4_2_result,linestyle='dotted')
-  axes[1,1].plot(x,l_p,color='black')
-  axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 with M")
-  axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-  axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-  #axes[1,1].scatter(x,p4_0_result_M,s=20,facecolors='none',edgecolor='b',marker='o',label="p=4 0/4 with M")
-  #axes[1,1].scatter(x,p4_1_result_M,s=20,facecolors='none',edgecolor='orange',marker='o',label="p=4 1/3 with M")
-  #axes[1,1].scatter(x,p4_2_result_M,s=20,facecolors='none',edgecolor='g',marker='o',label="p=4 2/2 with M")
-  axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-  axes[1,1].legend(loc='upper right')
-  axes[1,1].add_artist(legend1)
-
-  mng = plt.get_current_fig_manager()
-  mng.window.state('zoomed')
-  plt.subplots_adjust(left=0.025, bottom=0.04, right=1.0, top=1.0, wspace=0.15, hspace=0.05)
-  fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
-  plt.show()
-
-if M_shell_test == True:
-  nu_in = 1.2 * get_ionization_energy_1s(el_nr) / h
-  x = np.linspace(1.0001, 5.0001, 100)
-  l_max = 7
-  k_ = 0
-  x1_2 = xn(nu_in, 1, el_nr, 0, 2)
-  x2_2 = xn(nu_in, 2, el_nr, 0, 2)
-  x3_2 = xn(nu_in, 3, el_nr, 0, 2)
-  from time import time
-  numpy.random.seed(int(np.ceil(time())))
-  t0 = numpy.random.random(1)[0] * 2 * math.pi
-  alp = numpy.random.random(1)[0] * math.pi
-  third = 1./3.
-  res_2 = [0, 0, 0]
-
-  if True:
-    #K-shell
-    a_result = np.zeros_like(x)
-    b_result = np.zeros_like(x)
-    c_result = np.zeros_like(x)
-    k_s      = np.zeros_like(x)
-    
-    #L-shell
-    l_s      = np.zeros_like(x)
-    d_result = np.zeros_like(x)
-    e_result = np.zeros_like(x)
-    f_result = np.zeros_like(x)
-  
-    p0_result   = np.zeros_like(x)
-    p2_0_result = np.zeros_like(x)
-    p2_1_result = np.zeros_like(x)
-    l_p         = np.zeros_like(x)
-    
-    p0_result_M   = np.zeros_like(x)
-    p2_0_result_M = np.zeros_like(x)
-    p2_1_result_M = np.zeros_like(x)
-    l_p_M         = np.zeros_like(x)
-    
-    #M-shell
-    Ms0_result = np.zeros_like(x)
-    Ms1_result = np.zeros_like(x)
-    Ms2_result = np.zeros_like(x)
-    m_s        = np.zeros_like(x)
-    
-    M_p0_result   = np.zeros_like(x)
-    M_p2_0_result = np.zeros_like(x)
-    M_p2_1_result = np.zeros_like(x)
-    m_p           = np.zeros_like(x)
-    
-    M_p0_result_M   = np.zeros_like(x)
-    M_p2_0_result_M = np.zeros_like(x)
-    M_p2_1_result_M = np.zeros_like(x)
-    m_p_M           = np.zeros_like(x)
-  
-    #For comparison to Hönl etc
-    g_result = np.zeros_like(x)
-    h_result = np.zeros_like(x)
-    i_result = np.zeros_like(x)
-    j_result = np.zeros_like(x)
-    k_result = np.zeros_like(x)
-    l_result = np.zeros_like(x)
-  
-    m_result = np.zeros_like(x)
-    n_result = np.zeros_like(x)
-    o_result = np.zeros_like(x)
-
-    x_result = np.zeros_like(x)
-    y_result = np.zeros_like(x)
-    z_result = np.zeros_like(x)
-  for i,z in enumerate(x):
-    for l in range(l_max+1):
-      #K-Shell
-      res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 0)[0]
-      res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
-      res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 2)
-      for runny in range(len(res_2)):
-        res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
-
-      a_result[i] += (res_0)
-      b_result[i] += ((res_2[0]+res_2[2]))
-      c_result[i] += (res_2[1])
-
-      #L-Shell
-      #S-orbital
-      res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 0)[0]
-      res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
-      res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 2)
-      for runny in range(len(res_2)):
-        res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
-
-      d_result[i] += (res_0)
-      e_result[i] += ((res_2[0]+res_2[2]))
-      f_result[i] += (res_2[1])
+      #M-shell
+      Ms0_result = np.zeros_like(x)
+      Ms1_result = np.zeros_like(x)
+      Ms2_result = np.zeros_like(x)
+      m_s        = np.zeros_like(x)
       
-      #p-orbital
-      for _k in range(3):
-        b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
-        b_l,c_0_l,c_2_l,d_l = apply_angle_part_p(b_l.real, 
-                                                 c_0_l.real, 
-                                                 c_2_l.real, 
-                                                 d_l.real, 
-                                                 _k, t0, alp, l)
-        p0_result[i] += third * (b_l + c_0_l + c_2_l + d_l)
+      M_p0_result   = np.zeros_like(x)
+      M_p2_0_result = np.zeros_like(x)
+      M_p2_1_result = np.zeros_like(x)
+      m_p           = np.zeros_like(x)
+      
+      M_p0_result_M   = np.zeros_like(x)
+      M_p2_0_result_M = np.zeros_like(x)
+      M_p2_1_result_M = np.zeros_like(x)
+      m_p_M           = np.zeros_like(x)
+
+      M_d0_result = np.zeros_like(x)
+      M_d2_0_result = np.zeros_like(x)
+      M_d2_1_result = np.zeros_like(x)
+      m_d = np.zeros_like(x)
+
+      M_d0_result_M = np.zeros_like(x)
+      M_d2_0_result_M = np.zeros_like(x)
+      M_d2_1_result_M = np.zeros_like(x)
+      m_d_M = np.zeros_like(x)
+    
+      #For comparison to Hönl etc
+      g_result = np.zeros_like(x)
+      h_result = np.zeros_like(x)
+      i_result = np.zeros_like(x)
+      j_result = np.zeros_like(x)
+      k_result = np.zeros_like(x)
+      l_result = np.zeros_like(x)
+    
+      m_result = np.zeros_like(x)
+      n_result = np.zeros_like(x)
+      o_result = np.zeros_like(x)
+  
+      x_result = np.zeros_like(x)
+      y_result = np.zeros_like(x)
+      z_result = np.zeros_like(x)
+    for i,z in enumerate(x):
+      for l in range(l_max+1):
+        #K-Shell
+        res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 0)[0]
+        res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
+        res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 2)
+        for runny in range(len(res_2)):
+          res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
+  
+        a_result[i] += (res_0)
+        b_result[i] += ((res_2[0]+res_2[2]))
+        c_result[i] += (res_2[1])
+  
+        #L-Shell
+        #S-orbital
+        res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 0)[0]
+        res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
+        res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 2, 2)
+        for runny in range(len(res_2)):
+          res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
+  
+        d_result[i] += (res_0)
+        e_result[i] += ((res_2[0]+res_2[2]))
+        f_result[i] += (res_2[1])
         
-        b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 2)
-        for runny in range(len(b_l)):
-          b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real, 
-                                                                               c_0_l[runny].real,
-                                                                               c_2_l[runny].real,
-                                                                               d_l[runny].real,
-                                                                               _k, t0, alp, l)
-        p2_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
-        p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
+        #p-orbital
+        for _k in range(3):
+          b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 0)[0]
+          b_l,c_0_l,c_2_l,d_l = apply_angle_part_p(b_l.real, 
+                                                   c_0_l.real, 
+                                                   c_2_l.real, 
+                                                   d_l.real, 
+                                                   _k, t0, alp, l)
+          p0_result[i] += third * (b_l + c_0_l + c_2_l + d_l)
+          
+          b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 2, 2)
+          for runny in range(len(b_l)):
+            b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real, 
+                                                                                 c_0_l[runny].real,
+                                                                                 c_2_l[runny].real,
+                                                                                 d_l[runny].real,
+                                                                                 _k, t0, alp, l)
+          p2_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
+          p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
+          
+        #for p = 0 using the 0 angle applying a common angle function later
+        b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 2, 0)[0].real
+        c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 2, 0)[0].real
+        c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
+        d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
+        p0_result_M[i] += apply_angle_part_s(third * (  b_l   * alpha_coef(l,1,1,0,0)
+                                                      + c_0_l * alpha_coef(l,0,0,0,0)
+                                                      + c_2_l * alpha_coef(l,2,2,0,0)
+                                                      + d_l   * beta_bar_coef(l,2,2,0,0))
+                                             , t0, alp, 1)
         
-      #for p = 0 using the 0 angle applying a common angle function later
-      b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 2, 0)[0].real
-      c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 2, 0)[0].real
-      c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
-      d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 2, 0)[0].real
-      p0_result_M[i] += apply_angle_part_s(third * (  b_l   * alpha_coef(l,1,1,0,0)
-                                                    + c_0_l * alpha_coef(l,0,0,0,0)
-                                                    + c_2_l * alpha_coef(l,2,2,0,0)
-                                                    + d_l   * beta_bar_coef(l,2,2,0,0))
-                                           , t0, alp, 1)
-      
-      #for p = 2 using the 0 angle applying a common angle function later
-      b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 2, 2)
-      c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 2, 2)
-      c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 2, 2)
-      d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 2, 2)
-      res_2[0] = apply_angle_part_s(third * (  b_l[0].real   * alpha_coef(l,1,1,0,0) 
-                                             + c_0_l[0].real * alpha_coef(l,0,0,0,0)
-                                             + c_2_l[0].real * alpha_coef(l,2,2,0,0)
-                                             + d_l[0].real   * beta_bar_coef(l,2,2,0,0))
-                                          , t0, alp, 1)
-      res_2[2] = apply_angle_part_s(third * (  b_l[2].real   * alpha_coef(l,1,1,0,0) 
-                                             + c_0_l[2].real * alpha_coef(l,0,0,0,0)
-                                             + c_2_l[2].real * alpha_coef(l,2,2,0,0)
-                                             + d_l[2].real   * beta_bar_coef(l,2,2,0,0))
-                                          , t0, alp, 1)
-      res_2[1] = apply_angle_part_s(third * (  b_l[1].real   * alpha_coef(l,1,1,0,0) 
-                                             + c_0_l[1].real * alpha_coef(l,0,0,0,0)
-                                             + c_2_l[1].real * alpha_coef(l,2,2,0,0)
-                                             + d_l[1].real   * beta_bar_coef(l,2,2,0,0))
-                                          , t0, alp, 2)
-      p2_0_result_M[i] += ((res_2[0]+res_2[-1]))
-      p2_1_result_M[i] += ((res_2[1]))
-      
-      #M-Shell
-      #S-orbital
-      res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 3, 0)[0]
-      res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
-      res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 3, 2)
-      for runny in range(len(res_2)):
-        res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
+        #for p = 2 using the 0 angle applying a common angle function later
+        b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 2, 2)
+        c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 2, 2)
+        c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 2, 2)
+        d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 2, 2)
+        res_2[0] = apply_angle_part_s(third * (  b_l[0].real   * alpha_coef(l,1,1,0,0) 
+                                               + c_0_l[0].real * alpha_coef(l,0,0,0,0)
+                                               + c_2_l[0].real * alpha_coef(l,2,2,0,0)
+                                               + d_l[0].real   * beta_bar_coef(l,2,2,0,0))
+                                            , t0, alp, 1)
+        res_2[2] = apply_angle_part_s(third * (  b_l[2].real   * alpha_coef(l,1,1,0,0) 
+                                               + c_0_l[2].real * alpha_coef(l,0,0,0,0)
+                                               + c_2_l[2].real * alpha_coef(l,2,2,0,0)
+                                               + d_l[2].real   * beta_bar_coef(l,2,2,0,0))
+                                            , t0, alp, 1)
+        res_2[1] = apply_angle_part_s(third * (  b_l[1].real   * alpha_coef(l,1,1,0,0) 
+                                               + c_0_l[1].real * alpha_coef(l,0,0,0,0)
+                                               + c_2_l[1].real * alpha_coef(l,2,2,0,0)
+                                               + d_l[1].real   * beta_bar_coef(l,2,2,0,0))
+                                            , t0, alp, 2)
+        p2_0_result_M[i] += ((res_2[0]+res_2[-1]))
+        p2_1_result_M[i] += ((res_2[1]))
+        
+        #M-Shell
+        #S-orbital
+        res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 3, 0)[0]
+        res_0 = apply_angle_part_s(res_0.real, t0, alp, l)
+        res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 3, 2)
+        for runny in range(len(res_2)):
+          res_2[runny] = apply_angle_part_s(res_2[runny].real, t0, alp, l)
+  
+        Ms0_result[i] += (res_0)
+        Ms1_result[i] += ((res_2[0]+res_2[2]))
+        Ms2_result[i] += (res_2[1])
+        
+        #p-orbital
+        #Calculate all angle dependant parts
+        for _k in range(3):
+          b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          b_l,c_0_l,c_2_l,d_l = apply_angle_part_p(b_l.real, 
+                                                   c_0_l.real, 
+                                                   c_2_l.real, 
+                                                   d_l.real, 
+                                                   _k, t0, alp, l)
+          M_p0_result[i] += third * (b_l + c_0_l + c_2_l + d_l)
+          
+          b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          for runny in range(len(b_l)):
+            b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real, 
+                                                                                 c_0_l[runny].real,
+                                                                                 c_2_l[runny].real,
+                                                                                 d_l[runny].real,
+                                                                                 _k, t0, alp, l)
+          M_p2_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
+          M_p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
+          
+        #for p = 0 using the 0 angle applying a common angle function later
+        b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 3, 0)[0].real
+        c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 3, 0)[0].real
+        c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 3, 0)[0].real
+        d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 3, 0)[0].real
+        M_p0_result_M[i] += apply_angle_part_s(third * (  b_l   * alpha_coef(l,1,1,0,0)
+                                                      + c_0_l * alpha_coef(l,0,0,0,0)
+                                                      + c_2_l * alpha_coef(l,2,2,0,0)
+                                                      + d_l   * beta_bar_coef(l,2,2,0,0))
+                                             , t0, alp, 1)
+        
+        #for p = 2 using the 0 angle applying a common angle function later
+        b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 3, 2)
+        c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 3, 2)
+        c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 3, 2)
+        d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 3, 2)
+        res_2[0] = apply_angle_part_s(third * (  b_l[0].real   * alpha_coef(l,1,1,0,0) 
+                                               + c_0_l[0].real * alpha_coef(l,0,0,0,0)
+                                               + c_2_l[0].real * alpha_coef(l,2,2,0,0)
+                                               + d_l[0].real   * beta_bar_coef(l,2,2,0,0))
+                                            , t0, alp, 1)
+        res_2[2] = apply_angle_part_s(third * (  b_l[2].real   * alpha_coef(l,1,1,0,0) 
+                                               + c_0_l[2].real * alpha_coef(l,0,0,0,0)
+                                               + c_2_l[2].real * alpha_coef(l,2,2,0,0)
+                                               + d_l[2].real   * beta_bar_coef(l,2,2,0,0))
+                                            , t0, alp, 1)
+        res_2[1] = apply_angle_part_s(third * (  b_l[1].real   * alpha_coef(l,1,1,0,0) 
+                                               + c_0_l[1].real * alpha_coef(l,0,0,0,0)
+                                               + c_2_l[1].real * alpha_coef(l,2,2,0,0)
+                                               + d_l[1].real   * beta_bar_coef(l,2,2,0,0))
+                                            , t0, alp, 2)
+        M_p2_0_result_M[i] += ((res_2[0]+res_2[-1]))
+        M_p2_1_result_M[i] += ((res_2[1]))
 
-      Ms0_result[i] += (res_0)
-      Ms1_result[i] += ((res_2[0]+res_2[2]))
-      Ms2_result[i] += (res_2[1])
-      
-      #p-orbital
-      #Calculate all angle depenant parts
-      for _k in range(3):
-        b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
-        c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
-        c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
-        d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
-        b_l,c_0_l,c_2_l,d_l = apply_angle_part_p(b_l.real, 
-                                                 c_0_l.real, 
-                                                 c_2_l.real, 
-                                                 d_l.real, 
-                                                 _k, t0, alp, l)
-        M_p0_result[i] += third * (b_l + c_0_l + c_2_l + d_l)
-        
-        b_l   =   f_b_for_p(el_nr, l, _k, z, nu_in, 3, 2)
-        c_0_l = f_c_0_for_p(el_nr, l, _k, z, nu_in, 3, 2)
-        c_2_l = f_c_2_for_p(el_nr, l, _k, z, nu_in, 3, 2)
-        d_l   =   f_d_for_p(el_nr, l, _k, z, nu_in, 3, 2)
-        for runny in range(len(b_l)):
-          b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p(b_l[runny].real, 
-                                                                               c_0_l[runny].real,
-                                                                               c_2_l[runny].real,
-                                                                               d_l[runny].real,
-                                                                               _k, t0, alp, l)
-        M_p2_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
-        M_p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
-        
-      #for p = 0 using the 0 angle applying a common angle function later
-      b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 3, 0)[0].real
-      c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 3, 0)[0].real
-      c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 3, 0)[0].real
-      d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 3, 0)[0].real
-      M_p0_result_M[i] += apply_angle_part_s(third * (  b_l   * alpha_coef(l,1,1,0,0)
-                                                    + c_0_l * alpha_coef(l,0,0,0,0)
-                                                    + c_2_l * alpha_coef(l,2,2,0,0)
-                                                    + d_l   * beta_bar_coef(l,2,2,0,0))
-                                           , t0, alp, 1)
-      
-      #for p = 2 using the 0 angle applying a common angle function later
-      b_l     =   f_b_for_p(el_nr, l, 1, z, nu_in, 3, 2)
-      c_0_l   = f_c_0_for_p(el_nr, l, 0, z, nu_in, 3, 2)
-      c_2_l   = f_c_2_for_p(el_nr, l, 2, z, nu_in, 3, 2)
-      d_l     =   f_d_for_p(el_nr, l, 2, z, nu_in, 3, 2)
-      res_2[0] = apply_angle_part_s(third * (  b_l[0].real   * alpha_coef(l,1,1,0,0) 
-                                             + c_0_l[0].real * alpha_coef(l,0,0,0,0)
-                                             + c_2_l[0].real * alpha_coef(l,2,2,0,0)
-                                             + d_l[0].real   * beta_bar_coef(l,2,2,0,0))
-                                          , t0, alp, 1)
-      res_2[2] = apply_angle_part_s(third * (  b_l[2].real   * alpha_coef(l,1,1,0,0) 
-                                             + c_0_l[2].real * alpha_coef(l,0,0,0,0)
-                                             + c_2_l[2].real * alpha_coef(l,2,2,0,0)
-                                             + d_l[2].real   * beta_bar_coef(l,2,2,0,0))
-                                          , t0, alp, 1)
-      res_2[1] = apply_angle_part_s(third * (  b_l[1].real   * alpha_coef(l,1,1,0,0) 
-                                             + c_0_l[1].real * alpha_coef(l,0,0,0,0)
-                                             + c_2_l[1].real * alpha_coef(l,2,2,0,0)
-                                             + d_l[1].real   * beta_bar_coef(l,2,2,0,0))
-                                          , t0, alp, 2)
-      M_p2_0_result_M[i] += ((res_2[0]+res_2[-1]))
-      M_p2_1_result_M[i] += ((res_2[1]))
+        #d-orbital
+        #Calculate all angle dependant parts
+        for _k in range(5):
+          f_0_l = f_f_0_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          f_2_l = f_f_2_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          e_l   =   f_e_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          g_1_l = f_g_1_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          g_3_l = f_g_3_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          h_l   =   f_h_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          i_1_l = f_i_1_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          i_3_l = f_i_3_for_p(el_nr, l, _k, z, nu_in, 3, 0)[0]
+          f_0_l, f_2_l, e_l, g_1_l, g_3_l, h_l, i_1_l, i_3_l = apply_angle_part_d(f_0_l.real, 
+                                                                                  f_2_l.real, 
+                                                                                  e_l.real, 
+                                                                                  g_1_l.real, 
+                                                                                  g_3_l.real, 
+                                                                                  h_l.real, 
+                                                                                  i_1_l.real, 
+                                                                                  i_3_l.real,
+                                                                                  _k, t0, alp, l)
+          M_d0_result[i] += 0.2 * (f_0_l+ f_2_l+ e_l+ g_1_l+ g_3_l+ h_l+ i_1_l+ i_3_l)
+          
 
-    k_s[i] = a_result[i] + b_result[i] + c_result[i]
-    l_s[i] = d_result[i] + e_result[i] + f_result[i]
-    l_p[i] = p0_result[i] + p2_0_result[i] + p2_1_result[i]
-    l_p_M[i] = p0_result_M[i] + p2_0_result_M[i] + p2_1_result_M[i]
+          f_0_l = f_f_0_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          f_2_l = f_f_2_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          e_l   =   f_e_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          g_1_l = f_g_1_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          g_3_l = f_g_3_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          h_l   =   f_h_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          i_1_l = f_i_1_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          i_3_l = f_i_3_for_p(el_nr, l, _k, z, nu_in, 3, 2)
+          for runny in range(len(b_l)):
+            f_0_l[runny], f_2_l[runny], e_l[runny], g_1_l[runny], g_3_l[runny], h_l[runny], i_1_l[runny], i_3_l[runny] = apply_angle_part_d(
+              f_0_l[runny].real, 
+              f_2_l[runny].real, 
+              e_l[runny].real, 
+              g_1_l[runny].real, 
+              g_3_l[runny].real, 
+              h_l[runny].real, 
+              i_1_l[runny].real, 
+              i_3_l[runny].real,
+              _k, t0, alp, l)
+          M_d2_0_result[i] += 0.2 * (f_0_l[0]+ f_2_l[0]+ e_l[0]+ g_1_l[0]+ g_3_l[0]+ h_l[0]+ i_1_l[0]+ i_3_l[0] + f_0_l[2]+ f_2_l[2]+ e_l[2]+ g_1_l[2]+ g_3_l[2]+ h_l[2]+ i_1_l[2]+ i_3_l[2])
+          M_d2_1_result[i] += 0.2 * (f_0_l[1]+ f_2_l[1]+ e_l[1]+ g_1_l[1]+ g_3_l[1]+ h_l[1]+ i_1_l[1]+ i_3_l[1])
+
+        #for p = 0 using the 0 angle applying a common angle function later
+        res = f_f_0_for_p(el_nr, l, 0, z, nu_in, 3, 0)[0].real\
+        + f_f_2_for_p(el_nr, l, 2, z, nu_in, 3, 0)[0].real\
+        +   f_e_for_p(el_nr, l, 2, z, nu_in, 3, 0)[0].real\
+        + f_g_1_for_p(el_nr, l, 1, z, nu_in, 3, 0)[0].real\
+        + f_g_3_for_p(el_nr, l, 3, z, nu_in, 3, 0)[0].real\
+        +   f_h_for_p(el_nr, l, 1, z, nu_in, 3, 0)[0].real\
+        + f_i_1_for_p(el_nr, l, 1, z, nu_in, 3, 0)[0].real\
+        + f_i_3_for_p(el_nr, l, 3, z, nu_in, 3, 0)[0].real
+        M_d0_result_M[i] += apply_angle_part_s(0.2*res, t0, alp, 1)
+        
+        #for p = 2 using the 0 angle applying a common angle function later
+        f_0_l = f_f_0_for_p(el_nr, l, 0, z, nu_in, 3, 2)
+        f_2_l = f_f_2_for_p(el_nr, l, 2, z, nu_in, 3, 2)
+        e_l   =   f_e_for_p(el_nr, l, 2, z, nu_in, 3, 2)
+        g_1_l = f_g_1_for_p(el_nr, l, 1, z, nu_in, 3, 2)
+        g_3_l = f_g_3_for_p(el_nr, l, 3, z, nu_in, 3, 2)
+        h_l   =   f_h_for_p(el_nr, l, 1, z, nu_in, 3, 2)
+        i_1_l = f_i_1_for_p(el_nr, l, 1, z, nu_in, 3, 2)
+        i_3_l = f_i_3_for_p(el_nr, l, 3, z, nu_in, 3, 2)
+        res_2[0] = apply_angle_part_s(0.2 * (  f_0_l[0].real
+                                             + f_2_l[0].real
+                                             + e_l[0].real
+                                             + g_1_l[0].real
+                                             + g_3_l[0].real
+                                             + h_l[0].real
+                                             + i_1_l[0].real
+                                             + i_3_l[0].real)
+                                            , t0, alp, 1)
+        res_2[2] = apply_angle_part_s(0.2 * (  f_0_l[2].real
+                                             + f_2_l[2].real
+                                             + e_l[2].real
+                                             + g_1_l[2].real
+                                             + g_3_l[2].real
+                                             + h_l[2].real
+                                             + i_1_l[2].real
+                                             + i_3_l[2].real)
+                                            , t0, alp, 1)
+        res_2[1] = apply_angle_part_s(0.2 * (  f_0_l[1].real
+                                             + f_2_l[1].real
+                                             + e_l[1].real
+                                             + g_1_l[1].real
+                                             + g_3_l[1].real
+                                             + h_l[1].real
+                                             + i_1_l[1].real
+                                             + i_3_l[1].real)
+                                            , t0, alp, 2)
+        M_d2_0_result_M[i] += ((res_2[0]+res_2[-1]))
+        M_d2_1_result_M[i] += ((res_2[1]))
+  
+      k_s[i] = a_result[i] + b_result[i] + c_result[i]
+      l_s[i] = d_result[i] + e_result[i] + f_result[i]
+      l_p[i] = p0_result[i] + p2_0_result[i] + p2_1_result[i]
+      l_p_M[i] = p0_result_M[i] + p2_0_result_M[i] + p2_1_result_M[i]
+      
+      m_s[i] = Ms0_result[i] + Ms1_result[i] + Ms2_result[i]
+      m_p[i] = M_p0_result[i] + M_p2_0_result[i] + M_p2_1_result[i]
+      m_p_M[i] = M_p0_result_M[i] + M_p2_0_result_M[i] + M_p2_1_result_M[i]
+
+      m_d[i] = M_d0_result[i] + M_d2_0_result[i] + M_d2_1_result[i]
+      m_d_M[i] = M_d0_result_M[i] + M_d2_0_result_M[i] + M_d2_1_result_M[i]
+      
+      g_result[i] += apply_angle_part_s(f_s_1_hoenl(z)  *constant_factor     ,t0, alp, 1)
+      h_result[i] += apply_angle_part_s(f_s_2_1_hoenl(z)*constant_factor*x1_2,t0, alp, 1)
+      i_result[i] += apply_angle_part_s(f_s_2_2_hoenl(z)*constant_factor*x1_2,t0, alp, 2)
+  
+      j_result[i] += apply_angle_part_s(f_s_1_EM(z)  * constant_factor     , t0, alp, 1)
+      k_result[i] += apply_angle_part_s(f_s_2_1_EM(z)* constant_factor*x2_2, t0, alp, 1)
+      l_result[i] += apply_angle_part_s(f_s_2_2_EM(z)* constant_factor*x2_2, t0, alp, 2)
+  
+      m_result[i] += apply_angle_part_s(f_p_1_EM(z)  * constant_factor     , t0, alp, 1)
+      n_result[i] += apply_angle_part_s(f_p_2_1_EM(z)* constant_factor*x2_2, t0, alp, 1)
+      o_result[i] += apply_angle_part_s(f_p_2_2_EM(z)* constant_factor*x2_2, t0, alp, 2)
+  
+      x_result[i] += apply_angle_part_s(f_s_1_WA(z)  * constant_factor     ,t0, alp, 1)
+      y_result[i] += apply_angle_part_s(f_s_2_1_WA(z)* constant_factor*x3_2,t0, alp, 1)
+      z_result[i] += apply_angle_part_s(f_s_2_2_WA(z)* constant_factor*x3_2,t0, alp, 2)
     
-    m_s[i] = Ms0_result[i] + Ms1_result[i] + Ms2_result[i]
-    m_p[i] = M_p0_result[i] + M_p2_0_result[i] + M_p2_1_result[i]
-    m_p_M[i] = M_p0_result_M[i] + M_p2_0_result_M[i] + M_p2_1_result_M[i]
+    fig, axes = plt.subplots(4,2)
+    #K-shell s-orbitals
+    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
+    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
+    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
+    axes[0,0].plot(x,a_result,color='b')
+    axes[0,0].plot(x,b_result,color='g')
+    axes[0,0].plot(x,c_result,color='r')
+    axes[0,0].plot(x,k_s,color='black')
+    axes[0,0].legend()
+    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
+    #L-shell s-orbital
+    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
+    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
+    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
+    axes[1,0].plot(x,d_result,color='b')
+    axes[1,0].plot(x,e_result,color='g')
+    axes[1,0].plot(x,f_result,color='r')
+    axes[1,0].plot(x,l_s,color='black')
+    axes[1,0].legend()
+    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
+    #M-shell s-orbital
+    axes[2,0].scatter(x,x_result,s=20,facecolors='none',edgecolors='b',marker='^',label="WA fs_1^(0)")
+    axes[2,0].scatter(x,y_result,s=20,facecolors='none',edgecolors='g',marker='^',label="WA fs_1^(2)")
+    axes[2,0].scatter(x,z_result,s=20,facecolors='none',edgecolors='r',marker='^',label="WA fs_2^(2)")
+    axes[2,0].plot(x,Ms0_result,color='b',label="full angle p=0(1)")
+    axes[2,0].plot(x,Ms1_result,color='g',label="full angle p=2(1)")
+    axes[2,0].plot(x,Ms2_result,color='r',label="full angle p=2(2)")
+    axes[2,0].plot(x,m_s,color='black')
+    axes[2,0].legend()
+    axes[2,0].axhline(y=0,linestyle='dashed',color='gray')
     
-    g_result[i] += apply_angle_part_s(f_s_1_hoenl(z)  *constant_factor     ,t0, alp, 1)
-    h_result[i] += apply_angle_part_s(f_s_2_1_hoenl(z)*constant_factor*x1_2,t0, alp, 1)
-    i_result[i] += apply_angle_part_s(f_s_2_2_hoenl(z)*constant_factor*x1_2,t0, alp, 2)
+    axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)").legend_elements()
+    axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)").legend_elements()
+    axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)").legend_elements()
+    ours1, = axes[0,1].plot(x,p0_result,color='b')
+    ours2, = axes[0,1].plot(x,p2_0_result,color='g')
+    ours3, = axes[0,1].plot(x,p2_1_result,color='r')
+    ours11, = axes[0,1].plot(x,l_p,color='black')
+    axes[0,1].legend()
+    axes[0,1].axhline(y=0,linestyle='dashed',color='gray')
+    legend1 = axes[1,1].legend(
+                    handles=[ours1,
+                             ours2,ours3,
+                             ours11],
+                    labels=["0/0",
+                            "0/2 + 2/0","1/1",
+                            "sum"],
+                    loc = 'upper left',
+                    bbox_to_anchor=(-0.15,1.0))
+    
+    axes[1,1].plot(x,p0_result,  color='b')
+    axes[1,1].plot(x,p2_0_result,color='g')
+    axes[1,1].plot(x,p2_1_result,color='r')
+    axes[1,1].plot(x,l_p,color='black')
+    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
+    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
+    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
+    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
+    axes[1,1].legend(loc='upper right')
+    axes[1,1].add_artist(legend1)
+    axes[1,1].axhline(y=0,linestyle='dashed',color='gray')
+    
+    axes[2,1].plot(x,M_p0_result,  color='b',label="full angle p=0(1)")
+    axes[2,1].plot(x,M_p2_0_result,color='g',label="full angle p=2(1)")
+    axes[2,1].plot(x,M_p2_1_result,color='r',label="full angle p=2(2)")
+    axes[2,1].plot(x,m_p,color='black')
+    axes[2,1].scatter(x,M_p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
+    axes[2,1].scatter(x,M_p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
+    axes[2,1].scatter(x,M_p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
+    axes[2,1].scatter(x,m_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
+    axes[2,1].legend(loc='upper right')
+    axes[2,1].axhline(y=0,linestyle='dashed',color='gray')
 
-    j_result[i] += apply_angle_part_s(f_s_1_EM(z)  * constant_factor     , t0, alp, 1)
-    k_result[i] += apply_angle_part_s(f_s_2_1_EM(z)* constant_factor*x2_2, t0, alp, 1)
-    l_result[i] += apply_angle_part_s(f_s_2_2_EM(z)* constant_factor*x2_2, t0, alp, 2)
+    axes[3,0].plot(x,M_d0_result/M_d0_result_M,  color='b',label="ratio p=0(1)")
+    #axes[3,0].plot(x,M_d2_0_result/M_d2_0_result_M,color='g',label="ratio p=2(1)")
+    axes[3,0].plot(x,M_d2_1_result/M_d2_1_result_M,color='r',label="ratio p=2(2)")
 
-    m_result[i] += apply_angle_part_s(f_p_1_EM(z)  * constant_factor     , t0, alp, 1)
-    n_result[i] += apply_angle_part_s(f_p_2_1_EM(z)* constant_factor*x2_2, t0, alp, 1)
-    o_result[i] += apply_angle_part_s(f_p_2_2_EM(z)* constant_factor*x2_2, t0, alp, 2)
-
-    x_result[i] += apply_angle_part_s(f_s_1_WA(z)  * constant_factor     ,t0, alp, 1)
-    y_result[i] += apply_angle_part_s(f_s_2_1_WA(z)* constant_factor*x3_2,t0, alp, 1)
-    z_result[i] += apply_angle_part_s(f_s_2_2_WA(z)* constant_factor*x3_2,t0, alp, 2)
+    axes[3,1].plot(x,M_d0_result,  color='b',label="full angle p=0(1)")
+    axes[3,1].plot(x,M_d2_0_result,color='g',label="full angle p=2(1)")
+    axes[3,1].plot(x,M_d2_1_result,color='r',label="full angle p=2(2)")
+    axes[3,1].plot(x,m_d,color='black')
+    axes[3,1].scatter(x,M_d0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
+    axes[3,1].scatter(x,M_d2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
+    axes[3,1].scatter(x,M_d2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
+    axes[3,1].scatter(x,m_d_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
+    axes[3,1].legend(loc='upper right')
+    axes[3,1].axhline(y=0,linestyle='dashed',color='gray')
   
-  fig, axes = plt.subplots(3,2)
-  #K-shell s-orbitals
-  axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
-  axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
-  axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
-  axes[0,0].plot(x,a_result,color='b')
-  axes[0,0].plot(x,b_result,color='g')
-  axes[0,0].plot(x,c_result,color='r')
-  axes[0,0].plot(x,k_s,color='black')
-  axes[0,0].legend()
-  axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
-  #L-shell s-orbital
-  axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
-  axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
-  axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
-  axes[1,0].plot(x,d_result,color='b')
-  axes[1,0].plot(x,e_result,color='g')
-  axes[1,0].plot(x,f_result,color='r')
-  axes[1,0].plot(x,l_s,color='black')
-  axes[1,0].legend()
-  axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
-  #M-shell s-orbital
-  axes[2,0].scatter(x,x_result,s=20,facecolors='none',edgecolors='b',marker='^',label="WA fs_1^(0)")
-  axes[2,0].scatter(x,y_result,s=20,facecolors='none',edgecolors='g',marker='^',label="WA fs_1^(2)")
-  axes[2,0].scatter(x,z_result,s=20,facecolors='none',edgecolors='r',marker='^',label="WA fs_2^(2)")
-  axes[2,0].plot(x,Ms0_result,color='b',label="full angle p=0(1)")
-  axes[2,0].plot(x,Ms1_result,color='g',label="full angle p=2(1)")
-  axes[2,0].plot(x,Ms2_result,color='r',label="full angle p=2(2)")
-  axes[2,0].plot(x,m_s,color='black')
-  axes[2,0].legend()
-  axes[2,0].axhline(y=0,linestyle='dashed',color='gray')
-  
-  axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)").legend_elements()
-  axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)").legend_elements()
-  axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)").legend_elements()
-  ours1, = axes[0,1].plot(x,p0_result,color='b')
-  ours2, = axes[0,1].plot(x,p2_0_result,color='g')
-  ours3, = axes[0,1].plot(x,p2_1_result,color='r')
-  ours11, = axes[0,1].plot(x,l_p,color='black')
-  axes[0,1].legend()
-  axes[0,1].axhline(y=0,linestyle='dashed',color='gray')
-  legend1 = axes[1,1].legend(
-                  handles=[ours1,
-                           ours2,ours3,
-                           ours11],
-                  labels=["0/0",
-                          "0/2 + 2/0","1/1",
-                          "sum"],
-                  loc = 'upper left',
-                  bbox_to_anchor=(-0.15,1.0))
-  
-  axes[1,1].plot(x,p0_result,  color='b')
-  axes[1,1].plot(x,p2_0_result,color='g')
-  axes[1,1].plot(x,p2_1_result,color='r')
-  axes[1,1].plot(x,l_p,color='black')
-  axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-  axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-  axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-  axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-  axes[1,1].legend(loc='upper right')
-  axes[1,1].add_artist(legend1)
-  axes[1,1].axhline(y=0,linestyle='dashed',color='gray')
-  
-  axes[2,1].plot(x,M_p0_result,  color='b',label="full angle p=0(1)")
-  axes[2,1].plot(x,M_p2_0_result,color='g',label="full angle p=2(1)")
-  axes[2,1].plot(x,M_p2_1_result,color='r',label="full angle p=2(2)")
-  axes[2,1].plot(x,m_p,color='black')
-  axes[2,1].scatter(x,M_p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-  axes[2,1].scatter(x,M_p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-  axes[2,1].scatter(x,M_p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-  axes[2,1].scatter(x,m_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-  axes[2,1].legend(loc='upper right')
-  axes[2,1].axhline(y=0,linestyle='dashed',color='gray')
-
-  mng = plt.get_current_fig_manager()
-  mng.window.state('zoomed')
-  plt.subplots_adjust(left=0.025, bottom=0.04, right=1.0, top=1.0, wspace=0.15, hspace=0.05)
-  fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
-  plt.show()
+    #mng = plt.get_current_fig_manager()
+    #mng.window.state('zoomed')
+    plt.subplots_adjust(left=0.025, bottom=0.04, right=1.0, top=1.0, wspace=0.15, hspace=0.05)
+    fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
+    plt.show()

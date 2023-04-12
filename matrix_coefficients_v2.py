@@ -18,7 +18,7 @@ def z_nunu(nu_j, nu_2):
   return nu_j/nu_2
 
 def sugiura_exps(z,n_0):
-  return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))/(1-math.exp(-2*n_0*math.pi/math.sqrt(z-1)))
+  return np.exp(-4*n_0/np.sqrt(z-1)*np.arctan(np.sqrt(z-1)))/(1-np.exp(-2*n_0*math.pi/np.sqrt(z-1)))
 
 def b(n_0, l_0, Z):
   Z_eff = None
@@ -320,7 +320,7 @@ if True:
 
 def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = b_/2/pow(-2*k_,l+1)
+  part1 = -b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p,1,l,W11)
   if (J_ == 0):
@@ -330,7 +330,7 @@ def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
 
 def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = b_/pow(-2*k_,l+1)
+  part1 = -b_/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p,1,l,W11)
   if (J_ == 0):
@@ -342,7 +342,7 @@ def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
 
 def E_l_from_z_for_p(b_, z, n_0, l, nu, p):
   k_ = b_*math.sqrt(z-1)
-  part1 = b_/2/pow(-2*k_,l+1)
+  part1 = -b_/2/pow(-2*k_,l+1)
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p,1,l,W11)
   if (J_ == 0):
