@@ -189,62 +189,62 @@ def J(a,b,c,l, Matrix = None):
 
 
 W20 = make_matrix_W(2, 0, 20)
-def J0_hat(p,l):
-  if p == 0:
-    return 1/3 * delta(l,0) - 1/15 * delta(l,2)
-  #elif p == 1:
-  #  return 1/15 * delta(l,1) - 1/35 * delta(l,3)
-  #elif p == 2:
-  #  return 1/15 * delta(l,0) + 1/105 * delta(l,2) - 4/315 * delta(l,4)
-  #elif p == 3:
-  #  return 1/35 * delta(l,1) - 1/315 * delta(l,3) - 4/693 * delta(l,5)
-  else:
-    return 0.25 * J(2,p,0,l, W20)
+#def J0_hat(p,l):
+#  if p == 0:
+#    return 1/3 * delta(l,0) - 1/15 * delta(l,2)
+#  #elif p == 1:
+#  #  return 1/15 * delta(l,1) - 1/35 * delta(l,3)
+#  #elif p == 2:
+#  #  return 1/15 * delta(l,0) + 1/105 * delta(l,2) - 4/315 * delta(l,4)
+#  #elif p == 3:
+#  #  return 1/35 * delta(l,1) - 1/315 * delta(l,3) - 4/693 * delta(l,5)
+#  else:
+#    return 0.25 * J(2,p,0,l, W20)
  
 W00 = make_matrix_W(0, 0, 20)    
-def J0_bar(p,l):
-  if p == 0:
-    return 2 * delta(l,0)
-  #elif p == 1:
-  #  return 2/3 * delta(l,1)
-  #elif p == 2:
-  #  return 2/3 * delta(l,0) + 4/15 * delta(l,2)
-  #elif p == 3:
-  #  return 2/5 * delta(l,1) + 4/35 * delta(l,3)
-  #elif p == 4:
-  #  return 2/5 * delta(l,0) + 8/35 * delta(l,2) + 16/315 * delta(l,4)
-  #elif p == 5:
-  #  return 2/7 * delta(l,1) + 8/63 * delta(l,3) + 16/693 * delta(l,5)
-  else:
-    return J(0,p,0,l,W00)
+#def J0_bar(p,l):
+#  if p == 0:
+#    return 2 * delta(l,0)
+#  #elif p == 1:
+#  #  return 2/3 * delta(l,1)
+#  #elif p == 2:
+#  #  return 2/3 * delta(l,0) + 4/15 * delta(l,2)
+#  #elif p == 3:
+#  #  return 2/5 * delta(l,1) + 4/35 * delta(l,3)
+#  #elif p == 4:
+#  #  return 2/5 * delta(l,0) + 8/35 * delta(l,2) + 16/315 * delta(l,4)
+#  #elif p == 5:
+#  #  return 2/7 * delta(l,1) + 8/63 * delta(l,3) + 16/693 * delta(l,5)
+#  else:
+#    return J(0,p,0,l,W00)
 
 W11 = make_matrix_W(1, 1, 20)
-def J1(p,l):
-  if p == 0:
-    return 4/3 * delta(l,1)
-  #elif p == 1:
-  #  return 4/5 * delta(l,2)
-  #elif p == 2:
-  #  return 4/15 * delta(l,1) + 16/35 * delta(l,3)
-  #elif p == 3:
-  #  return 12/35 * delta(l,2) + 16/63 * delta(l,4)
-  #elif p == 4:
-  #  return 4/35 * delta(l,1) + 32/105 * delta(l,3) + 32/231 * delta(l,5)
-  else:
-    return J(1,p,1,l,W11)
+#def J1(p,l):
+#  if p == 0:
+#    return 4/3 * delta(l,1)
+#  #elif p == 1:
+#  #  return 4/5 * delta(l,2)
+#  #elif p == 2:
+#  #  return 4/15 * delta(l,1) + 16/35 * delta(l,3)
+#  #elif p == 3:
+#  #  return 12/35 * delta(l,2) + 16/63 * delta(l,4)
+#  #elif p == 4:
+#  #  return 4/35 * delta(l,1) + 32/105 * delta(l,3) + 32/231 * delta(l,5)
+#  else:
+#    return J(1,p,1,l,W11)
 
 W22 = make_matrix_W(2, 2, 20)  
-def J2(p,l):
-  if p == 0:
-    return 16/5 * delta(l,2)
-  #elif p == 1:
-  #  return 16/7 * delta(l,3)
-  #elif p == 2:
-  #  return 16/35 * delta(l,2) + 32/21 * delta(l,4)
-  #elif p == 3:
-  #  return 16/21 * delta(l,3) + 32/33 * delta(l,5)
-  else:
-    return J(2,p,2,l,W22)
+#def J2(p,l):
+#  if p == 0:
+#    return 16/5 * delta(l,2)
+#  #elif p == 1:
+#  #  return 16/7 * delta(l,3)
+#  #elif p == 2:
+#  #  return 16/35 * delta(l,2) + 32/21 * delta(l,4)
+#  #elif p == 3:
+#  #  return 16/21 * delta(l,3) + 32/33 * delta(l,5)
+#  else:
+#    return J(2,p,2,l,W22)
 W31 = make_matrix_W(3, 1, 20)
 W33 = make_matrix_W(3, 3, 20)
 ################################# END OF CALC Js ###################################    
@@ -283,7 +283,7 @@ if True:
     sum = 0
     for p in range(p_limit):
       n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J = J2(p,l)
+      J = J(2,p,2,l,W22)
       if (J == 0):
         continue
       K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
@@ -296,7 +296,7 @@ if True:
     sum = 0
     for p in range(p_limit):
       n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J = J1(p+1,l)
+      J = J(1,p+1,1,l,W11)
       if J == 0:
         continue
       K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
@@ -309,8 +309,8 @@ if True:
     sum = 0
     for p in range(p_limit):
       n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J1 = J0_hat(p,l)
-      J2 = J0_bar(p,l)
+      J1 = 0.25 * J(2,p,0,l, W20)
+      J2 = J(0,p,0,l, W00)
       if J1 == 0 and J2 == 0:
         continue
       K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
