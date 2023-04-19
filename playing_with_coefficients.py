@@ -1701,7 +1701,7 @@ if __name__ == "__main__":
     axes[2,2].scatter(x,m_d_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
     axes[2,2].legend(loc='upper right')
     axes[2,2].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,2].set_title("M-shell d-electrons miracle?", y=1.0, pad=-14)
+    axes[2,2].set_title("M-shell d-electrons", y=1.0, pad=-14)
   
     #mng = plt.get_current_fig_manager()
     #mng.window.state('zoomed')

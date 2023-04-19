@@ -427,14 +427,8 @@ def G0_from_z_for_p(b_, z, n_0, l, nu, p):
   J2 = J(0,p+1,0,l,W00)
   if J1 == 0 and J2 == 0:
     return 0.0
-  if J1 > 0:
-    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-  else:
-    K1 = 0
-  if J2 > 0:
-    K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  else:
-    K2 = 0
+  K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
   return part1 * n1 * (-2*J2*K1 + b_*J1*K2)
 
 def G1_from_z_for_p(b_, z, n_0, l, nu, p):
