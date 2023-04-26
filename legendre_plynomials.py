@@ -146,7 +146,11 @@ def alpha_coef(l,m,m_,theta0, alpha):
         else:
           s = 0
       elif f1 == 0:
-        q2 = pow(st0,m-m_+2*rho) * pow(ct0,2*l-m-2*rho+m_)
+        temp = m-m_+2*rho
+        if temp < 0 and st0 == 0:
+          q2 = 0
+        else:
+          q2 = pow(st0,m-m_+2*rho) * pow(ct0,2*l-m-2*rho+m_)
         s = f2 * q2
       elif f2 == 0:
         q1 = pow(st0,m+m_+2*rho) * pow(ct0,2*l-m-2*rho-m_)

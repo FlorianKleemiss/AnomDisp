@@ -47,7 +47,7 @@ def calc_stuff(position, number, n_disp_K, n_disp_L, n_disp_M, axis, edge):
 
 def integrand_for_disp_els_K(n_j,n_0):
   z=n_j/n_0
-  part1 = 128*pow(n_0,3)/(3*pow(n_j,4))
+  part1 = 128/n_0/(3*pow(z,4))
   z_1=z-1
   if(n_j < n_0):
     sqrt_var = numpy.sqrt(abs(z_1))
@@ -92,47 +92,47 @@ def integrand_for_disp_els_L2_3(n_j,n_0):
 
 def integrand_for_disp_els_M1(n_j,n_0):
   z=n_j/n_0
-  part1 = 62208/n_0*(z*z+3*z+90)/(3*pow(z,6))
+  part1 = 64*2/n_0*pow(3*z+4,2)*(z+8)/(pow(z,7))
   z_1=z-1
   if(n_j < n_0):
     sqrt_var = numpy.sqrt(abs(z_1))
     temp = numpy.arctan(sqrt_var)/sqrt_var - 2*1/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
-    part2 = numpy.exp(-16*temp)
-    part3 = 1-numpy.exp(-8*math.pi/sqrt_var)
+    part2 = numpy.exp(-12*temp)
+    part3 = 1-numpy.exp(-6*math.pi/sqrt_var)
   else:
     sqrt_var = numpy.sqrt(z_1)
     part2 = numpy.exp(-16/sqrt_var*numpy.arctan(sqrt_var))
-    part3 = 1-numpy.exp(-8*math.pi/sqrt_var)
+    part3 = 1-numpy.exp(-6*math.pi/sqrt_var)
   return part1*part2/part3
 
 def integrand_for_disp_els_M_2_3(n_j,n_0):
   z=n_j/n_0
-  part1 = 62208/n_0*(z*z+8/3*z+140)/(3*pow(z,7))
+  part1 = 512*2/n_0*(3*z*z+26*z+28)/(pow(z,7))
   z_1=z-1
   if(n_j < n_0):
     sqrt_var = numpy.sqrt(abs(z_1))
     temp = numpy.arctan(sqrt_var)/sqrt_var - 2*1/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
-    part2 = numpy.exp(-16*temp)
-    part3 = 1-numpy.exp(-8*math.pi/sqrt_var)
+    part2 = numpy.exp(-12*temp)
+    part3 = 1-numpy.exp(-6*math.pi/sqrt_var)
   else:
     sqrt_var = numpy.sqrt(z_1)
-    part2 = numpy.exp(-16/sqrt_var*numpy.arctan(sqrt_var))
-    part3 = 1-numpy.exp(-8*math.pi/sqrt_var)
+    part2 = numpy.exp(-12/sqrt_var*numpy.arctan(sqrt_var))
+    part3 = 1-numpy.exp(-6*math.pi/sqrt_var)
   return part1*part2/part3
 
 def integrand_for_disp_els_M_4_5(n_j,n_0):
   z=n_j/n_0
-  part1 = 62208/n_0*(z*z+7/3*z+180)/(3*pow(z,8))
+  part1 = 1024/5.0*2/n_0*(5*z*z+46*z+48)/(pow(z,8))
   z_1=z-1
   if(n_j < n_0):
     sqrt_var = numpy.sqrt(abs(z_1))
     temp = numpy.arctan(sqrt_var)/sqrt_var - 2*1/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
-    part2 = numpy.exp(-16*temp)
-    part3 = 1-numpy.exp(-8*math.pi/sqrt_var)
+    part2 = numpy.exp(-12*temp)
+    part3 = 1-numpy.exp(-6*math.pi/sqrt_var)
   else:
     sqrt_var = numpy.sqrt(z_1)
-    part2 = numpy.exp(-16/sqrt_var*numpy.arctan(sqrt_var))
-    part3 = 1-numpy.exp(-8*math.pi/sqrt_var)
+    part2 = numpy.exp(-12/sqrt_var*numpy.arctan(sqrt_var))
+    part3 = 1-numpy.exp(-6*math.pi/sqrt_var)
   return part1*part2/part3
 
 def real_general_integration(n_j,chi_j,nu,n_0,oscillator_density_function):
@@ -196,7 +196,7 @@ def m_disp_els(Z=None):
     print("Z MUST BE INTEGER!")
     return
   if Z == None:
-    Z = 6
+    Z = 52
   Z_s_sq1 = pow(get_Zeff_3s(Z),2)
   Z_s_sq2 = pow(get_Zeff_3p_1_2(Z),2)
   Z_s_sq3 = pow(get_Zeff_3p_3_2(Z),2)
@@ -207,11 +207,6 @@ def m_disp_els(Z=None):
   e_ion_3 = get_ionization_energy_3p_3_2(Z)
   e_ion_4 = get_ionization_energy_3d_3_2(Z)
   e_ion_5 = get_ionization_energy_3d_5_2(Z)
-  print(e_ion_1)
-  print(e_ion_2)
-  print(e_ion_3)
-  print(e_ion_4)
-  print(e_ion_5)
   nu_m1 = e_ion_1 / h
   nu_m2 = e_ion_2 / h
   nu_m3 = e_ion_3 / h
@@ -220,8 +215,8 @@ def m_disp_els(Z=None):
   delta_m1 = 1 + alpha_sq * Z_s_sq1 * 0.25 - 9*e_ion_1/(Ryd_ener * Z_s_sq1) #33 in Hoenl
   delta_m2 = 1 + alpha_sq * Z_s_sq2 * 0.25 - 9*e_ion_2/(Ryd_ener * Z_s_sq2) #33 in Hoenl
   delta_m3 = 1 + alpha_sq * Z_s_sq3 / 12 - 9*e_ion_3/(Ryd_ener * Z_s_sq3) #33 in Hoenl
-  delta_m4 = 1 + alpha_sq * Z_s_sq4 / 12 - 9*e_ion_2/(Ryd_ener * Z_s_sq4) #33 in Hoenl
-  delta_m5 = 1 + alpha_sq * Z_s_sq5 / 36 - 9*e_ion_3/(Ryd_ener * Z_s_sq5) #33 in Hoenl
+  delta_m4 = 1 + alpha_sq * Z_s_sq4 / 12 - 9*e_ion_4/(Ryd_ener * Z_s_sq4) #33 in Hoenl
+  delta_m5 = 1 + alpha_sq * Z_s_sq5 / 36 - 9*e_ion_5/(Ryd_ener * Z_s_sq5) #33 in Hoenl
   n_0_1 = nu_m1/(1-delta_m1) #22 in Hoenl
   n_0_2 = nu_m2/(1-delta_m2) #22 in Hoenl
   n_0_3 = nu_m3/(1-delta_m3) #22 in Hoenl
@@ -234,12 +229,7 @@ def m_disp_els(Z=None):
   n_disp_3d3_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m4,20000*nu_m4,args=(n_0_4),limit=200000,epsabs=1E-60)[0]
   n_disp_3d5_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m5,20000*nu_m5,args=(n_0_5),limit=200000,epsabs=1E-60)[0]
 
-  print(n_disp_3s)
-  print(n_disp_3p1_2)
-  print(n_disp_3p3_2)
-  print(n_disp_3d3_2)
-  print(n_disp_3d5_2)
-  return 2*n_disp_3s+2*n_disp_3p1_2+4*n_disp_3p3_2+6*n_disp_3d3_2+4*n_disp_3d5_2
+  return 2*n_disp_3s+2*n_disp_3p1_2+4*n_disp_3p3_2+4*n_disp_3d3_2+6*n_disp_3d5_2
 
 def sugiura_k(Z=None, ener=8047.8):
     # Z is integer number of 

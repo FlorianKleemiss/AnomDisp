@@ -567,7 +567,7 @@ def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
         )
 
 def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
-  if z <= 1: return 0
+  if z <= 1: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0,0,Z)
   prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
   result = []
@@ -585,7 +585,7 @@ def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
   return result
 
 def f_b_for_p(Z,l,g_k,z,nu_in,n_0,p):
-  if z <= 1: return 0
+  if z <= 1: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0, 1, Z)
   prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
   result = []
@@ -613,7 +613,7 @@ def f_b_for_p(Z,l,g_k,z,nu_in,n_0,p):
   return result
 
 def f_c_0_for_p(Z,l,g_k,z,nu_in,n_0,p):
-  if z <= 1: return 0
+  if z <= 1: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0, 1, Z)
   prefactor = N0_square(b_) * N_square(l,0,b_,n_0,z)
   result = []
@@ -641,7 +641,7 @@ def f_c_0_for_p(Z,l,g_k,z,nu_in,n_0,p):
   return result
 
 def f_c_2_for_p(Z,l,g_k,z,nu_in,n_0,p):
-  if z <= 1: return 0
+  if z <= 1: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0, 1, Z)
   prefactor = N0_square(b_) * N_square(l,2,b_,n_0,z)
   result = []
@@ -669,7 +669,7 @@ def f_c_2_for_p(Z,l,g_k,z,nu_in,n_0,p):
   return result
 
 def f_d_for_p(Z,l,g_k,z,nu_in,n_0,p):
-  if z <= 1: return 0
+  if z <= 1: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0, 1, Z)
   prefactor = N0_square(b_) * N_square(l,2,b_,n_0,z)
   result = []
@@ -696,8 +696,46 @@ def f_d_for_p(Z,l,g_k,z,nu_in,n_0,p):
     result.append(prefactor * postfactor)
   return result
 
+def f_p_el_for_p(Z,l,g_m,g_k,z,nu_in,n_0,p):
+  if z <= 1: return [complex(0,0)] * (p+1)
+  b_ = b(n_0, 1, Z)
+  prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z)
+  result = []
+  if n_0 == 2:
+    if g_m == 0: 
+      func = B0_from_z_for_p
+    elif g_m == 1:
+      func = B1_from_z_for_p
+    elif g_m == 2:
+      func = B2_from_z_for_p
+    if g_k == 0: 
+      conjugate_function = B0_from_z_for_p
+    elif g_k == 1:
+      conjugate_function = B1_from_z_for_p
+    elif g_k == 2:
+      conjugate_function = B2_from_z_for_p
+  elif n_0 == 3:
+    if g_m == 0: 
+      func = D0_from_z_for_p
+    elif g_m == 1:
+      func = D1_from_z_for_p
+    elif g_m == 2:
+      func = D2_from_z_for_p
+    if g_k == 0: 
+      conjugate_function = D0_from_z_for_p
+    elif g_k == 1:
+      conjugate_function = D1_from_z_for_p
+    elif g_k == 2:
+      conjugate_function = D2_from_z_for_p
+  for j in range(p+1):
+    matrix_value1 = func(b_,z,n_0,l,nu_in,j)
+    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
+    postfactor = matrix_value1 * matrix_value2.conjugate()
+    result.append(prefactor * postfactor)
+  return result
+
 def f_d_el_for_p(Z,l,g_m,g_k,z,nu_in,n_0,p):
-  if z <= 1: return 0
+  if z <= 1: return [complex(0,0)] * (p+1)
   b_ = b(n_0, 2, Z)
   if g_m <= 3:
     prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z)
