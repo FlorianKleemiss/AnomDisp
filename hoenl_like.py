@@ -693,7 +693,7 @@ if __name__ == '__main__':
     elif axis == "Angstrom":
       minimal = 1000
       maximal = 30000
-      nr_steps = 30
+      nr_steps = 300
       for step in range(int(minimal),int(maximal),int(nr_steps)):
         steps.append(step)
     elif axis == "fixed":
@@ -740,17 +740,17 @@ if __name__ == '__main__':
         y_d_imag.append(result[8])
       print("Timing: " + str(time.perf_counter()-time_1))
       
-    axs[0,0].plot(x,y_s_real,'+:',label="%s K_edge"%elements[i])
-    axs[0,1].plot(x,y_s_imag,'+:',label="%s K_edge"%elements[i])
+    axs[0,0].plot(x,y_s_real,':',label="%s K_edge"%elements[i])
+    axs[0,1].plot(x,y_s_imag,':',label="%s K_edge"%elements[i])
 
-    axs[1,0].plot(x,y_l_real,'+:',label="%s L_edges"%elements[i])
-    axs[1,1].plot(x,y_l_imag,'+:',label="%s L_edges"%elements[i])
+    axs[1,0].plot(x,y_l_real,':',label="%s L_edges"%elements[i])
+    axs[1,1].plot(x,y_l_imag,':',label="%s L_edges"%elements[i])
 
-    axs[2,0].plot(x,y_m_real,'+:',label="%s M_edges"%elements[i])
-    axs[2,1].plot(x,y_m_imag,'+:',label="%s M_edges"%elements[i])
+    axs[2,0].plot(x,y_m_real,':',label="%s M_edges"%elements[i])
+    axs[2,1].plot(x,y_m_imag,':',label="%s M_edges"%elements[i])
 
-    axs[3,0].plot(x,y_d_real,'+:',label="%s"%elements[i])
-    axs[3,1].plot(x,y_d_imag,'+:',label="%s"%elements[i])
+    axs[3,0].plot(x,y_d_real,':',label="%s"%elements[i])
+    axs[3,1].plot(x,y_d_imag,':',label="%s"%elements[i])
     axs[3,0].axhline(y=-(n_disp_K+n_disp_L), color="gray", linestyle="--")
 
   axs[0, 0].set_title('K Real')
