@@ -4,8 +4,10 @@ from matrix_coefficients_v2 import f_a,f_c_0, f_c_2, integrand_matrix_p, integra
 from constants_and_atomic_properties import *
 import matplotlib
 import matplotlib.pyplot as plt
-import scipy.integrate as integrate
+#import scipy.integrate as integrate
 import numpy as np
+import multiprocessing
+from itertools import repeat
 #from mpl_toolkits import mplot3d
 
 def f_s_1_hoenl(z):
@@ -417,7 +419,7 @@ def apply_angle_part_d_orthogonal(vals,_k, theta0, alpha, l):
     vals[7] *= np.sqrt(3.0)*0.5*st0*st0*c2a * beta_coef(l,3,1,theta0,alpha)
   return vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7]
 
-def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
+def calc_stuff(nu_in, t0, l_max, p_max, el_nr,
                al00, al11, al22, al33, bbl11, bbl22, bbl33):
   z_k   = nu_in / (get_ionization_energy_1s(el_nr) / h)
   z_ls  = nu_in / (get_ionization_energy_2s(el_nr) / h)
@@ -428,9 +430,6 @@ def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
   z_mp3 = nu_in / (get_ionization_energy_3p_3_2(el_nr) / h)
   z_md3 = nu_in / (get_ionization_energy_3d_3_2(el_nr) / h)
   z_md5 = nu_in / (get_ionization_energy_3d_5_2(el_nr) / h)
-
-  wavelength = speed_of_light / nu_in * 1E10
-  brennan_fdp = br.at_angstrom(wavelength, e)[1]
 
   k_s_p = 0
   k_s_o = 0
@@ -469,8 +468,8 @@ def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
     fac.append(p+1) 
   
   for l in range(l_max+1):
-    s_par = al11[l]
-    s_orth = beta_coef(l,1,1,t0,alp)
+    s_par = beta_coef(l,1,1,t0,0)
+    s_orth = beta_coef(l,1,1,t0,1)
 
     #K-Shell
     temp = 0
@@ -488,19 +487,7 @@ def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
         temp += r.real
     l_s_p += s_par * temp
     l_s_o += s_orth * temp
-    
-    #p-orbital    
-    ms = [0,1,2]
-    mults = [al00[l],al11[l],al22[l]+bbl22[l]]
-    for p in range(0,p_max+1,2):
-      for nummy in range(len(ms)):
-        for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_lp1, nu_in, 2, p)):
-          l_p_p1 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alp, fac[num])
-          l_p_o1 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alp, fac[num])
-        for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_lp3, nu_in, 2, p)):
-          l_p_p3 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alp, fac[num])
-          l_p_o3 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alp, fac[num])
-    
+
     #M-Shell
     #S-orbital
     temp = 0
@@ -509,16 +496,30 @@ def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
         temp += r.real
     m_s_p += s_par * temp
     m_s_o += s_orth * temp
-
+    
+    #L-shell
+    #p-orbital    
+    ms = [0,1,2]
+    mults = [al00[l],al11[l],al22[l]+bbl22[l]]
+    for p in range(0,p_max+1,2):
+      for nummy in range(len(ms)):
+        for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_lp1, nu_in, 2, p)):
+          l_p_p1 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, 0, fac[num])
+          l_p_o1 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, 1, fac[num])
+        for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_lp3, nu_in, 2, p)):
+          l_p_p3 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, 0, fac[num])
+          l_p_o3 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, 1, fac[num])
+    
+    #M-shell
     #p-orbital
     for p in range(0,p_max+1,2):
       for nummy in range(len(ms)):
         for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_mp1, nu_in, 3, p)):
-          m_p_p1 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alp, fac[num])
-          m_p_o1 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alp, fac[num])
+          m_p_p1 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, 0, fac[num])
+          m_p_o1 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, 1, fac[num])
         for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_mp3, nu_in, 3, p)):
-          m_p_p3 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alp, fac[num])
-          m_p_o3 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alp, fac[num])
+          m_p_p3 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, 0, fac[num])
+          m_p_o3 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, 1, fac[num])
 
     #d-orbital
     ms = [0,1,2,3,4]
@@ -526,11 +527,11 @@ def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
     for p in range(0,p_max+1,2):
       for nummy in range(len(ms)):
         for num,r in enumerate(f_d_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_md3, nu_in, 3, p)):
-          m_d_p3 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alp, fac[num])
-          m_d_o3 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alp, fac[num])
+          m_d_p3 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, 0, fac[num])
+          m_d_o3 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, 1, fac[num])
         for num,r in enumerate(f_d_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_md5, nu_in, 3, p)):
-          m_d_p5 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alp, fac[num])
-          m_d_o5 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alp, fac[num])
+          m_d_p5 += apply_angle_part_s_parallel(r.real * mults[nummy], t0, 0, fac[num])
+          m_d_o5 += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, 1, fac[num])
   
   k_s_p = pow(k_s_p,2)
   k_s_o = pow(k_s_o,2)
@@ -557,10 +558,28 @@ def calc_stuff(nu_in, t0, alp, l_max, p_max, el_nr, br, e,
   m_s = math.sqrt(m_s_p + m_s_o)
   m_p = math.sqrt((m_p_p1 + m_p_o1) + 2*(m_p_p3 + m_p_o3))
   m_d = math.sqrt(3*(m_d_p3 + m_d_o3) + 2*(m_d_p5 + m_d_o5))
-
-  hönl = test_integral_hönl(0,nu_in,el_nr,p_max+1)
   
-  return k_s_p, k_s_o, k_s, l_s_p, l_s_o, l_s, l_p_p1+l_p_p3, l_p_o1+l_p_o3, l_p, m_s_p, m_s_o, m_s, m_p_p1+m_p_p3, m_p_o1+m_p_o3, m_p, m_d_p3+m_d_p5, m_d_o3+m_d_o5, m_d, brennan_fdp, hönl
+  return math.sqrt(k_s_p), math.sqrt(k_s_o), k_s,\
+         math.sqrt(l_s_p), math.sqrt(l_s_o), l_s,\
+         math.sqrt(l_p_p1+2*l_p_p3), math.sqrt(l_p_o1+2*l_p_o3), l_p,\
+         math.sqrt(m_s_p), math.sqrt(m_s_o), m_s,\
+         math.sqrt(m_p_p1+2*m_p_p3), math.sqrt(m_p_o1+2*m_p_o3), m_p,\
+         math.sqrt(3*m_d_p3+2*m_d_p5), math.sqrt(3*m_d_o3+2*m_d_o5), m_d
+
+def calc_stuff_with_brennan(nu_in, t0, l_max, p_max, el_nr, br, e,
+               al00, al11, al22, al33, bbl11, bbl22, bbl33):
+  wavelength = speed_of_light / nu_in * 1E10
+  brennan_fdp = br.at_angstrom(wavelength, e)[1]
+  hönl = test_integral_hönl(0,nu_in,el_nr,p_max+1)
+  t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18 = calc_stuff(nu_in, t0, l_max, p_max, el_nr, al00, al11, al22, al33, bbl11, bbl22, bbl33)
+  
+  return t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18, brennan_fdp, hönl
+
+def calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr,
+               al00, al11, al22, al33, bbl11, bbl22, bbl33):
+  t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18 = calc_stuff(nu_in, t0, l_max, p_max, el_nr, al00, al11, al22, al33, bbl11, bbl22, bbl33)
+  
+  return t3,t6,t9,t12,t15,t18
 
 if __name__ == "__main__":
   test_1s = False
@@ -593,7 +612,7 @@ if __name__ == "__main__":
     root.destroy()
   tk.Label(root,text="Choose what to run",state="active",justify=tk.CENTER,padx=20).pack()
   for l,val in options:
-    tk.Radiobutton(root,text=l,padx=20,indicatoron=0, width=20,variable=v,command=set_result,value=val).pack()
+    tk.Radiobutton(root,text=l,padx=20,indicatoron=0, width=30, height=2, variable=v,command=set_result,value=val).pack()
   root.mainloop()
   if result == 0:
     test_1s = True
@@ -616,9 +635,7 @@ if __name__ == "__main__":
     lam_bohr = lambd/a0
     def final(p):
       return np.vectorize(lambda n: 
-        np.sum(np.fromiter( (pow(-1,x) * pow(pi2_b * n * 1E10, 2*x) * (x+1)  \
-          for x in range(p,-1,-1)
-        ), dtype=np.float64))
+        np.sum(np.fromiter((pow(-1,x) * pow(pi2_b * n * 1E10, 2*x) * (x+1) for x in range(p,-1,-1)), dtype=np.float64))
       )
     def sin_t_l_function(t,l):
       return np.round(np.sin(t/2)/l,4)
@@ -1842,8 +1859,10 @@ if __name__ == "__main__":
     
   if form_factor_test:
     print("Performing Disp Correction Calculation")
-    x = np.logspace(math.log10(speed_of_light*1E10/3.), 
-                    math.log10(speed_of_light*1E10/0.15), 
+    lam_min = 4.0
+    lam_max = 0.15
+    x = np.logspace(math.log10(speed_of_light*1E10/lam_min), 
+                    math.log10(speed_of_light*1E10/lam_max), 
                     300)
     l_max = 7
     p_limit = 4
@@ -1865,9 +1884,7 @@ if __name__ == "__main__":
 
     from time import time
     numpy.random.seed(int(np.ceil(time())))
-    #t0 = numpy.random.random(1)[0] * math.pi
-    t0 = 0.1*math.pi
-    alp = numpy.random.random(1)[0] * math.pi * 2
+    t0 = numpy.random.random(1)[0] * math.pi
     TS = (1+pow(np.cos(t0),2))/2
 
     from brennan import brennan
@@ -1902,34 +1919,34 @@ if __name__ == "__main__":
       m_d   = np.zeros_like(x)
 
       zero_angle = np.zeros_like(x)
-
       hönl  = np.zeros_like(x)
-
       brennan_fdp = np.zeros_like(x)
       e = elements[el_nr]
     
-      import multiprocessing
-      from itertools import repeat
       with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-      #with multiprocessing.Pool(1) as pool:
-        res = pool.starmap(calc_stuff, zip(x, repeat(t0), repeat(alp), repeat(l_max), repeat(p_limit), repeat(el_nr), repeat(br), repeat(e),
+        res = pool.starmap(calc_stuff_with_brennan, zip(x, repeat(t0), repeat(l_max), repeat(p_limit), repeat(el_nr), repeat(br), repeat(e),
                                            repeat(al00), repeat(al11), repeat(al22), repeat(al33), repeat(bbl11), repeat(bbl22), repeat(bbl33)))
         for i,r in enumerate(res):
-          k_s_p[i], k_s_o[i], k_s[i], l_s_p[i], l_s_o[i], l_s[i], l_p_p[i], l_p_o[i], l_p[i], m_s_p[i], m_s_o[i], m_s[i], m_p_p[i], m_p_o[i], m_p[i], m_d_p[i], m_d_o[i], m_d[i], brennan_fdp[i],hönl[i] = r
+          k_s_p[i], k_s_o[i], k_s[i],\
+          l_s_p[i], l_s_o[i], l_s[i],\
+          l_p_p[i], l_p_o[i], l_p[i],\
+          m_s_p[i], m_s_o[i], m_s[i],\
+          m_p_p[i], m_p_o[i], m_p[i],\
+          m_d_p[i], m_d_o[i], m_d[i], brennan_fdp[i], hönl[i] = r
         
-        res = pool.starmap(calc_stuff, zip(x, repeat(0), repeat(0), repeat(l_max), repeat(p_limit), repeat(el_nr), repeat(br), repeat(e),
+        res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(0), repeat(l_max), repeat(p_limit), repeat(el_nr),
                                            repeat(al00), repeat(al11), repeat(al22), repeat(al33), repeat(bbl11), repeat(bbl22), repeat(bbl33)))
         for i,r in enumerate(res):
-          temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,temp10,temp11,temp12,temp13,temp14,temp15,temp16,temp17,temp18,temp19,temp20 = r
+          temp3,temp6,temp9,temp12,temp15,temp18 = r
           zero_angle[i] = (temp3+temp6+temp12+3*temp9+3*temp15+5*temp18)
     
-    x = speed_of_light / x * 1E10
+    x2 = speed_of_light / x * 1E10
     fig, axes = plt.subplots(3,3)
 
     def plot_stuff(ax,o,p,t,name):
-      ax.scatter(x,o,s=20,facecolors='none',edgecolors='b',marker='^',label="orthogonal")
-      ax.scatter(x,p,s=20,facecolors='none',edgecolors='g',marker='^',label="parallel")
-      ax.plot(x,t,color='r',label="total")
+      ax.scatter(x2,o,s=20,facecolors='none',edgecolors='b',marker='^',label="orthogonal")
+      ax.scatter(x2,p,s=20,facecolors='none',edgecolors='g',marker='^',label="parallel")
+      ax.plot(x2,t,color='r',label="total")
       ax.axhline(y=0,linestyle='dashed',color='gray')
       ax.set_title(name, y=1.0, pad=-14)
 
@@ -1942,25 +1959,39 @@ if __name__ == "__main__":
 
     plot_stuff(axes[2,2],m_d_o,m_d_p,m_d,"M-shell d-electrons")
     
-    axes[0,2].plot(x,2*math.pi*2*(k_s+l_s+3*l_p+m_s+3*m_p+5*m_d)/constant_factor,color='k',label="all")
+    axes[0,2].plot(x2,2*math.pi*2*(k_s+l_s+3*l_p+m_s+3*m_p+5*m_d)/constant_factor,color='k',label="all")
     axes[0,2].axhline(y=0,linestyle='dashed',color='gray')
     
-    axes[1,2].plot(x,brennan_fdp*TS,color='k',label="brennan")
+    axes[1,2].plot(x2,brennan_fdp,color='k',label="brennan")
     axes[1,2].axhline(y=0,linestyle='dashed',color='gray')
 
-    axes[0,1].plot(x,zero_angle/(k_s+l_s+3*l_p+m_s+3*m_p+5*m_d),color='k',label="zero angle")
     axes[0,1].axhline(y=1,linestyle='dashed',color='gray')
+    steps = 6
+    print("Starting angle calculations!")
+    for i in range(0,steps+1):
+      theta = i*(1./steps)*math.pi
+      temp = np.zeros_like(zero_angle)
+      print("{}/{} steps".format(i,steps))
+      with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(theta), repeat(l_max), repeat(p_limit), repeat(el_nr),
+                                           repeat(al00), repeat(al11), repeat(al22), repeat(al33), repeat(bbl11), repeat(bbl22), repeat(bbl33)))
+        for j,r in enumerate(res):
+          temp3,temp6,temp9,temp12,temp15,temp18 = r
+          temp[j] = (temp3+temp6+temp12+3*temp9+3*temp15+5*temp18)
+        axes[0,1].plot(x2,zero_angle/temp*(1+pow(np.cos(theta),2))/2,label=r"$\theta_0 = ${:4.2f}$\pi$".format(theta/math.pi))
+
+    axes[0,1].plot(x2,zero_angle/(k_s+l_s+3*l_p+m_s+3*m_p+5*m_d)*TS,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))
     axes[0,1].set_title(r"Ratio between $\theta_0=0$ and $\theta_0$", y=1.0, pad=-14)
 
     for ax in fig.get_axes():
       ax.set_xscale('log')
-      ax.set_xlim(3.0,0.15)
+      ax.set_xlim(lam_min,lam_max)
       ax.set_xticks([0.2,0.3,0.5,0.7,1.0,1.5,2.0,3.0])
       ax.get_xaxis().get_major_formatter().labelOnlyBase = False
       ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
       ax.legend()
 
-    fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
+    fig.suptitle(r"$\theta_0$ = {:4.2f} $\pi$".format(t0/math.pi))
     plt.subplots_adjust(left=0.04, bottom=0.04, right=1.0, top=0.95, wspace=0.15, hspace=0.1)
     plt.show()
     exit()
