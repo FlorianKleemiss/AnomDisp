@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from constants_and_atomic_properties import *
+import scipy.special as special
 
 def z_EE(E,E2):
   return (E+abs(E2))/abs(E2)
@@ -16,9 +17,6 @@ def n_prime_from_z(z,n_0):
 
 def z_nunu(nu_j, nu_2):
   return nu_j/nu_2
-
-def sugiura_exps(z,n_0):
-  return np.exp(-4*n_0/np.sqrt(z-1)*np.arctan(np.sqrt(z-1)))/(1-np.exp(-2*n_0*math.pi/np.sqrt(z-1)))
 
 def b(n_0, l_0, Z):
   Z_eff = None

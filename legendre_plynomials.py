@@ -51,6 +51,44 @@ def alpha_coef(l,m,m_,theta0, alpha):
       sum += pow(-1,rho) * f0 * s
   return part1 * sum
 
+#NOT TESTED!
+def alpha_l11(l, theta0, alpha):
+  if l == 0: return 0.0
+  st0 = np.sin(theta0/2)
+  ct0 = np.cos(theta0/2)
+  part1 = np.cos(alpha)
+  if part1 == 0:
+    return 0.0
+  sum = 0
+  for rho in range(0, l):
+    f0 = scipy.special.binom(l-1,rho)
+    f1 = scipy.special.binom(l+1,2+rho)
+    f2 = scipy.special.binom(l+1,rho)
+    if f1 != 0 and f2 != 0:
+      q1 = pow(st0,2+2*rho) * pow(ct0,2*l-2*rho-2)
+      q2 = pow(st0,2*rho) * pow(ct0,2*l-2*rho)
+      if q1 != 0 and q2 != 0:
+        s = -f1 * q1 + f2 * q2
+      elif q1 != 0:
+        s = -f1 * q1
+      elif q2 != 0:
+        s = f2 * q2
+      else:
+        s = 0
+    elif f1 == 0:
+      temp = 2*rho
+      if temp < 0 and st0 == 0:
+        q2 = 0
+      else:
+        q2 = pow(st0,2*rho) * pow(ct0,2*l-2*rho)
+      s = f2 * q2
+    elif f2 == 0:
+      q1 = pow(st0,2+2*rho) * pow(ct0,2*l-2*rho-2)
+      s = -f1 * q1
+    else:
+      s = 0
+    sum += pow(-1,rho) * f0 * s
+
 def alpha_bar_coef(l,m,m_,theta0, alpha):
   if l-m < 0:
     return 0
@@ -132,6 +170,42 @@ def beta_coef(l,m,m_,theta0, alpha):
     elif f2 == 0:
       q1 = pow(st0,m+m_+2*rho) * pow(ct0,2*l-m-2*rho-m_)
       s = pow(-1,m_) * f1 * q1
+    else:
+      s = 0
+    sum += pow(-1,rho) * f0 * s
+  return part1 * sum
+
+#NOT TESTED
+def beta_l11(l,theta0, alpha):
+  if l-1 < 0:
+    return 0
+  st0 = np.sin(theta0/2)
+  ct0 = np.cos(theta0/2)
+  part1 = np.sin(alpha)
+  if part1 == 0:
+    return 0.0
+  sum = 0
+  for rho in range(0, l):
+    f0 = scipy.special.binom(l-1,rho)
+    f1 = scipy.special.binom(l+1,2+rho)
+    f2 = scipy.special.binom(l+1,rho)
+    if f1 != 0 and f2 != 0:
+      q1 = pow(st0,2+2*rho) * pow(ct0,2*l-2*rho-2)
+      q2 = pow(st0,2*rho) * pow(ct0,2*l-2*rho)
+      if q1 != 0 and q2 != 0:
+        s = (-f1 * q1 - f2 * q2)
+      elif q1 != 0:
+        s = (-f1 * q1)
+      elif q2 != 0:
+        s = -f2*q2
+      else:
+        s = 0
+    elif f1 == 0:
+      q2 = pow(st0,2*rho) * pow(ct0,2*l-2*rho)
+      s = -f2 * q2
+    elif f2 == 0:
+      q1 = pow(st0,2+2*rho) * pow(ct0,2*l-2*rho-2)
+      s = -f1 * q1
     else:
       s = 0
     sum += pow(-1,rho) * f0 * s

@@ -13,3 +13,5 @@
 /parallel_test.py
 /profiling_stats.txt
 /__pycache__
+/PDFs/*
+.vscode/settings.json

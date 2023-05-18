@@ -1,5 +1,6 @@
 import numpy
 import math
+import scipy.special as special
 
 a0 = 0.529177210903E-10 #in m
 h = 6.62607015E-34/1.602176634E-19 #in eV*s
@@ -14,6 +15,21 @@ r_0 = pow(el_charge,2)/el_charge/pow(speed_of_light,2)
 r_0_for_nu = pow(el_charge,2)/el_charge
 angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
 barn2bohr = 2.80028520539078E+7
+
+def sugiura_exps(z,n_0):
+  z_1 = z-1
+  if(z<=1):
+    sqrt_var = numpy.sqrt(abs(z_1))
+    temp = numpy.arctan(sqrt_var)/sqrt_var - 2/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
+    part2 = numpy.exp(-4*n_0*temp)
+    part3 = 1-numpy.exp(-2*n_0*math.pi/sqrt_var)
+  else:
+    sqrt_var = numpy.sqrt(z_1)
+    part2 = numpy.exp(-4*n_0/sqrt_var*numpy.arctan(sqrt_var))
+    part3 = 1-numpy.exp(-2*n_0*math.pi/sqrt_var)
+  return part2/part3
+  #The one above is without the correction for the part when z is <1 where we continue the function using the hyp2f1
+  return np.exp(-4*n_0/np.sqrt(z-1)*np.arctan(np.sqrt(z-1)))/(1-np.exp(-2*n_0*math.pi/np.sqrt(z-1)))
 
 kpcor =  [ 0.0,    0.0,                                                                                                                                                                                                                   0.0,
           1E-3,    0.0,                                                                                                                                                                              1E-3,  1E-3,  2E-3,  3E-3,  4E-3,  4E-3,
