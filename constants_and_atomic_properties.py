@@ -55,6 +55,67 @@ def exp_squared_from_z(z,n_0):
 def exp_squared_from_z(z,n_0):
   return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
+def delta(Z,n0,l,j):
+  if n0 == 1:
+    if l != 0: raise ValueError("unknown orbital type!")
+    else: 
+      Z_s_sq = pow(get_Zeff_1s(Z),2)
+      e_ion = get_ionization_energy_1s(Z)
+      delta_K = 1 + alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+      return delta_K
+  elif n0 == 2:
+    if l == 0:
+      Z_s_sq = pow(get_Zeff_2s(Z),2)
+      e_ion = get_ionization_energy_2s(Z)
+      delta_l1 = 1 + alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+      return delta_l1
+    elif l == 1:
+      if j == 0.5:
+        Z_s_sq = pow(get_Zeff_2p_1_2(Z),2)
+        e_ion = get_ionization_energy_2p1_2(Z)
+        delta_l2 = 1 + alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return delta_l2
+      elif j == 1.5:
+        Z_s_sq = pow(get_Zeff_2p_3_2(Z),2)
+        e_ion = get_ionization_energy_2p3_2(Z)
+        delta_l2 = 1 + alpha_sq * Z_s_sq * 0.0625 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return delta_l2
+      else: raise ValueError("unknown orbital type!")
+    else: raise ValueError("unknown orbital type!")
+  elif n0 == 3:
+    if l == 0:
+      Z_s_sq = pow(get_Zeff_3s(Z),2)
+      e_ion = get_ionization_energy_3s(Z)
+      delta_m1 = 1 + alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+      return delta_m1
+    elif l == 1:
+      if j == 0.5:
+        Z_s_sq = pow(get_Zeff_3p_1_2(Z),2)
+        e_ion = get_ionization_energy_3p_1_2(Z)
+        delta_m2 = 1 + alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return delta_m2
+      elif j == 1.5:
+        Z_s_sq = pow(get_Zeff_3p_3_2(Z),2)
+        e_ion = get_ionization_energy_3p_3_2(Z)
+        delta_m3 = 1 + alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return delta_m3
+      else: raise ValueError("unknown orbital type!")
+    elif l == 2:
+      if j == 1.5:
+        Z_s_sq = pow(get_Zeff_3d_3_2(Z),2)
+        e_ion = get_ionization_energy_3d_3_2(Z)
+        delta_m4 = 1 + alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return delta_m4
+      elif j == 3.5:
+        Z_s_sq = pow(get_Zeff_3d_5_2(Z),2)
+        e_ion = get_ionization_energy_3d_5_2(Z)
+        delta_m5 = 1 + alpha_sq * Z_s_sq /36 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return delta_m5
+      else: raise ValueError("unknown orbital type!")
+    else: raise ValueError("unknown orbital type!")
+  else: raise ValueError("unknown orbital type!")
+    
+
 elements = ["DUMMY","H",                                                                                                                                              "He",
             "Li","Be",                                                                                                                        "B", "C", "N", "O", "F","Ne",
             "Na","Mg",                                                                                                                       "Al","Si", "P", "S","Cl","Ar",
@@ -458,6 +519,58 @@ def get_ionization_energy_3d_5_2(Z):
   plt.scatter(x,y,marker="*")
   plt.plot(x2,func(x2, *result), 'r-')
   plt.show()
+  
+def get_line_width_K(Z):
+  #returns line width in eV
+  #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  0.24,
+                           0.30,  0.36,                                                                                                                                                                          0.42,  0.48,  0.53,  0.59,  0.64,  0.68,
+                           0.74,  0.81,                                                                                                    0.86,  0.94,  1.01,  1.08,  1.16,  1.25,  1.33,  1.44,  1.55,  1.67,  1.82,  1.96,  2.14,  2.33,  2.52,  2.75,
+                           2.99,  3.25,                                                                                                    3.52,  3.84,  4.14,  4.52,  4.91,  5.33,  5.77,  6.24,  6.75,  7.28,  7.91,  8.49,  9.16,  9.89,  10.6,  11.4,
+                           12.3,  13.2,  14.1,  15.1,  16.2,  17.3,  18.5,  19.7,  21.0,  22.3,  23.8,  25.2,  26.8,  28.4,  30.1, 31.9,   33.7,  35.7,  37.7,  39.9,  42.1,  44.4,  46.8,  49.3,  52.0,  54.6,  57.4,  60.4,  63.4,  66.6,  69.8,  73.3,
+                           76.8,  80.4,  84.1,  88.0,  91.9,  96.1, 100, 105, 109, 114, 119, 124, 129, 135, 140, 145, 150
+                         ]
+  return Linewidths[Z-1]
+
+def get_line_width_Lp_3_2(Z):
+  #returns line width in eV
+  #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.1,
+                           0.20,  0.41,                                                                                                                                                                          0.73,  1.03,  1.26,  1.49,  1.58,  1.63,
+                           1.92,  2.07,                                                                                                    2.21,  2.34,  2.41,  2.54,  2.62,  2.76,  2.79,  2.89,  3.06,  3.28,  3.38,  3.53,  3.79,  3.94,  4.11,  4.28,
+                           4.44,  4.67,                                                                                                    4.71,  4.78,  3.94,  4.25,  4.36,  4.58,  4.73,  4.93,  4.88,  4.87,  5.00,  2.97,  3.13,  3.32,  3.46,  3.64,
+                           3.78,  3.92,  4.06,  4.21,  4.34,  4.52,  4.67,  4.80,  4.91,  5.05,  5.19,  5.25,  5.33,  5.43,  5.47, 5.53,   5.54,  5.63,  5.58,  5.61,  6.18,  7.25,  8.30,  9.39,  10.5,  11.3,  12.0,  12.2,  12.4,  12.6,  12.8,  13.1,
+                           13.3,  13.4,  13.6,  13.7,  14.3,  14.0,    14, 13.5, 13.3, 13.6, 13.8, 14.0, 14.3, 14.4, 14.8, 15.1, 15.9
+                         ]
+  return Linewidths[Z-1]
+
+def get_line_width_Lp_1_2(Z):
+  #returns line width in eV
+  #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0,   0.0,   0.0,
+                           0.00, 0.001,                                                                                                                                                                         0.004, 0.015, 0.032, 0.054, 0.083, 0.126,
+                          0.152,  0.17,                                                                                                    0.19,  0.24,  0.26,  0.29,  0.34,  0.37,  0.43,  0.52,  0.62,  0.72,  0.83,  0.95,  1.03,  1.13,  1.21,  1.31,
+                           1.43,  1.54,                                                                                                    1.65,  1.78,  1.87,  1.97,  2.08,  2.23,  2.35,  2.43,  2.57,  2.62,  2.72,  2.84,  3.00,  3.12,  3.25,  3.40,
+                           3.51,  3.57,  3.68,  3.80,  3.89,  3.97,  4.06,  4.15,  4.23,  4.32,  4.43,  4.55,  4.66,  4.73,  4.79, 4.82,   4.92,  5.02,  5.15,  5.33,  5.48,  5.59,  5.69,  5.86,  6.00,  6.17,  6.32,  6.48,  6.67,  6.83,  7.01,  7.20,
+                           7.47,  7.68,  7.95,  8.18,  8.75,  9.32,  9.91, 10.5, 10.9, 11.4, 11.8, 12.2, 12.7, 13.1, 13.6, 14.0, 14.4
+                         ]
+  return Linewidths[Z-1]
+  
+def get_line_width_Ls(Z):
+  #returns line width in eV
+  #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0,   0.0,   0.0,
+                           0.00, 0.001,                                                                                                                                                                         0.004, 0.014, 0.033, 0.054, 0.087, 0.128,
+                          0.156,  0.17,                                                                                                    0.19,  0.22,  0.24,  0.27,  0.32,  0.36,  0.43,  0.48,  0.56,  0.65,  0.76,  0.82,  0.94,  1.00,  1.08,  1.17,
+                           1.27,  1.39,                                                                                                    1.50,  1.57,  1.66,  1.78,  1.91,  2.00,  2.13,  2.25,  2.40,  2.50,  2.65,  2.75,  2.87,  2.95,  3.08,  3.13,
+                           3.25,  3.32,  3.41,  3.48,  3.60,  3.65,  3.75,  3.86,  3.91,  4.01,  4.12,  4.17,  4.26,  4.35,  4.48,  4.60,  4.68,  4.80,  4.88,  4.98,  5.04,  5.16,  5.25,  5.31,  5.41,  5.50,  5.65,  5.81,  5.98,  6.13,  6.29,  6.41,
+                           6.65,  6.82,  6.98,  7.13,  7.33,  7.43,  7.59,  7.82,  8.04,  8.26,  8.55,  8.75,  9.04,  9.33,  9.61,  9.90, 10.1
+                         ]
+  return Linewidths[Z-1]
     
 def get_Zeff_1s(Z):
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf

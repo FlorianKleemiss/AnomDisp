@@ -107,13 +107,13 @@ def sugiura_k(Z=None, ener=8047.8, disp_only=False):
   #integrating directly as one intergal with the singulary position as point does not work.
   
   if disp_only == True:
-    n_disp_el = integrate.quad(integrand_for_disp_els_K,nu_k,2000*nu_k,args=(n_0),limit=200000,epsabs=1E-60)[0]
+    n_disp_el = integrate.quad(integrand_for_disp_els_K,nu_k,20000*nu_k,args=(n_0),limit=200000,epsabs=1E-60)[0]
     return 2*n_disp_el
 
   #REAL PART
   #When telling the quad alorithm that nu is a "position to be carefull with" the results don't require epsilon, one can integrate from left and right
   inte1 = integrate.quad(real_general_integration,nu_k,nu,args=(x_j,nu,n_0,integrand_for_disp_els_K),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
-  inte2 = integrate.quad(real_general_integration,nu,40*nu,args=(x_j,nu,n_0,integrand_for_disp_els_K),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
+  inte2 = integrate.quad(real_general_integration,nu,100*nu,args=(x_j,nu,n_0,integrand_for_disp_els_K),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
   if inte1[1] > 0.5*abs(inte1[0]):
     print("!!! inaccurate REAL1 integral at nu_k/nu = " + "{:8.4f}".format(nu_k/nu) + " " + str(inte1) + str(inte1[1]/abs(inte1[0])))
   if inte2[1] > 0.5*abs(inte2[0]):
@@ -131,10 +131,6 @@ def sugiura_k(Z=None, ener=8047.8, disp_only=False):
   if imag_integral[1] > 0.5*abs(imag_integral[0]):
     print("!!! inaccurate IMAG integral at nu_k/nu = " + "{:6.4f}".format(nu_k/nu) + " " + str(imag_integral) + " " + str(imag_integral[1]/abs(imag_integral[0])) + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
-  #this yields the number of dispersion electrons, which is independant of the wavelenght used
-  #n_disp_el = integrate.quad(integrand_for_disp_els,nu_k,2000*nu_k,args=(n_0),limit=200000,epsabs=1E-60)[0]
-  #print(n_disp_el)
-
   alpha_K_sugiura_damp = complex(integral,imag_integral[0])
   ausdruck = alpha_K_sugiura_damp/(1-4.0*math.pi/3*alpha_K_sugiura_damp*prefactor)
   factor = pow(nu,2)
@@ -147,18 +143,12 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
     return
   if Z == None:
     Z = 6
-  Z_s_sq1 = pow(get_Zeff_2s(Z),2)
-  Z_s_sq2 = pow(get_Zeff_2p_1_2(Z),2)
-  Z_s_sq3 = pow(get_Zeff_2p_3_2(Z),2)
-  e_ion_1 = get_ionization_energy_2s(Z)
-  e_ion_2 = get_ionization_energy_2p1_2(Z)
-  e_ion_3 = get_ionization_energy_2p3_2(Z)
-  nu_l1 = e_ion_1 / h
-  nu_l2 = e_ion_2 / h
-  nu_l3 = e_ion_3 / h
-  delta_l1 = 1 + alpha_sq * Z_s_sq1 * 0.3125 - 4*e_ion_1/(Ryd_ener * Z_s_sq1) #33 in Hoenl
-  delta_l2 = 1 + alpha_sq * Z_s_sq2 * 0.3125 - 4*e_ion_2/(Ryd_ener * Z_s_sq2) #33 in Hoenl
-  delta_l3 = 1 + alpha_sq * Z_s_sq3 * 0.0625 - 4*e_ion_3/(Ryd_ener * Z_s_sq3) #33 in Hoenl
+  nu_l1 = get_ionization_energy_2s(Z)   /h
+  nu_l2 = get_ionization_energy_2p1_2(Z)/h
+  nu_l3 = get_ionization_energy_2p3_2(Z)/h
+  delta_l1 =  delta(Z,2,0,0)
+  delta_l2 =  delta(Z,2,1,0.5)
+  delta_l3 =  delta(Z,2,1,1.5)
   n_0_1 = nu_l1/(1-delta_l1) #22 in Hoenl
   n_0_2 = nu_l2/(1-delta_l2) #22 in Hoenl
   n_0_3 = nu_l3/(1-delta_l3) #22 in Hoenl
@@ -169,16 +159,16 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
   x_j3 = nu_l3*1E-6
   
   if disp_only == True:
-    n_disp_2s = integrate.quad(integrand_for_disp_els_L1,nu_l1,20000*nu_l1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
-    n_disp_2p1_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l2,20000*nu_l2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
-    n_disp_2p3_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l3,20000*nu_l3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
+    n_disp_2s = integrate.quad(integrand_for_disp_els_L1,nu_l1,200000*nu_l1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
+    n_disp_2p1_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l2,200000*nu_l2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
+    n_disp_2p3_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l3,200000*nu_l3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
 
     return 2*n_disp_2s+2*n_disp_2p1_2+4*n_disp_2p3_2
 
   #REAL PART
   #When telling hte quad alorithm that nu is a "position to be carefull with" the results don't require epsilon
   inte1_1 = integrate.quad(real_general_integration,nu_l1,nu,args=(x_j1,nu,n_0_1,integrand_for_disp_els_L1),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
-  inte2_1 = integrate.quad(real_general_integration,nu,40*nu,args=(x_j1,nu,n_0_1,integrand_for_disp_els_L1),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
+  inte2_1 = integrate.quad(real_general_integration,nu,100*nu,args=(x_j1,nu,n_0_1,integrand_for_disp_els_L1),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
   if inte1_1[1] > 0.5*abs(inte1_1[0]):
     print("!!! inaccurate REAL1 integral at nu_l/nu = " + "{:8.4f}".format(nu_l1/nu) + " " + str(inte1_1) + str(inte1_1[1]/abs(inte1_1[0])))
   if inte2_1[1] > 0.5*abs(inte2_1[0]):
@@ -186,7 +176,7 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
   integral_1 = inte1_1[0] + inte2_1[0]
 
   inte1_2 = integrate.quad(real_general_integration,nu_l2,nu,args=(x_j2,nu,n_0_2,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
-  inte2_2 = integrate.quad(real_general_integration,nu,40*nu,args=(x_j2,nu,n_0_2,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
+  inte2_2 = integrate.quad(real_general_integration,nu,100*nu,args=(x_j2,nu,n_0_2,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
   if inte1_2[1] > 0.5*abs(inte1_2[0]):
     print("!!! inaccurate REAL1 integral at nu_l/nu = " + "{:8.4f}".format(nu_l2/nu) + " " + str(inte1_2) + str(inte1_2[1]/abs(inte1_2[0])))
   if inte2_2[1] > 0.5*abs(inte2_2[0]):
@@ -194,7 +184,7 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
   integral_2 = inte1_2[0] + inte2_2[0]
 
   inte1_3 = integrate.quad(real_general_integration,nu_l3,nu,args=(x_j3,nu,n_0_3,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
-  inte2_3 = integrate.quad(real_general_integration,nu,40*nu,args=(x_j3,nu,n_0_3,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
+  inte2_3 = integrate.quad(real_general_integration,nu,100*nu,args=(x_j3,nu,n_0_3,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
   if inte1_3[1] > 0.5*abs(inte1_3[0]):
     print("!!! inaccurate REAL1 integral at nu_l/nu = " + "{:8.4f}".format(nu_l3/nu) + " " + str(inte1_3) + str(inte1_3[1]/abs(inte1_3[0])))
   if inte2_3[1] > 0.5*abs(inte2_3[0]):
@@ -238,10 +228,6 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
     print("!!! inaccurate IMAG integral at nu_l/nu = " + "{:6.4f}".format(nu_l3/nu) + " " + str(imag_integral_3) + " " + str(imag_integral_3[1]/abs(imag_integral_3[0])) 
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
-  #n_disp_2s = integrate.quad(integrand_for_disp_els_L1,nu_l1,2000*nu_l1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
-  #n_disp_2p1_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l2,2000*nu_l2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
-  #n_disp_2p3_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l3,2000*nu_l3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
-
   alpha_L_sugiura_damp = complex(integral_1+integral_2+integral_3*2,imag_integral_1[0]+imag_integral_2[0]+2*imag_integral_3[0])
   ausdruck = (alpha_L_sugiura_damp)/(1-4.0*math.pi/3*alpha_L_sugiura_damp*prefactor)
   factor = pow(nu,2)
@@ -254,26 +240,16 @@ def m_with_imag(Z=None, ener=8047.8, disp_only=False):
     return
   if Z == None:
     Z = 6
-  Z_s_sq1 = pow(get_Zeff_3s(Z),2)
-  Z_s_sq2 = pow(get_Zeff_3p_1_2(Z),2)
-  Z_s_sq3 = pow(get_Zeff_3p_3_2(Z),2)
-  Z_s_sq4 = pow(get_Zeff_3d_3_2(Z),2)
-  Z_s_sq5 = pow(get_Zeff_3d_5_2(Z),2)
-  e_ion_1 = get_ionization_energy_3s(Z)
-  e_ion_2 = get_ionization_energy_3p_1_2(Z)
-  e_ion_3 = get_ionization_energy_3p_3_2(Z)
-  e_ion_4 = get_ionization_energy_3d_3_2(Z)
-  e_ion_5 = get_ionization_energy_3d_5_2(Z)
-  nu_m1 = e_ion_1 / h
-  nu_m2 = e_ion_2 / h
-  nu_m3 = e_ion_3 / h
-  nu_m4 = e_ion_4 / h
-  nu_m5 = e_ion_5 / h
-  delta_m1 = 1 + alpha_sq * Z_s_sq1 * 0.25 - 9*e_ion_1/(Ryd_ener * Z_s_sq1) #33 in Hoenl
-  delta_m2 = 1 + alpha_sq * Z_s_sq2 * 0.25 - 9*e_ion_2/(Ryd_ener * Z_s_sq2) #33 in Hoenl
-  delta_m3 = 1 + alpha_sq * Z_s_sq3 / 12 - 9*e_ion_3/(Ryd_ener * Z_s_sq3) #33 in Hoenl
-  delta_m4 = 1 + alpha_sq * Z_s_sq4 / 12 - 9*e_ion_4/(Ryd_ener * Z_s_sq4) #33 in Hoenl
-  delta_m5 = 1 + alpha_sq * Z_s_sq5 / 36 - 9*e_ion_5/(Ryd_ener * Z_s_sq5) #33 in Hoenl
+  nu_m1 = get_ionization_energy_3s(Z)    / h
+  nu_m2 = get_ionization_energy_3p_1_2(Z)/ h
+  nu_m3 = get_ionization_energy_3p_3_2(Z)/ h
+  nu_m4 = get_ionization_energy_3d_3_2(Z)/ h
+  nu_m5 = get_ionization_energy_3d_5_2(Z)/ h
+  delta_m1 = delta(Z,3,0,0)
+  delta_m2 = delta(Z,3,1,0.5)
+  delta_m3 = delta(Z,3,1,1.5)
+  delta_m4 = delta(Z,3,2,1.5)
+  delta_m5 = delta(Z,3,2,3.5)
   n_0_1 = nu_m1/(1-delta_m1) #22 in Hoenl
   n_0_2 = nu_m2/(1-delta_m2) #22 in Hoenl
   n_0_3 = nu_m3/(1-delta_m3) #22 in Hoenl
@@ -288,11 +264,11 @@ def m_with_imag(Z=None, ener=8047.8, disp_only=False):
   x_j5 = nu_m5*1E-6
   
   if disp_only == True:
-    n_disp_3s    = integrate.quad(integrand_for_disp_els_M1   ,nu_m1,40000*nu_m1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
-    n_disp_3p1_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m2,40000*nu_m2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
-    n_disp_3p3_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m3,40000*nu_m3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
-    n_disp_3d3_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m4,40000*nu_m4,args=(n_0_4),limit=200000,epsabs=1E-60)[0]
-    n_disp_3d5_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m5,40000*nu_m5,args=(n_0_5),limit=200000,epsabs=1E-60)[0]
+    n_disp_3s    = integrate.quad(integrand_for_disp_els_M1   ,nu_m1,100000*nu_m1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
+    n_disp_3p1_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m2,100000*nu_m2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
+    n_disp_3p3_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m3,100000*nu_m3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
+    n_disp_3d3_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m4,100000*nu_m4,args=(n_0_4),limit=200000,epsabs=1E-60)[0]
+    n_disp_3d5_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m5,100000*nu_m5,args=(n_0_5),limit=200000,epsabs=1E-60)[0]
 
     return 2*n_disp_3s+2*n_disp_3p1_2+4*n_disp_3p3_2+4*n_disp_3d3_2+6*n_disp_3d5_2
 
@@ -629,7 +605,7 @@ if __name__ == '__main__':
 
     axs[3,0].plot(x,y_d_real,':',label="%s"%elements[i])
     axs[3,1].plot(x,y_d_imag,':',label="%s"%elements[i])
-    #axs[3,0].axhline(y=-(n_disp_K+n_disp_L+n_disp_M), color="gray", linestyle="--")
+    axs[3,0].axhline(y=0, color="gray", linestyle="--")
 
   axs[0, 0].set_title('K Real')
   axs[1, 0].set_title('L Real')

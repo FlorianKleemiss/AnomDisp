@@ -438,19 +438,15 @@ def apply_angle_part_d_orthogonal(vals,_k, theta0, alpha, l):
 
 def calc_Intensity_s_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, el_nr):
   if n0 == 1:
-    ener = get_ionization_energy_1s(el_nr)
-    z_temp = nu_in / (ener / h)
-    Z_s_sq = pow(get_Zeff_1s(el_nr),2)
-    nu_k = ener / h
-    delta_K = 1 + alpha_sq * Z_s_sq / 4 - ener/(Ryd_ener * Z_s_sq) #21a in Hoenl
+    z_temp = nu_in / (get_ionization_energy_1s(el_nr) / h)
+    de = delta(el_nr,1,0,0)
   elif n0 == 2:
-    ener = get_ionization_energy_2s(el_nr)
-    z_temp = nu_in / (ener / h)
-    Z_s_sq1 = pow(get_Zeff_2s(el_nr),2)
-    nu_l1 = ener / h
-    delta_K = 1 + alpha_sq * Z_s_sq1 * 0.3125 - 4*ener/(Ryd_ener * Z_s_sq1) #33 in Hoenl
+    z_temp = nu_in / (get_ionization_energy_2s(el_nr) / h)
+    de = delta(el_nr,2,0,0)
   elif n0 == 3:
     z_temp = nu_in / (get_ionization_energy_3s(el_nr) / h)
+    de = delta(el_nr,3,0,0)
+  z_temp /= (1-de)
 
   par = 0
   orth = 0
@@ -468,7 +464,7 @@ def calc_Intensity_s_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, el_nr):
     par += alpha_coef(l,1,1,t0,alpha_loc) * temp
     orth += beta_coef(l,1,1,t0,alpha_loc) * temp
   
-  return par**2 + orth**2
+  return (par**2 + orth**2)/constant_factor**2
 
 def calc_Intensity_p_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, subshell, el_nr):
   if n0 == 1:
@@ -477,13 +473,18 @@ def calc_Intensity_p_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, subshell, e
   elif n0 == 2:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_2p1_2(el_nr) / h)
+      de = delta(el_nr,2,1,0.5)
     else:
       z_temp = nu_in / (get_ionization_energy_2p3_2(el_nr) / h)
+      de = delta(el_nr,2,1,1.5)
   elif n0 == 3:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_3p_1_2(el_nr) / h)
+      de = delta(el_nr,3,1,0.5)
     else:
       z_temp = nu_in / (get_ionization_energy_3p_3_2(el_nr) / h)
+      de = delta(el_nr,3,1,1.5)
+  z_temp /= (1-de)
 
   par = 0
   orth = 0
@@ -504,7 +505,7 @@ def calc_Intensity_p_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, subshell, e
           orth += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alpha_loc, fac[num])
   
   #Has division by 3**2 to avergae over all 3 p orbitals a.k.a. the p-wonder
-  return (par**2 + orth**2) / 9
+  return (par**2 + orth**2) / 9/constant_factor**2
 
 def calc_Intensity_d_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, subshell, el_nr):
   if n0 == 1:
@@ -537,7 +538,7 @@ def calc_Intensity_d_orbital(alpha_loc, nu_in, t0, l_max, p_max, n0, subshell, e
           par += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alpha_loc, fac[num])
           orth += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alpha_loc, fac[num])
   #Has division by 5**2 to accomodate the averaging over 5 d orbtials  a.k.a. the d-wonder
-  return (par**2 + orth**2) / 25.0
+  return (par**2 + orth**2) / 25.0 /constant_factor**2
 
 def calc_stuff(nu_in, t0, l_max, p_max, el_nr):
   #Integrate Intensity over all poalrization angles alpha and then divide by 2pi
@@ -569,13 +570,12 @@ def calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr):
 
   return t1,t2,t3,t4+4*t5,t6+4*t7,9*t8+4*t9
 
-def fdp_from_z(z,n0, delta_K, nu_0):
+def fdp_from_z(z, delta, osz_func):
   if z<1:  return 0
-  #res = -eta_K(z,n0,nu_0,delta_K)
-  emd = 1 - delta_K
+  emd = 1 - delta
   z_eff = emd * z
-  #nu = z * nu_0 / emd
-  return math.pi*2**7/3.0 *sugiura_exps(z_eff,n0)/z_eff**5
+  return osz_func(z_eff)*2*math.pi
+  #return 2**7/3.0 *sugiura_exps(z_eff,n0)/z_eff**3*math.pi
 
 def eta_K(z,n0,nu_0,delta_K):
   emd = 1 - delta_K
@@ -1957,16 +1957,57 @@ if __name__ == "__main__":
     
     x2 = speed_of_light / x * 1E10
     achse_z = x / (get_ionization_energy_1s(el_nr) / h)
+    achse_z1 = x / (get_ionization_energy_2s(el_nr) / h)
+    achse_z2 = x / (get_ionization_energy_2p1_2(el_nr) / h)
+    achse_z3 = x / (get_ionization_energy_2p3_2(el_nr) / h)
+    achse_zm1 = x / (get_ionization_energy_3s(el_nr) / h)
+    achse_zm2 = x / (get_ionization_energy_3p_1_2(el_nr) / h)
+    achse_zm3 = x / (get_ionization_energy_3p_3_2(el_nr) / h)
+    achse_zm4 = x / (get_ionization_energy_3d_3_2(el_nr) / h)
+    achse_zm5 = x / (get_ionization_energy_3d_5_2(el_nr) / h)
     fdp_nach_hoenl = np.zeros_like(achse_z)
-    nu_0 = (get_ionization_energy_1s(el_nr) / h)
-    Z_s_sq = pow(get_Zeff_1s(el_nr),2)
-    e_ion = get_ionization_energy_1s(el_nr)
-    nu_k = e_ion / h
-    delta_K = 1 + alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+    fdp_nach_EM = np.zeros_like(achse_z)
+    fdp_nach_Wa = np.zeros_like(achse_z)
+    delta_K = delta(el_nr,1,0,0)
+    delta_l1 = delta(el_nr,2,0,0)
+    delta_l2 = delta(el_nr,2,1,0.5)
+    delta_l3 = delta(el_nr,2,1,1.5)
+    delta_m1 = delta(el_nr,3,0,0)
+    delta_m2 = delta(el_nr,3,1,0.5)
+    delta_m3 = delta(el_nr,3,1,1.5)
+    delta_m4 = delta(el_nr,3,2,1.5)
+    delta_m5 = delta(el_nr,3,2,3.5)
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-      res = pool.starmap(fdp_from_z, zip(achse_z, repeat(1), repeat(delta_K), repeat(nu_0)))
+      res = pool.starmap(fdp_from_z, zip(achse_z, repeat(delta_K), repeat(f_s_1_hoenl)))
       for i,r in enumerate(res):
         fdp_nach_hoenl[i] = r
+      
+      res = pool.starmap(fdp_from_z, zip(achse_z1, repeat(delta_l1), repeat(f_s_1_EM)))
+      for i,r in enumerate(res):
+        fdp_nach_EM[i] += r
+      res = pool.starmap(fdp_from_z, zip(achse_z2, repeat(delta_l2), repeat(f_p_1_EM)))
+      for i,r in enumerate(res):
+        fdp_nach_EM[i] += r
+      res = pool.starmap(fdp_from_z, zip(achse_z3, repeat(delta_l3), repeat(f_p_1_EM)))
+      for i,r in enumerate(res):
+        fdp_nach_EM[i] += 2*r
+      
+      res = pool.starmap(fdp_from_z, zip(achse_zm1, repeat(delta_m1), repeat(f_s_1_WA)))
+      for i,r in enumerate(res):
+        fdp_nach_Wa[i] += r
+      res = pool.starmap(fdp_from_z, zip(achse_zm2, repeat(delta_m2), repeat(f_p_1_WA)))
+      for i,r in enumerate(res):
+        fdp_nach_Wa[i] += r
+      res = pool.starmap(fdp_from_z, zip(achse_zm3, repeat(delta_m3), repeat(f_p_1_WA)))
+      for i,r in enumerate(res):
+        fdp_nach_Wa[i] += 2*r
+        res = pool.starmap(fdp_from_z, zip(achse_zm4, repeat(delta_m4), repeat(f_d_1_WA)))
+      for i,r in enumerate(res):
+        fdp_nach_Wa[i] += 3*r
+      res = pool.starmap(fdp_from_z, zip(achse_zm5, repeat(delta_m5), repeat(f_d_1_WA)))
+      for i,r in enumerate(res):
+        fdp_nach_Wa[i] += 2*r
+      
     fig, axes = plt.subplots(3,3)
 
     def plot_stuff(ax,o,p,t,name):
@@ -1984,7 +2025,7 @@ if __name__ == "__main__":
       ax.plot(x2,t,color='r',label="total")
       ax.axhline(y=0,linestyle='dashed',color='gray')
       ax.set_title(name, y=1.0, pad=-14)
-    factor_x = 1E18/x
+    factor_x = 2*math.pi
     plot(axes[0,0],np.sqrt(k_s)*factor_x,name="K-shell s-electrons")
     plot(axes[1,0],np.sqrt(l_s)*factor_x,name="L-shell s-electrons")
     plot(axes[2,0],np.sqrt(m_s)*factor_x,name="M-shell s-electrons")
@@ -2010,13 +2051,16 @@ if __name__ == "__main__":
     axes[0,2].plot(x2,brennan_fdp,color='r',label="brennan")
     axes[0,2].plot(x2,hönl,color='b',label="hönl")
 
-    axes[0,2].scatter(x2,fdp_nach_hoenl,facecolors='none',edgecolors='g',marker='^',label="hönl purely paper")
-    axes[0,1].scatter(x2,fdp_nach_hoenl,facecolors='none',edgecolors='g',marker='^',label="hönl purely paper")
+    axes[0,1].scatter(x2,fdp_nach_hoenl,facecolors='none',edgecolors='g',marker='^',label="K purely paper")
+    axes[0,1].scatter(x2,fdp_nach_EM,facecolors='none',edgecolors='b',marker='^',label="L purely paper")
+    axes[0,1].scatter(x2,fdp_nach_Wa,facecolors='none',edgecolors='r',marker='^',label="M purely paper")
+    
+    axes[0,2].scatter(x2,fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl,facecolors='none',edgecolors='k',marker='^',label="total purely paper")
 
     axes[1,2].plot(x2,resy_br/brennan_fdp,color='k',label="ratio all/brennan")
     axes[1,2].plot(x2,hönl/brennan_fdp,color='b',label="ratio hönl/brennan")
     axes[1,2].plot(x2,resy_br/hönl,color='g',label="ratio all/hönl")
-    axes[1,2].plot(x2,fdp_nach_hoenl/hönl_K,color='r',label="ratio hönl/hönl_integral")
+    axes[1,2].plot(x2,(fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl)/hönl,color='r',label="ratio hönl/hönl_integral")
     axes[1,2].axhline(y=1,linestyle='dashed',color='gray')
 
     def transform(input):
