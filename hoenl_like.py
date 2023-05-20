@@ -101,13 +101,14 @@ def sugiura_k(Z=None, ener=8047.8, disp_only=False):
   delta_K = 1 + alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
   n_0 = nu_k/(1-delta_K) #22 in Hoenl
   nu = ener / h #Cu alpha: 8047.8 eV, molly 17450 eV
-  epsilon2 = 0.005
-  x_j = nu_k*1E-6
+  epsilon2 = 0.1
+  x_j = get_line_width_K(Z)/h
   #integral_test = integrate.quad(integrand_damped_abs,nu_k,50*nu,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
   #integrating directly as one intergal with the singulary position as point does not work.
   
   if disp_only == True:
     n_disp_el = integrate.quad(integrand_for_disp_els_K,nu_k,20000*nu_k,args=(n_0),limit=200000,epsabs=1E-60)[0]
+
     return 2*n_disp_el
 
   #REAL PART
@@ -121,13 +122,13 @@ def sugiura_k(Z=None, ener=8047.8, disp_only=False):
   integral = inte1[0] + inte2[0]
   #IMAG PART
   lower_limit = nu_k
-  if (1-epsilon2)*nu > nu_k:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_k:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_k:
-    upper_limit = 10*nu_k
+    upper_limit = 1000*nu_k
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j,nu,n_0,integrand_for_disp_els_K),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
+  imag_integral = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j,nu,n_0,integrand_for_disp_els_K),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10)
   if imag_integral[1] > 0.5*abs(imag_integral[0]):
     print("!!! inaccurate IMAG integral at nu_k/nu = " + "{:6.4f}".format(nu_k/nu) + " " + str(imag_integral) + " " + str(imag_integral[1]/abs(imag_integral[0])) + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
@@ -149,19 +150,19 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
   delta_l1 =  delta(Z,2,0,0)
   delta_l2 =  delta(Z,2,1,0.5)
   delta_l3 =  delta(Z,2,1,1.5)
+  nu = ener / h #Cu alpha: 8047.8 eV, molly 17450 eV
+  epsilon2 = 0.1
+  x_j1 = get_line_width_Ls(Z)/h
+  x_j2 = get_line_width_Lp_1_2(Z)/h
+  x_j3 = get_line_width_Lp_3_2(Z)/h
   n_0_1 = nu_l1/(1-delta_l1) #22 in Hoenl
   n_0_2 = nu_l2/(1-delta_l2) #22 in Hoenl
   n_0_3 = nu_l3/(1-delta_l3) #22 in Hoenl
-  nu = ener / h #Cu alpha: 8047.8 eV, molly 17450 eV
-  epsilon2 = 0.0025
-  x_j1 = nu_l1*1E-6
-  x_j2 = nu_l2*1E-6
-  x_j3 = nu_l3*1E-6
   
   if disp_only == True:
-    n_disp_2s = integrate.quad(integrand_for_disp_els_L1,nu_l1,200000*nu_l1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
-    n_disp_2p1_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l2,200000*nu_l2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
-    n_disp_2p3_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l3,200000*nu_l3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
+    n_disp_2s = integrate.quad(integrand_for_disp_els_L1,nu_l1,80000*nu_l1,args=(n_0_1),limit=200000,epsabs=1E-12)[0]
+    n_disp_2p1_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l2,100000*nu_l2,args=(n_0_2),limit=200000,epsabs=1E-12)[0]
+    n_disp_2p3_2 = integrate.quad(integrand_for_disp_els_L2_3,nu_l3,100000*nu_l3,args=(n_0_3),limit=200000,epsabs=1E-12)[0]
 
     return 2*n_disp_2s+2*n_disp_2p1_2+4*n_disp_2p3_2
 
@@ -193,10 +194,10 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
 
   #IMAG PART
   lower_limit = nu_l1
-  if (1-epsilon2)*nu > nu_l1:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_l1:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_l1:
-    upper_limit = 10*nu_l1
+    upper_limit = 1000*nu_l1
   else:
     upper_limit = (1+epsilon2)*nu
   imag_integral_1 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j1,nu,n_0_1,integrand_for_disp_els_L1),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
@@ -205,10 +206,10 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
   lower_limit = nu_l2
-  if (1-epsilon2)*nu > nu_l2:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_l2:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_l2:
-    upper_limit = 10*nu_l2
+    upper_limit = 1000*nu_l2
   else:
     upper_limit = (1+epsilon2)*nu
   imag_integral_2 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j2,nu,n_0_2,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
@@ -217,10 +218,10 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
   
   lower_limit = nu_l3
-  if (1-epsilon2)*nu > nu_l3:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_l3:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_l3:
-    upper_limit = 10*nu_l3
+    upper_limit = 1000*nu_l3
   else:
     upper_limit = (1+epsilon2)*nu
   imag_integral_3 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j3,nu,n_0_3,integrand_for_disp_els_L2_3),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
@@ -249,26 +250,26 @@ def m_with_imag(Z=None, ener=8047.8, disp_only=False):
   delta_m2 = delta(Z,3,1,0.5)
   delta_m3 = delta(Z,3,1,1.5)
   delta_m4 = delta(Z,3,2,1.5)
-  delta_m5 = delta(Z,3,2,3.5)
+  delta_m5 = delta(Z,3,2,2.5)
   n_0_1 = nu_m1/(1-delta_m1) #22 in Hoenl
   n_0_2 = nu_m2/(1-delta_m2) #22 in Hoenl
   n_0_3 = nu_m3/(1-delta_m3) #22 in Hoenl
   n_0_4 = nu_m4/(1-delta_m4) #22 in Hoenl
   n_0_5 = nu_m5/(1-delta_m5) #22 in Hoenl
   nu = ener / h #Cu alpha: 8047.8 eV, molly 17450 eV
-  epsilon2 = 0.0015
-  x_j1 = nu_m1*1E-6
-  x_j2 = nu_m2*1E-6
-  x_j3 = nu_m3*1E-6
-  x_j4 = nu_m4*1E-6
-  x_j5 = nu_m5*1E-6
+  epsilon2 = 0.1
+  x_j1 = nu_m1*1E-3
+  x_j2 = nu_m2*1E-3
+  x_j3 = nu_m3*1E-3
+  x_j4 = nu_m4*1E-3
+  x_j5 = nu_m5*1E-3
   
   if disp_only == True:
-    n_disp_3s    = integrate.quad(integrand_for_disp_els_M1   ,nu_m1,100000*nu_m1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
-    n_disp_3p1_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m2,100000*nu_m2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
-    n_disp_3p3_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m3,100000*nu_m3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
-    n_disp_3d3_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m4,100000*nu_m4,args=(n_0_4),limit=200000,epsabs=1E-60)[0]
-    n_disp_3d5_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m5,100000*nu_m5,args=(n_0_5),limit=200000,epsabs=1E-60)[0]
+    n_disp_3s    = integrate.quad(integrand_for_disp_els_M1   ,nu_m1,10000*nu_m1,args=(n_0_1),limit=200000,epsabs=1E-60)[0]
+    n_disp_3p1_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m2,10000*nu_m2,args=(n_0_2),limit=200000,epsabs=1E-60)[0]
+    n_disp_3p3_2 = integrate.quad(integrand_for_disp_els_M_2_3,nu_m3,10000*nu_m3,args=(n_0_3),limit=200000,epsabs=1E-60)[0]
+    n_disp_3d3_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m4,10000*nu_m4,args=(n_0_4),limit=200000,epsabs=1E-60)[0]
+    n_disp_3d5_2 = integrate.quad(integrand_for_disp_els_M_4_5,nu_m5,10000*nu_m5,args=(n_0_5),limit=200000,epsabs=1E-60)[0]
 
     return 2*n_disp_3s+2*n_disp_3p1_2+4*n_disp_3p3_2+4*n_disp_3d3_2+6*n_disp_3d5_2
 
@@ -316,61 +317,61 @@ def m_with_imag(Z=None, ener=8047.8, disp_only=False):
 
   #IMAG PART
   lower_limit = nu_m1
-  if (1-epsilon2)*nu > nu_m1:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_m1:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_m1:
-    upper_limit = 100*nu_m1
+    upper_limit = 1000*nu_m1
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral_1 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j1,nu,n_0_1,integrand_for_disp_els_M1),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
+  imag_integral_1 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j1,nu,n_0_1,integrand_for_disp_els_M1),points=nu,limit=200000,epsabs=1E-60,epsrel=1E-10,full_output=2)
   if imag_integral_1[1] > 0.5*abs(imag_integral_1[0]):
     print("!!! inaccurate IMAG integral at nu_m1/nu = " + "{:6.4f}".format(nu_m1/nu) + " " + str(imag_integral_1[0]) + " " + str(imag_integral_1[1]/abs(imag_integral_1[0])) 
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
   lower_limit = nu_m2
-  if (1-epsilon2)*nu > nu_m2:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_m2:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_m2:
-    upper_limit = 100*nu_m2
+    upper_limit = 1000*nu_m2
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral_2 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j2,nu,n_0_2,integrand_for_disp_els_M_2_3),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
+  imag_integral_2 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j2,nu,n_0_2,integrand_for_disp_els_M_2_3),points=nu,limit=200000,epsabs=1E-60,epsrel=1E-10,full_output=2)
   if imag_integral_2[1] > 0.5*abs(imag_integral_2[0]):
     print("!!! inaccurate IMAG integral at nu_m2/nu = " + "{:6.4f}".format(nu_m2/nu) + " " + str(imag_integral_2[0]) + " " + str(imag_integral_2[1]/abs(imag_integral_2[0])) 
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
   
   lower_limit = nu_m3
-  if (1-epsilon2)*nu > nu_m3:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_m3:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_m3:
-    upper_limit = 100*nu_m3
+    upper_limit = 1000*nu_m3
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral_3 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j3,nu,n_0_3,integrand_for_disp_els_M_2_3),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
+  imag_integral_3 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j3,nu,n_0_3,integrand_for_disp_els_M_2_3),points=nu,limit=200000,epsabs=1E-60,epsrel=1E-10,full_output=2)
   if imag_integral_3[1] > 0.5*abs(imag_integral_3[0]):
     print("!!! inaccurate IMAG integral at nu_m3/nu = " + "{:6.4f}".format(nu_m3/nu) + " " + str(imag_integral_3[0]) + " " + str(imag_integral_3[1]/abs(imag_integral_3[0])) 
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
   lower_limit = nu_m4
-  if (1-epsilon2)*nu > nu_m4:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_m4:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_m4:
-    upper_limit = 100*nu_m4
+    upper_limit = 1000*nu_m4
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral_4 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j4,nu,n_0_4,integrand_for_disp_els_M_4_5),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
+  imag_integral_4 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j4,nu,n_0_4,integrand_for_disp_els_M_4_5),points=nu,limit=200000,epsabs=1E-60,epsrel=1E-10,full_output=2)
   if imag_integral_4[1] > 0.5*abs(imag_integral_4[0]):
     print("!!! inaccurate IMAG integral at nu_m3/nu = " + "{:6.4f}".format(nu_m4/nu) + " " + str(imag_integral_4[0]) + " " + str(imag_integral_4[1]/abs(imag_integral_4[0])) 
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
 
   lower_limit = nu_m5
-  if (1-epsilon2)*nu > nu_m5:
-    lower_limit = (1-epsilon2)*nu
+  #if (1-epsilon2)*nu > nu_m5:
+  #  lower_limit = (1-epsilon2)*nu
   if (1+epsilon2)*nu < nu_m5:
-    upper_limit = 100*nu_m5
+    upper_limit = 1000*nu_m5
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral_5 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j5,nu,n_0_5,integrand_for_disp_els_M_4_5),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
+  imag_integral_5 = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j5,nu,n_0_5,integrand_for_disp_els_M_4_5),points=nu,limit=200000,epsabs=1E-60,epsrel=1E-10,full_output=2)
   if imag_integral_5[1] > 0.5*abs(imag_integral_5[0]):
     print("!!! inaccurate IMAG integral at nu_m3/nu = " + "{:6.4f}".format(nu_m5/nu) + " " + str(imag_integral_5[0]) + " " + str(imag_integral_5[1]/abs(imag_integral_5[0])) 
     + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
@@ -484,7 +485,7 @@ if __name__ == '__main__':
   import matplotlib.pyplot as plt
   fig, axs = plt.subplots(4,2,sharex=True)
   stop = False
-  Zs = [52]
+  Zs = [42,52,92]
   edges = []
   L_edges = []
   M_edges = []
@@ -547,7 +548,7 @@ if __name__ == '__main__':
     elif axis == "Angstrom":
       minimal = 1000
       maximal = 30000
-      nr_steps = 50
+      nr_steps = 5
       for step in range(int(minimal),int(maximal),int(nr_steps)):
         steps.append(step)
     elif axis == "fixed":
@@ -677,8 +678,8 @@ def sugiura_k_purely_imag(Z=None, ener=8047.8):
   #delta_K = 0
   n_0 = nu_k/(1-delta_K) #22 in Hoenl
   nu = ener / h #Cu alpha: 8047.8 eV, molly 17450 eV
-  epsilon2 = 0.0015
-  x_j = nu_k*1E-6
+  epsilon2 = 0.1
+  x_j = get_line_width_K(Z)/h
 
   #IMAG PART
   lower_limit = nu_k
@@ -690,4 +691,4 @@ def sugiura_k_purely_imag(Z=None, ener=8047.8):
     upper_limit = (1+epsilon2)*nu
   imag_integral = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j,nu,n_0,integrand_for_disp_els_K),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10,full_output=2)
   
-  return imag_integral[0]
+  return -imag_integral[0]

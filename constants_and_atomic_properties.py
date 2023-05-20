@@ -15,6 +15,7 @@ r_0 = pow(el_charge,2)/el_charge/pow(speed_of_light,2)
 r_0_for_nu = pow(el_charge,2)/el_charge
 angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
 barn2bohr = 2.80028520539078E+7
+constant_factor = 4*math.pi*math.pi*el_mass/h/h #p_0 according to Hönl's Waller paper (1933) Page 646
 
 def sugiura_exps(z,n_0):
   z_1 = z-1
@@ -47,12 +48,17 @@ relcor = [ 0.0, 0.0,                                                            
            2.15700006,           2.22099996, 2.28699994, 2.35299993, 2.42100000, 2.49000001]  
 
 def exp_from_z(z,n_0):
+  z_1 = z-1
+  temp = 0.0
+  sqrt_var = numpy.sqrt(abs(z_1))
+  if(z<=1):
+    temp -= 2/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
+  temp += numpy.arctan(sqrt_var)/sqrt_var
+  return math.exp(-2*n_0*temp)
   return math.exp(-2*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
 def exp_squared_from_z(z,n_0):
-  return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
-
-def exp_squared_from_z(z,n_0):
+  return exp_from_z(z,n_0)**2
   return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
 def delta(Z,n0,l,j):
@@ -106,7 +112,7 @@ def delta(Z,n0,l,j):
         e_ion = get_ionization_energy_3d_3_2(Z)
         delta_m4 = 1 + alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
         return delta_m4
-      elif j == 3.5:
+      elif j == 2.5:
         Z_s_sq = pow(get_Zeff_3d_5_2(Z),2)
         e_ion = get_ionization_energy_3d_5_2(Z)
         delta_m5 = 1 + alpha_sq * Z_s_sq /36 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
@@ -182,11 +188,11 @@ def get_ionization_energy_2s(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=3:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     import numpy as np
     from scipy.optimize import curve_fit
     def func(x,a1,a2,a3,a4,a5,b1,c):
@@ -227,11 +233,11 @@ def get_ionization_energy_2p1_2(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=5:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     import numpy as np
     from scipy.optimize import curve_fit
     def func(x,n1,n2,n3,n4,n5,m1,o):
@@ -272,11 +278,11 @@ def get_ionization_energy_2p3_2(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=7:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     import numpy as np
     from scipy.optimize import curve_fit
     def func(x,n1,n2,n3,n4,n5,m1,o):
@@ -317,11 +323,11 @@ def get_ionization_energy_3s(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   import numpy as np
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
@@ -362,11 +368,11 @@ def get_ionization_energy_3p_1_2(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   import numpy as np
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
@@ -407,11 +413,11 @@ def get_ionization_energy_3p_3_2(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   import numpy as np
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
@@ -452,11 +458,11 @@ def get_ionization_energy_3d_3_2(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   import numpy as np
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
@@ -497,11 +503,11 @@ def get_ionization_energy_3d_5_2(Z):
     result = float(ionization_energies[Z-1])
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z*Z*Z + a4*Z*Z + a5*Z + c)
+    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   import numpy as np
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):

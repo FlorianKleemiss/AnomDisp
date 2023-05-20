@@ -1,7 +1,6 @@
 import math
 import numpy as np
 from constants_and_atomic_properties import *
-import scipy.special as special
 
 def z_EE(E,E2):
   return (E+abs(E2))/abs(E2)
@@ -13,7 +12,10 @@ def z_nprime(n_prime, n_0):
   return n_0*n_0/pow(n_prime,2) + 1
 
 def n_prime_from_z(z,n_0):
-  return n_0/math.sqrt(z-1)
+  if z>=1:
+    return n_0/math.sqrt(z-1)
+  else:
+    return n_0/math.sqrt((1-z))
 
 def z_nunu(nu_j, nu_2):
   return nu_j/nu_2
@@ -44,6 +46,7 @@ def k(E):
 def n_prime(E, Z, n,l):
   return 2*b(n,l,Z)/k(E)
 
+#introduces m^3 / pi
 def N0_square(b_):
   return pow(b_,3)/math.pi
 
@@ -51,18 +54,18 @@ def N0(b_):
   return math.sqrt(N0_square(b_))
 
 def product_n_prime_from_z(n_0,z,l):
-  n_p = n_0/math.sqrt(z-1)
+  n_p = n_prime_from_z(z,n_0)
   fact = 1.0
   for nu in range(1,l+1):
-    #print(nu)
     fact *= n_p * n_p + nu*nu
   denom = 1-math.exp(-2*math.pi*n_p)
   return fact/denom
-  
+
+#Introduces factors 2pi m_e /h^2 and m
 def N_square_from_z(l, m, b_, n_0, z):
   if (m > l):
     return 0
-  result = 2*(2*l+1)*math.factorial(l-m)/math.factorial(l+m) * 2 * n_0 * math.pi * el_mass/h/h * b_ * product_n_prime_from_z(n_0,z,l)
+  result = (2*l+1)*math.factorial(l-m)/math.factorial(l+m) * constant_factor / math.pi * n_0 * b_ * product_n_prime_from_z(n_0,z,l)
   if m >= 1:
     result *= 2
   return result
@@ -79,7 +82,7 @@ def N_lm_from_z(l,m,z,b_,n_0):
 def N_lm_square_from_z(l,m,z,b_,n_0):
   return N_square(l,m,b_,n_0,z)
   
-  
+#2pi m/s^2 
 def q(nu):
   return 2*math.pi*nu/speed_of_light
 
@@ -92,7 +95,7 @@ def delta(a,b):
 ######################### BEGIN OF MAKING K_p,l #######################################################
 
 def prepare_M(p,l,z,n_0):
-  nprime = n_0/math.sqrt(z-1)
+  nprime = n_prime_from_z(z,n_0)
   M = np.zeros((p+2,p+2),dtype=complex)
   M.fill(complex(0.0,0.0))
   M[0,0] = complex(1.0,0)
@@ -116,17 +119,21 @@ def g_from_M(M, xhi, j):
 def K_recursive_from_z(p, l, b_, z, n_0):
   if l > p+1:
     return 0
-  xhi = complex(0,1/(2*math.sqrt(z-1)))
-  banane = g_from_M(prepare_M(p,l,z, n_0), xhi, p+1-l)
   zm1 = z-1
+  if z<= 1:
+    zm1 = abs(zm1)
+  xhi = complex(0,1/(2*math.sqrt(zm1)))
+  banane = g_from_M(prepare_M(p,l,z, n_0), xhi, p+1-l)
   part1 = -pow(2,p+3+l) \
     * complex(0,math.pi) \
     * pow(math.sqrt(zm1),p+2+l) \
     / pow(-z,p+2) \
     / pow(complex(0,b_),p+2-l)
   ex = exp_from_z(z,n_0)
-  return part1 * banane * ex
-
+  if z<= 1:
+    return -part1 * banane * ex
+  else:
+    return part1 * banane * ex
 ################### END OF CALC K ############################################
 ################### BEGIN CALC J  ############################################
 
@@ -245,326 +252,332 @@ W22 = make_matrix_W(2, 2, 20)
 W31 = make_matrix_W(3, 1, 20)
 W33 = make_matrix_W(3, 3, 20)
 ################################# END OF CALC Js ###################################    
-if True:
-  def C_l_from_z(b_, z, n_0, l, nu, p_limit):
-    k_ = b_*math.sqrt(z-1)
-    part1 = b_/pow(-2*k_,l+1)
-    sum = 0
-    for p in range(p_limit):
-      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J_ = J(1,p,1,l,W11)
-      if (J_ == 0):
-        continue
-      K1 = K_recursive_from_z(p,l,b_,z, n_0)
-      K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
-      K2_mod = b_/2*K2
-      sum += n1 * J_ * (K1-K2_mod)
-    return part1 * sum
-  
-  def A_l_from_z(b_, z, n_0, l, nu, p_limit):
-    k_ = b_*math.sqrt(z-1)
-    part1 = b_/2/pow(-2*k_,l+1)
-    sum = 0
-    for p in range(p_limit):
-      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J1 = J(1,p,1,l,W11)
-      if (J == 0):
-        continue
-      K1 = K_recursive_from_z(p,l,b_,z, n_0)
-      sum += n1 * J1 * K1
-    return part1 * sum
-    
-  def B2_from_z(b_, z, n_0, l, nu, p_limit):
-    k_ = b_*math.sqrt(z-1)
-    part1 = b_*b_/(4*pow(-2*k_,l+1))
-    sum = 0
-    for p in range(p_limit):
-      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J1 = J(2,p,2,l,W22)
-      if (J1 == 0):
-        continue
-      K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-      sum += n1 * J1 * K1
-    return part1 * sum
-  
-  def B1_from_z(b_, z, n_0, l, nu, p_limit):
-    k_ = b_*math.sqrt(z-1)
-    part1 = b_*b_/(2*pow(-2*k_,l+1))
-    sum = 0
-    for p in range(p_limit):
-      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J1 = J(1,p+1,1,l,W11)
-      if J == 0:
-        continue
-      K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-      sum += n1 * J1 * K1
-    return part1 * sum
-    
-  def B0_from_z(b_, z, n_0, l, nu, p_limit):
-    k_ = b_*math.sqrt(z-1)
-    part1 = b_/pow(-2*k_,l+1)
-    sum = 0
-    for p in range(p_limit):
-      n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-      J1 = 0.25 * J(2,p,0,l, W20)
-      J2 = J(0,p,0,l, W00)
-      if J1 == 0 and J2 == 0:
-        continue
-      K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-      K2 = K_recursive_from_z(p,l,b_,z,n_0)
-      sum += n1 * (2*b_*J1 * K1 - J2 * K2)
-    return part1 * sum
+#def A_l_from_z(b_, z, n_0, l, nu, p_limit):
+#  part1 = b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
+#  sum = 0
+#  for p in range(p_limit):
+#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+#    J1 = J(1,p,1,l,W11)
+#    if (J == 0):
+#      continue
+#    K1 = K_recursive_from_z(p,l,b_,z, n_0)
+#    sum += n1 * J1 * K1
+#  return part1 * sum
+#
+#def C_l_from_z(b_, z, n_0, l, nu, p_limit):
+#  part1 = b_/pow(-2*b_*math.sqrt(z-1),l+1)
+#  sum = 0
+#  for p in range(p_limit):
+#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+#    J_ = J(1,p,1,l,W11)
+#    if (J_ == 0):
+#      continue
+#    K1 = K_recursive_from_z(p,l,b_,z, n_0)
+#    K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
+#    K2_mod = b_/2*K2
+#    sum += n1 * J_ * (K1-K2_mod)
+#  return part1 * sum
+#  
+#def B2_from_z(b_, z, n_0, l, nu, p_limit):
+#  part1 = b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
+#  sum = 0
+#  for p in range(p_limit):
+#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+#    J1 = J(2,p,2,l,W22)
+#    if (J1 == 0):
+#      continue
+#    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+#    sum += n1 * J1 * K1
+#  return part1 * sum
+#
+#def B1_from_z(b_, z, n_0, l, nu, p_limit):
+#  part1 = b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+#  sum = 0
+#  for p in range(p_limit):
+#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+#    J1 = J(1,p+1,1,l,W11)
+#    if J == 0:
+#      continue
+#    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+#    sum += n1 * J1 * K1
+#  return part1 * sum
+#  
+#def B0_from_z(b_, z, n_0, l, nu, p_limit):
+#  part1 = b_/pow(-2*b_*math.sqrt(z-1),l+1)
+#  sum = 0
+#  for p in range(p_limit):
+#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+#    J1 = 0.25 * J(2,p,0,l, W20)
+#    J2 = J(0,p,0,l, W00)
+#    if J1 == 0 and J2 == 0:
+#      continue
+#    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+#    K2 = K_recursive_from_z(p,l,b_,z,n_0)
+#    sum += n1 * (2*b_*J1 * K1 - J2 * K2)
+#  return part1 * sum
 
 def A_l_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -b_/2/pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p,1,l,W11)
-  if (J_ == 0):
-    return 0.0
+  if (J_ == 0): return 0.0
   K1 = K_recursive_from_z(p,l,b_,z, n_0)
+  if K1 == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  if (l+1)%2 == 0:
+    part1 = -b_/2/pow(4*b_**2*(z-1),(l+1)/2)
+  else:
+    part1 = -b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
   return part1 * n1 * J_ * K1
 
 def C_l_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -b_/pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p,1,l,W11)
-  if (J_ == 0):
-    return 0.0
+  if (J_ == 0): return 0.0
   K1 = K_recursive_from_z(p, l, b_, z, n_0)
   K2 = K_recursive_from_z(p+1, l, b_, z, n_0)
   K2_mod = b_/2*K2
-  return part1 * n1 * J_ * (K1-K2_mod)
+  Ktot = (K1-K2_mod)
+  if Ktot == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  if (l+1)%2 == 0:
+    part1 = -b_/pow(4*b_**2*(z-1),(l+1)/2)
+  else:
+    part1 = -b_/pow(-2*b_*math.sqrt(z-1),l+1)
+  return part1 * n1 * J_ * Ktot
 
 def E_l_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -b_/2/pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p,1,l,W11)
-  if (J_ == 0):
-    return 0.0
+  if (J_ == 0): return 0.0
   K1 = K_recursive_from_z(p, l, b_, z, n_0)
   K2 = K_recursive_from_z(p+1, l, b_, z, n_0)
   K3 = K_recursive_from_z(p+2, l, b_, z, n_0)
-  return part1 * n1 * J_ * (3*K1-10*b_/3*K2+2*b_*b_/3*K3)
+  Ktot = (3*K1-10*b_/3*K2+2*b_*b_/3*K3)
+  if Ktot == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  if (l+1)%2 == 0:
+    part1 = -b_/2/pow(4*b_**2*(z-1),(l+1)/2)
+  else:
+    part1 = -b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
+  return part1 * n1 * J_ * Ktot
 
 def B2_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -b_*b_/(4*pow(-2*k_,l+1))
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(2,p,2,l,W22)
-  if (J_ == 0):
-    return 0.0
+  if (J_ == 0): return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  if K1 == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  if (l+1)%2 == 0:
+    part1 = -b_*b_/(4*pow(4*b_**2*(z-1),(l+1)/2))
+  else:
+    part1 = -b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
   return part1 * n1 * J_ * K1
 
 def B1_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -b_*b_/(2*pow(-2*k_,l+1))
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p+1,1,l,W11)
-  if J_ == 0:
-    return 0.0
+  if J_ == 0: return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+  if K1 == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  if (l+1)%2 == 0:
+    part1 = -b_*b_/(2*pow(4*b_**2*(z-1),(l+1)/2))
+  else:
+    part1 = -b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
   return part1 * n1 * J_ * K1
   
 def B0_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -b_/(2*pow(-2*k_,l+1))
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(2,p,0,l,W20)
   J2 = J(0,p,0,l,W00)
-  if J1 == 0 and J2 == 0:
-    return 0.0
+  if J1 == 0 and J2 == 0: return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p,l,b_,z,n_0)
-  return part1 * n1 * (-2 * J2 * K2 + b_* J1 * K1)
+  tot_term = (-2 * J2 * K2 + b_* J1 * K1)
+  if tot_term == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  if (l+1)%2 == 0:
+    part1 = -b_/(2*pow(4*b_**2*(z-1),(l+1)/2))
+  else:
+    part1 = -b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  return part1 * n1 * tot_term
 
 def D2_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_*b_/(4*pow(-2*k_,l+1))
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(2,p,2,l,W22)
-  if (J_ == 0):
-    return 0.0
+  if (J_ == 0): return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * J_ * (3*K1 - b_ * K2)
+  Ktot = (3*K1 - b_ * K2)
+  if Ktot == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
+  return part1 * n1 * J_ * Ktot
 
 def D1_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_*b_/(2*pow(-2*k_,l+1))
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J_ = J(1,p+1,1,l,W11)
-  if J_ == 0:
-    return 0.0
+  if J_ == 0: return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * J_ * (3 * K1 - b_ * K2)
+  Ktot = (3 * K1 - b_ * K2)
+  if Ktot == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  return part1 * n1 * J_ * Ktot
   
 def D0_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_/(2*pow(-2*k_,l+1))
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(2,p,0,l,W20) 
   J2 = J(0,p,0,l,W00) 
-  if J1 == 0 and J2 == 0:
-    return 0.0
+  if J1 == 0 and J2 == 0: return 0.0
   K1 = K_recursive_from_z(p,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K3 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (J2*(-4*K1 + 2*b_*K2) + b_ * J1 * (3*K2-b_*K3))
+  tot_term = (J2*(-4*K1 + 2*b_*K2) + b_ * J1 * (3*K2-b_*K3))
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  return part1 * n1 * tot_term
 
 def G0_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(2,p+1,0,l,W20) 
   J2 = J(0,p+1,0,l,W00)
-  if J1 == 0 and J2 == 0:
-    return 0.0
+  if J1 == 0 and J2 == 0: return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (-2*J2*K1 + b_*J1*K2)
+  tot_term = (-2*J2*K1 + b_*J1*K2)
+  if tot_term == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*b_*math.sqrt(z-1),l+1)
+  return part1 * n1 * tot_term
 
 def G1_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(1,p,1,l,W11)
   J2 = J(3,p,1,l,W31)
-  if J1 == 0 and J2 == 0:
-    return 0.0
+  if J1 == 0 and J2 == 0: return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (-J1*K1 + b_/4.*J2*K2)
+  tot_term = (-J1*K1 + b_/4.*J2*K2)
+  if tot_term == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*b_*math.sqrt(z-1),l+1)
+  return part1 * n1 * tot_term
 
 def G2_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_*b_*b_/4./pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(2,p+1,2,l,W22)
-  if J1 == 0:
-    return 0.0
+  if J1 == 0: return 0.0
   K1 = K_recursive_from_z(p+2,l,b_,z,n_0)
+  if K1 == 0: return 0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_*b_*b_/4./pow(-2*b_*math.sqrt(z-1),l+1)
   return part1 * n1 * (J1*K1)
 
 def G3_from_z_for_p(b_, z, n_0, l, nu, p):
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(2./3.)*b_*b_*b_/8./pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(3,p,3,l,W33)
-  if J1 == 0:
-    return 0.0
+  if J1 == 0: return 0.0
   K1 = K_recursive_from_z(p+2,l,b_,z,n_0)
+  if K1 == 0: return 0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(2./3.)*b_*b_*b_/8./pow(-2*b_*math.sqrt(z-1),l+1)
   return part1 * n1 * (J1*K1)
 
 def G4_from_z_for_p(b_, z, n_0, l, nu, p): #'This is G_tilde'
-  k_ = b_*math.sqrt(z-1)
-  part1 = -math.sqrt(1./2.)*b_*b_/2./pow(-2*k_,l+1)
-  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
   J1 = J(1,p,1,l,W11)
   J2 = J(1,p+2,1,l,W11)
-  if J1 == 0 and J2 == 0.0:
-    return 0.0
+  if J1 == 0 and J2 == 0.0: return 0.0
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   K2 = K_recursive_from_z(p+2,l,b_,z,n_0)
-  return part1 * n1 * (1./3.*J1*(2*K1-b_*K2) + b_*J2*K2)
+  tot_term = (1./3.*J1*(2*K1-b_*K2) + b_*J2*K2)
+  if tot_term == 0: return 0.0
+  n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+  part1 = -math.sqrt(1./2.)*b_*b_/2./pow(-2*b_*math.sqrt(z-1),l+1)
+  return part1 * n1 * tot_term
 
 ################## END of matrix element calculation
 
 ## Start of f functions for angle independant part of matrix products:
 
-def f_a(Z,l,k,z,nu_in,n_0,p_limit):
-  if z <= 1: return 0
-  b_ = b(n_0,0,Z)
-  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
-  matrix_value = 0
-  if n_0 == 1:
-    matrix_value = A_l_from_z(b_,z,n_0,l,nu_in,p_limit)
-  elif n_0 == 2:
-    matrix_value = C_l_from_z(b_,z,n_0,l,nu_in,p_limit)
-  postfactor = matrix_value * matrix_value.conjugate()
-  return prefactor*postfactor
+#def f_a(Z,l,k,z,nu_in,n_0,p_limit):
+#  if z <= 1: return 0
+#  b_ = b(n_0,0,Z)
+#  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
+#  matrix_value = 0
+#  if n_0 == 1:
+#    matrix_value = A_l_from_z(b_,z,n_0,l,nu_in,p_limit)
+#  elif n_0 == 2:
+#    matrix_value = C_l_from_z(b_,z,n_0,l,nu_in,p_limit)
+#  postfactor = matrix_value * matrix_value.conjugate()
+#  return prefactor*postfactor
+#
+#def f_b(Z,l,g_k,z,nu_in,n_0,p_limit):
+#  if z <= 1: return 0
+#  b_ = b(n_0, 1, Z)
+#  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
+#  matrix_value1 = B1_from_z(b_, z, n_0, l, nu_in, p_limit)
+#  if g_k == 0: 
+#    conjugate_function = B0_from_z
+#  elif g_k == 1:
+#    conjugate_function = B1_from_z
+#  elif g_k == 2:
+#    conjugate_function = B2_from_z 
+#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+#  return prefactor * matrix_value1 * matrix_value2
+#
+#def f_c_0(Z,l,g_k,z,nu_in,n_0,p_limit):
+#  if z <= 1: return 0
+#  b_ = b(n_0, 1, Z)
+#  N0sq = pow(N0(b_),2)
+#  prefactor = N0sq * N_square(l,0,b_,n_0,z)
+#  matrix_value1 = B0_from_z(b_, z, n_0, l, nu_in, p_limit)
+#  if g_k == 0: 
+#    conjugate_function = B0_from_z
+#  elif g_k == 1:
+#    conjugate_function = B1_from_z
+#  elif g_k == 2:
+#    conjugate_function = B2_from_z 
+#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+#  return prefactor * matrix_value1 * matrix_value2
+#
+#def f_c_2(Z,l,g_k,z,nu_in,n_0,p_limit):
+#  if z <= 1: return 0
+#  b_ = b(n_0, 1, Z)
+#  N0sq = pow(N0(b_),2)
+#  prefactor = N0sq * N_square(l,2,b_,n_0,z)
+#  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
+#  if g_k == 0: 
+#    conjugate_function = B0_from_z
+#  elif g_k == 1:
+#    conjugate_function = B1_from_z
+#  elif g_k == 2:
+#    conjugate_function = B2_from_z 
+#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+#  return prefactor * matrix_value1 * matrix_value2
+#
+#def f_d(Z,l,g_k,z,nu_in,n_0,p_limit):
+#  if z <= 1: return 0
+#  b_ = b(n_0, 1, Z)
+#  prefactor = pow(N0(b_),2) * N_square(l,2,b_,n_0,z)
+#  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
+#  if g_k == 0: 
+#    conjugate_function = B0_from_z
+#  elif g_k == 1:
+#    conjugate_function = B1_from_z
+#  elif g_k == 2:
+#    conjugate_function = B2_from_z 
+#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+#  return prefactor * matrix_value1 * matrix_value2
 
-def f_b(Z,l,g_k,z,nu_in,n_0,p_limit):
-  if z <= 1: return 0
-  b_ = b(n_0, 1, Z)
-  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
-  matrix_value1 = B1_from_z(b_, z, n_0, l, nu_in, p_limit)
-  if g_k == 0: 
-    conjugate_function = B0_from_z
-  elif g_k == 1:
-    conjugate_function = B1_from_z
-  elif g_k == 2:
-    conjugate_function = B2_from_z 
-  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-  return prefactor * matrix_value1 * matrix_value2
-
-def f_c_0(Z,l,g_k,z,nu_in,n_0,p_limit):
-  if z <= 1: return 0
-  b_ = b(n_0, 1, Z)
-  N0sq = pow(N0(b_),2)
-  prefactor = N0sq * N_square(l,0,b_,n_0,z)
-  matrix_value1 = B0_from_z(b_, z, n_0, l, nu_in, p_limit)
-  if g_k == 0: 
-    conjugate_function = B0_from_z
-  elif g_k == 1:
-    conjugate_function = B1_from_z
-  elif g_k == 2:
-    conjugate_function = B2_from_z 
-  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-  return prefactor * matrix_value1 * matrix_value2
-
-def f_c_2(Z,l,g_k,z,nu_in,n_0,p_limit):
-  if z <= 1: return 0
-  b_ = b(n_0, 1, Z)
-  N0sq = pow(N0(b_),2)
-  prefactor = N0sq * N_square(l,2,b_,n_0,z)
-  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
-  if g_k == 0: 
-    conjugate_function = B0_from_z
-  elif g_k == 1:
-    conjugate_function = B1_from_z
-  elif g_k == 2:
-    conjugate_function = B2_from_z 
-  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-  return prefactor * matrix_value1 * matrix_value2
-
-def f_d(Z,l,g_k,z,nu_in,n_0,p_limit):
-  if z <= 1: return 0
-  b_ = b(n_0, 1, Z)
-  prefactor = pow(N0(b_),2) * N_square(l,2,b_,n_0,z)
-  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
-  if g_k == 0: 
-    conjugate_function = B0_from_z
-  elif g_k == 1:
-    conjugate_function = B1_from_z
-  elif g_k == 2:
-    conjugate_function = B2_from_z 
-  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-  return prefactor * matrix_value1 * matrix_value2
-
-def integrand_matrix(z,f_function,z0, Z, l, k, nu_in, n_0, p_limit):
-  if z<1: return 0
-  return 2*z/(z*z-z0*z0)*f_function(Z,l,k,z,nu_in,n_0,p_limit).real
-
-def integrand_matrix_s(z,z0, Z, l,k, nu_in, n_0, p_limit):
-  if z<1: return 0
-  return 2*z/(z*z-z0*z0) * \
-      f_a(Z,l,k,z,nu_in,n_0,p_limit).real 
-
-def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
-  if z<1: return 0
-  return 2*z/(z*z-z0*z0)\
-    *1/3*(\
-      f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
-      f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
-        )
+#def integrand_matrix(z,f_function,z0, Z, l, k, nu_in, n_0, p_limit):
+#  if z<1: return 0
+#  return 2*z/(z*z-z0*z0)*f_function(Z,l,k,z,nu_in,n_0,p_limit).real
+#
+#def integrand_matrix_s(z,z0, Z, l,k, nu_in, n_0, p_limit):
+#  if z<1: return 0
+#  return 2*z/(z*z-z0*z0) * \
+#      f_a(Z,l,k,z,nu_in,n_0,p_limit).real 
+#
+#def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
+#  if z<1: return 0
+#  return 2*z/(z*z-z0*z0)\
+#    *1/3*(\
+#      f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
+#      f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
+#        )
 
 def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
-  if z <= 1: return [complex(0,0)] * (2*p+1)
+  if z <= 0: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0,0,Z)
   prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
   result = []
@@ -581,120 +594,8 @@ def f_a_for_p(Z,l,k,z,nu_in,n_0,p):
     result.append(prefactor * postfactor)
   return result
 
-#def f_b_for_p(Z,l,g_k,z,nu_in,n_0,p):
-#  if z <= 1: return [complex(0,0)] * (2*p+1)
-#  b_ = b(n_0, 1, Z)
-#  prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
-#  result = []
-#  if n_0 == 2:
-#    func = B1_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = B0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = B1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = B2_from_z_for_p
-#  elif n_0 == 3:
-#    func = D1_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = D0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = D1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = D2_from_z_for_p
-#  for j in range(p+1):
-#    matrix_value1 = func(b_,z,n_0,l,nu_in,j)
-#    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
-#    postfactor = matrix_value1 * matrix_value2.conjugate()
-#    result.append(prefactor * postfactor)
-#  return result
-#
-#def f_c_0_for_p(Z,l,g_k,z,nu_in,n_0,p):
-#  if z <= 1: return [complex(0,0)] * (2*p+1)
-#  b_ = b(n_0, 1, Z)
-#  prefactor = N0_square(b_) * N_square(l,0,b_,n_0,z)
-#  result = []
-#  if n_0 == 2:
-#    func = B0_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = B0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = B1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = B2_from_z_for_p
-#  elif n_0 == 3:
-#    func = D0_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = D0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = D1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = D2_from_z_for_p
-#  for j in range(p+1):
-#    matrix_value1 = func(b_,z,n_0,l,nu_in,j)
-#    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
-#    postfactor = matrix_value1 * matrix_value2.conjugate()
-#    result.append(prefactor * postfactor)
-#  return result
-#
-#def f_c_2_for_p(Z,l,g_k,z,nu_in,n_0,p):
-#  if z <= 1: return [complex(0,0)] * (2*p+1)
-#  b_ = b(n_0, 1, Z)
-#  prefactor = N0_square(b_) * N_square(l,2,b_,n_0,z)
-#  result = []
-#  if n_0 == 2:
-#    func = B2_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = B0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = B1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = B2_from_z_for_p
-#  elif n_0 == 3:
-#    func = D2_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = D0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = D1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = D2_from_z_for_p
-#  for j in range(p+1):
-#    matrix_value1 = func(b_,z,n_0,l,nu_in,j)
-#    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
-#    postfactor = matrix_value1 * matrix_value2.conjugate()
-#    result.append(prefactor * postfactor)
-#  return result
-#
-#def f_d_for_p(Z,l,g_k,z,nu_in,n_0,p):
-#  if z <= 1: return [complex(0,0)] * (2*p+1)
-#  b_ = b(n_0, 1, Z)
-#  prefactor = N0_square(b_) * N_square(l,2,b_,n_0,z)
-#  result = []
-#  if n_0 == 2:
-#    func = B2_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = B0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = B1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = B2_from_z_for_p
-#  elif n_0 == 3:
-#    func = D2_from_z_for_p
-#    if g_k == 0: 
-#      conjugate_function = D0_from_z_for_p
-#    elif g_k == 1:
-#      conjugate_function = D1_from_z_for_p
-#    elif g_k == 2:
-#      conjugate_function = D2_from_z_for_p
-#  for j in range(p+1):
-#    matrix_value1 = func(b_,z,n_0,l,nu_in,j)
-#    matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j)
-#    postfactor = matrix_value1 * matrix_value2.conjugate()
-#    result.append(prefactor * postfactor)
-#  return result
-
 def f_p_el_for_p(Z,l,g_m,g_k,z,nu_in,n_0,p):
-  if z <= 1: return [complex(0,0)] * (p+1)
+  if z <= 0: return [complex(0,0)] * (p+1)
   b_ = b(n_0, 1, Z)
   prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z)
   result = []
@@ -732,7 +633,7 @@ def f_p_el_for_p(Z,l,g_m,g_k,z,nu_in,n_0,p):
   return result
 
 def f_d_el_for_p(Z,l,g_m,g_k,z,nu_in,n_0,p):
-  if z <= 1: return [complex(0,0)] * (p+1)
+  if z <= 0: return [complex(0,0)] * (p+1)
   b_ = b(n_0, 2, Z)
   if g_m <= 3:
     prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z)
