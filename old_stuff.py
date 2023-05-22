@@ -502,3 +502,54 @@ def B0_from_z(b_, z, n_0, l, nu, p_limit):
     K2 = K_recursive_from_z(p,l,b_,z,n_0)
     sum += n1 * (2*b_*J1 * K1 - J2 * K2)
   return part1 * sum
+
+def J2(p,l):
+  if p == 0:
+    return 16/5 * kronecke_delta(l,2)
+  elif p == 1:
+    return 16/7 * kronecke_delta(l,3)
+  elif p == 2:
+    return 16/35 * kronecke_delta(l,2) + 32/21 * kronecke_delta(l,4)
+  elif p == 3:
+    return 16/21 * kronecke_delta(l,3) + 32/33 * kronecke_delta(l,5)
+  else:
+    return J(2,p,2,l,W22)
+def J1(p,l):
+  if p == 0:
+    return 4/3 * kronecke_delta(l,1)
+  elif p == 1:
+    return 4/5 * kronecke_delta(l,2)
+  elif p == 2:
+    return 4/15 * kronecke_delta(l,1) + 16/35 * kronecke_delta(l,3)
+  elif p == 3:
+    return 12/35 * kronecke_delta(l,2) + 16/63 * kronecke_delta(l,4)
+  elif p == 4:
+    return 4/35 * kronecke_delta(l,1) + 32/105 * kronecke_delta(l,3) + 32/231 * kronecke_delta(l,5)
+  else:
+    return J(1,p,1,l,W11)
+def J0_bar(p,l):
+  if p == 0:
+    return 2 * kronecke_delta(l,0)
+  elif p == 1:
+    return 2/3 * kronecke_delta(l,1)
+  elif p == 2:
+    return 2/3 * kronecke_delta(l,0) + 4/15 * kronecke_delta(l,2)
+  elif p == 3:
+    return 2/5 * kronecke_delta(l,1) + 4/35 * kronecke_delta(l,3)
+  elif p == 4:
+    return 2/5 * kronecke_delta(l,0) + 8/35 * kronecke_delta(l,2) + 16/315 * kronecke_delta(l,4)
+  elif p == 5:
+    return 2/7 * kronecke_delta(l,1) + 8/63 * kronecke_delta(l,3) + 16/693 * kronecke_delta(l,5)
+  else:
+    return J(0,p,0,l,W00)
+def J0_hat(p,l):
+  if p == 0:
+    return 1/3 * kronecke_delta(l,0) - 1/15 * kronecke_delta(l,2)
+  elif p == 1:
+    return 1/15 * kronecke_delta(l,1) - 1/35 * kronecke_delta(l,3)
+  elif p == 2:
+    return 1/15 * kronecke_delta(l,0) + 1/105 * kronecke_delta(l,2) - 4/315 * kronecke_delta(l,4)
+  elif p == 3:
+    return 1/35 * kronecke_delta(l,1) - 1/315 * kronecke_delta(l,3) - 4/693 * kronecke_delta(l,5)
+  else:
+    return 0.25 * J(2,p,0,l, W20)

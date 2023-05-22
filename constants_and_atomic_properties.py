@@ -66,7 +66,13 @@ def exp_squared_from_z(z: float,n_0: int) -> float:
   return exp_from_z(z,n_0)**2
   return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
-def delta(Z: int,n0: int,l: int ,j: float) -> float:
+def kronecke_delta(a: Union[int,float],b: Union[int,float]) -> int:
+  if a == b:
+      return 1
+  else:
+      return 0
+
+def delta_edge(Z: int,n0: int,l: int ,j: float) -> float:
   if n0 == 1:
     if l != 0: raise ValueError("unknown orbital type!")
     else: 

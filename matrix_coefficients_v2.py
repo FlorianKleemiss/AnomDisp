@@ -1,4 +1,5 @@
 import math
+import cmath
 import numpy as np
 from constants_and_atomic_properties import *
 
@@ -11,11 +12,8 @@ def z_kb(k: float,b: float) -> float:
 def z_nprime(n_prime:float, n_0:int) -> float:
   return n_0*n_0/pow(n_prime,2) + 1
 
-def n_prime_from_z(z:float,n_0:int) -> float:
-  if z>=1:
-    return n_0/math.sqrt(z-1)
-  else:
-    return n_0/math.sqrt((1-z))
+def n_prime_from_z(z:float,n_0:int) -> complex:
+  return n_0/cmath.sqrt(z-1)
 
 def z_nunu(nu_j: float, nu_2: float) -> float:
   return nu_j/nu_2
@@ -55,16 +53,19 @@ def N0_square(b_: float) -> float:
 def N0(b_: float) -> float:
   return math.sqrt(N0_square(b_))
 
-def product_n_prime_from_z(n_0: int,z: float,l: int) -> float:
+def product_n_prime_from_z(n_0: int,z: float,l: int) -> complex:
   n_p = n_prime_from_z(z,n_0)
-  fact = 1.0
+  fact = complex(1.0)
   for nu in range(1,l+1):
     fact *= n_p * n_p + nu*nu
-  denom = 1-math.exp(-2*math.pi*n_p)
+  if z < 1:
+    denom = 1-complex(np.cos(-2*math.pi*n_p.imag),np.sin(-2*math.pi*n_p.imag))
+  else: 
+    denom = 1-math.exp(-2*math.pi*n_p.real)
   return fact/denom
 
 #Introduces factors 2pi m_e /h^2 and m
-def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> float:
+def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
   if (m > l):
     return 0
   result = (2*l+1)*math.factorial(l-m)/math.factorial(l+m) * constant_factor / math.pi * n_0 * b_ * product_n_prime_from_z(n_0,z,l)
@@ -72,27 +73,21 @@ def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> float:
     result *= 2
   return result
 
-def N(l: int, m: int, b_: float, n_0: int, z: float) -> float:
-  return math.sqrt(N_square_from_z(l,m,b_,n_0,z))
+def N(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
+  return cmath.sqrt(N_square_from_z(l,m,b_,n_0,z))
 
-def N_square(l: int, m: int, b_: float, n_0: int, z: float) -> float:
+def N_square(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
   return N_square_from_z(l,m,b_,n_0,z)
 
-def N_lm_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> float:
+def N_lm_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> complex:
   return N(l,m,b_,n_0, z)
 
-def N_lm_square_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> float:
+def N_lm_square_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> complex:
   return N_square(l,m,b_,n_0,z)
   
 #2pi m/s^2 
 def q(nu: float) -> float:
   return 2*math.pi*nu/speed_of_light
-
-def delta(a: Union[int,float],b: Union[int,float]) -> int:
-  if a == b:
-      return 1
-  else:
-      return 0
 
 ######################### BEGIN OF MAKING K_p,l #######################################################
 matrix_type_M = type(np.zeros((0,0),dtype=complex))
@@ -122,20 +117,15 @@ def K_recursive_from_z(p: int, l: int, b_: float, z: float, n_0: int) -> complex
   if l > p+1:
     return 0
   zm1 = z-1
-  if z<= 1:
-    zm1 = abs(zm1)
-  xhi = complex(0,1/(2*math.sqrt(zm1)))
+  xhi = complex(0,1/(2*cmath.sqrt(zm1)))
   banane = g_from_M(prepare_M(p,l,z, n_0), xhi, p+1-l)
   part1 = -pow(2,p+3+l) \
     * complex(0,math.pi) \
-    * pow(math.sqrt(zm1),p+2+l) \
+    * pow(cmath.sqrt(zm1),p+2+l) \
     / pow(-z,p+2) \
     / pow(complex(0,b_),p+2-l)
   ex = exp_from_z(z,n_0)
-  if z<= 1:
-    return -part1 * banane * ex
-  else:
-    return part1 * banane * ex
+  return part1 * banane * ex
 ################### END OF CALC K ############################################
 ################### BEGIN CALC J  ############################################
 matrix_type_W = type(np.zeros((0,0)))
@@ -193,64 +183,10 @@ def J(a: int,b: int,c: int,l: int, Matrix: matrix_type_W = np.zeros((0,0))) -> f
   result = value_from_W(Matrix,b,l,M)
   return result
 
-
 W20 = make_matrix_W(2, 0, 20)
-#def J0_hat(p,l):
-#  if p == 0:
-#    return 1/3 * delta(l,0) - 1/15 * delta(l,2)
-#  #elif p == 1:
-#  #  return 1/15 * delta(l,1) - 1/35 * delta(l,3)
-#  #elif p == 2:
-#  #  return 1/15 * delta(l,0) + 1/105 * delta(l,2) - 4/315 * delta(l,4)
-#  #elif p == 3:
-#  #  return 1/35 * delta(l,1) - 1/315 * delta(l,3) - 4/693 * delta(l,5)
-#  else:
-#    return 0.25 * J(2,p,0,l, W20)
- 
 W00 = make_matrix_W(0, 0, 20)    
-#def J0_bar(p,l):
-#  if p == 0:
-#    return 2 * delta(l,0)
-#  #elif p == 1:
-#  #  return 2/3 * delta(l,1)
-#  #elif p == 2:
-#  #  return 2/3 * delta(l,0) + 4/15 * delta(l,2)
-#  #elif p == 3:
-#  #  return 2/5 * delta(l,1) + 4/35 * delta(l,3)
-#  #elif p == 4:
-#  #  return 2/5 * delta(l,0) + 8/35 * delta(l,2) + 16/315 * delta(l,4)
-#  #elif p == 5:
-#  #  return 2/7 * delta(l,1) + 8/63 * delta(l,3) + 16/693 * delta(l,5)
-#  else:
-#    return J(0,p,0,l,W00)
-
 W11 = make_matrix_W(1, 1, 20)
-#def J1(p,l):
-#  if p == 0:
-#    return 4/3 * delta(l,1)
-#  #elif p == 1:
-#  #  return 4/5 * delta(l,2)
-#  #elif p == 2:
-#  #  return 4/15 * delta(l,1) + 16/35 * delta(l,3)
-#  #elif p == 3:
-#  #  return 12/35 * delta(l,2) + 16/63 * delta(l,4)
-#  #elif p == 4:
-#  #  return 4/35 * delta(l,1) + 32/105 * delta(l,3) + 32/231 * delta(l,5)
-#  else:
-#    return J(1,p,1,l,W11)
-
 W22 = make_matrix_W(2, 2, 20)  
-#def J2(p,l):
-#  if p == 0:
-#    return 16/5 * delta(l,2)
-#  #elif p == 1:
-#  #  return 16/7 * delta(l,3)
-#  #elif p == 2:
-#  #  return 16/35 * delta(l,2) + 32/21 * delta(l,4)
-#  #elif p == 3:
-#  #  return 16/21 * delta(l,3) + 32/33 * delta(l,5)
-#  else:
-#    return J(2,p,2,l,W22)
 W31 = make_matrix_W(3, 1, 20)
 W33 = make_matrix_W(3, 3, 20)
 ################################# END OF CALC Js ###################################    
@@ -260,10 +196,8 @@ def A_l_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -
   K1 = K_recursive_from_z(p,l,b_,z, n_0)
   if K1 == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  if (l+1)%2 == 0:
-    part1 = -b_/2/pow(4*b_**2*(z-1),(l+1)/2)
-  else:
-    part1 = -b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -b_/2/pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * K1
 
 def C_l_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -275,10 +209,8 @@ def C_l_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -
   Ktot = (K1-K2_mod)
   if Ktot == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  if (l+1)%2 == 0:
-    part1 = -b_/pow(4*b_**2*(z-1),(l+1)/2)
-  else:
-    part1 = -b_/pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -b_/pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * Ktot
 
 def E_l_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -290,10 +222,8 @@ def E_l_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -
   Ktot = (3*K1-10*b_/3*K2+2*b_*b_/3*K3)
   if Ktot == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  if (l+1)%2 == 0:
-    part1 = -b_/2/pow(4*b_**2*(z-1),(l+1)/2)
-  else:
-    part1 = -b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -b_/2/pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * Ktot
 
 def B2_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -302,10 +232,8 @@ def B2_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   if K1 == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  if (l+1)%2 == 0:
-    part1 = -b_*b_/(4*pow(4*b_**2*(z-1),(l+1)/2))
-  else:
-    part1 = -b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
+  part1 = -b_*b_/(4*pow(-2*b_*cmath.sqrt(z-1),l+1))
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * K1
 
 def B1_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -314,10 +242,8 @@ def B1_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
   if K1 == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  if (l+1)%2 == 0:
-    part1 = -b_*b_/(2*pow(4*b_**2*(z-1),(l+1)/2))
-  else:
-    part1 = -b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  part1 = -b_*b_/(2*pow(-2*b_*cmath.sqrt(z-1),l+1))
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * K1
   
 def B0_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -329,10 +255,8 @@ def B0_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   tot_term = (-2 * J2 * K2 + b_* J1 * K1)
   if tot_term == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  if (l+1)%2 == 0:
-    part1 = -b_/(2*pow(4*b_**2*(z-1),(l+1)/2))
-  else:
-    part1 = -b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  part1 = -b_/(2*pow(-2*b_*cmath.sqrt(z-1),l+1))
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * tot_term
 
 def D2_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -343,7 +267,8 @@ def D2_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   Ktot = (3*K1 - b_ * K2)
   if Ktot == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
+  part1 = -math.sqrt(2./3.)*b_*b_/(4*pow(-2*b_*cmath.sqrt(z-1),l+1))
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * Ktot
 
 def D1_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -354,7 +279,8 @@ def D1_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   Ktot = (3 * K1 - b_ * K2)
   if Ktot == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  part1 = -math.sqrt(2./3.)*b_*b_/(2*pow(-2*b_*cmath.sqrt(z-1),l+1))
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * J_ * Ktot
   
 def D0_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -367,7 +293,8 @@ def D0_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   tot_term = (J2*(-4*K1 + 2*b_*K2) + b_ * J1 * (3*K2-b_*K3))
   if tot_term == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  part1 = -math.sqrt(2./3.)*b_/(2*pow(-2*b_*cmath.sqrt(z-1),l+1))
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * tot_term
 
 def G0_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -379,7 +306,8 @@ def G0_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   tot_term = (-2*J2*K1 + b_*J1*K2)
   if tot_term == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * tot_term
 
 def G1_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -391,7 +319,8 @@ def G1_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   tot_term = (-J1*K1 + b_/4.*J2*K2)
   if tot_term == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_/2./pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * tot_term
 
 def G2_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -400,7 +329,8 @@ def G2_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   K1 = K_recursive_from_z(p+2,l,b_,z,n_0)
   if K1 == 0: return 0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_*b_*b_/4./pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_*b_/4./pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * (J1*K1)
 
 def G3_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
@@ -409,7 +339,8 @@ def G3_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   K1 = K_recursive_from_z(p+2,l,b_,z,n_0)
   if K1 == 0: return 0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(2./3.)*b_*b_*b_/8./pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -math.sqrt(2./3.)*b_*b_*b_/8./pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * (J1*K1)
 
 def G4_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex: #'This is G_tilde'
@@ -421,7 +352,8 @@ def G4_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
   tot_term = (1./3.*J1*(2*K1-b_*K2) + b_*J2*K2)
   if tot_term == 0: return 0.0
   n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-  part1 = -math.sqrt(1./2.)*b_*b_/2./pow(-2*b_*math.sqrt(z-1),l+1)
+  part1 = -math.sqrt(1./2.)*b_*b_/2./pow(-2*b_*cmath.sqrt(z-1),l+1)
+  if z<1: part1 *= math.sqrt(2)
   return part1 * n1 * tot_term
 
 ################## END of matrix element calculation

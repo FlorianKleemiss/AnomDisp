@@ -274,13 +274,13 @@ def calc_Intensity_s_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
   z_temp = None
   if n0 == 1:
     z_temp = nu_in / (get_ionization_energy_1s(el_nr) / h)
-    de = delta(el_nr,1,0,0)
+    de = delta_edge(el_nr,1,0,0)
   elif n0 == 2:
     z_temp = nu_in / (get_ionization_energy_2s(el_nr) / h)
-    de = delta(el_nr,2,0,0)
+    de = delta_edge(el_nr,2,0,0)
   elif n0 == 3:
     z_temp = nu_in / (get_ionization_energy_3s(el_nr) / h)
-    de = delta(el_nr,3,0,0)
+    de = delta_edge(el_nr,3,0,0)
   else:
     z_temp = 0
     de = 0
@@ -312,17 +312,17 @@ def calc_Intensity_p_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
   elif n0 == 2:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_2p1_2(el_nr) / h)
-      de = delta(el_nr,2,1,0.5)
+      de = delta_edge(el_nr,2,1,0.5)
     else:
       z_temp = nu_in / (get_ionization_energy_2p3_2(el_nr) / h)
-      de = delta(el_nr,2,1,1.5)
+      de = delta_edge(el_nr,2,1,1.5)
   elif n0 == 3:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_3p_1_2(el_nr) / h)
-      de = delta(el_nr,3,1,0.5)
+      de = delta_edge(el_nr,3,1,0.5)
     else:
       z_temp = nu_in / (get_ionization_energy_3p_3_2(el_nr) / h)
-      de = delta(el_nr,3,1,1.5)
+      de = delta_edge(el_nr,3,1,1.5)
   else:
     z_temp = 0
     de = 0
@@ -360,10 +360,10 @@ def calc_Intensity_d_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
   elif n0 == 3:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_3d_3_2(el_nr) / h)
-      de = delta(el_nr,3,2,1.5)
+      de = delta_edge(el_nr,3,2,1.5)
     else:
       z_temp = nu_in / (get_ionization_energy_3d_5_2(el_nr) / h)
-      de = delta(el_nr,3,2,2.5)
+      de = delta_edge(el_nr,3,2,2.5)
   else:
     z_temp = 0
     de = 0
@@ -1722,6 +1722,7 @@ if __name__ == "__main__":
     #t0 = numpy.random.random(1)[0] * math.pi
     t0 = 0
     TS = (1+pow(np.cos(t0),2))/2
+    e = elements[el_nr]
     
     factor_x = 2*math.pi
 
@@ -1749,7 +1750,6 @@ if __name__ == "__main__":
     hönl_M  = np.zeros_like(x)
     hönl    = np.zeros_like(x)
     brennan_fdp = np.zeros_like(x)
-    e = elements[el_nr]
     
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
       res = pool.starmap(calc_stuff_with_brennan, zip(x, repeat(t0), repeat(l_max), repeat(p_max), repeat(el_nr), repeat(br), repeat(e)))
@@ -1779,15 +1779,15 @@ if __name__ == "__main__":
     fdp_nach_hoenl = np.zeros_like(achse_z)
     fdp_nach_EM = np.zeros_like(achse_z)
     fdp_nach_Wa = np.zeros_like(achse_z)
-    delta_K  = delta(el_nr,1,0,0)
-    delta_l1 = delta(el_nr,2,0,0)
-    delta_l2 = delta(el_nr,2,1,0.5)
-    delta_l3 = delta(el_nr,2,1,1.5)
-    delta_m1 = delta(el_nr,3,0,0)
-    delta_m2 = delta(el_nr,3,1,0.5)
-    delta_m3 = delta(el_nr,3,1,1.5)
-    delta_m4 = delta(el_nr,3,2,1.5)
-    delta_m5 = delta(el_nr,3,2,2.5)
+    delta_K  = delta_edge(el_nr,1,0,0)
+    delta_l1 = delta_edge(el_nr,2,0,0)
+    delta_l2 = delta_edge(el_nr,2,1,0.5)
+    delta_l3 = delta_edge(el_nr,2,1,1.5)
+    delta_m1 = delta_edge(el_nr,3,0,0)
+    delta_m2 = delta_edge(el_nr,3,1,0.5)
+    delta_m3 = delta_edge(el_nr,3,1,1.5)
+    delta_m4 = delta_edge(el_nr,3,2,1.5)
+    delta_m5 = delta_edge(el_nr,3,2,2.5)
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
       res = pool.starmap(fdp_from_z, zip(achse_z, repeat(delta_K), repeat(f_s_1_hoenl)))
       for i,r in enumerate(res):
@@ -1855,12 +1855,9 @@ if __name__ == "__main__":
     res_L = (l_s+l_p1+2*l_p3)*factor_x
     res_M = (m_s+m_p1+2*m_p3+3*m_d3+2*m_d5)*factor_x
     resy = res_K+res_L+res_M
-    #resy = (np.sqrt(k_s))
-    #resy_br = 2*resy/constant_factor
-    #ausdruck = (resy)/(1-4.0*math.pi/3*resy)*constant_factor
     resy_br = resy
 
-    axes[0,2].plot(second_x,resy_br,color='k',label="all")
+    axes[0,2].plot(second_x,resy_br,color='k',label="Norbert & Florian")
     axes[0,2].axhline(y=0,linestyle='dashed',color='gray')
     axes[0,2].plot(second_x,brennan_fdp,color='r',label="brennan")
     axes[0,2].plot(second_x,hönl,color='b',label="hönl")
@@ -1871,9 +1868,9 @@ if __name__ == "__main__":
     
     axes[0,2].scatter(second_x,fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl,facecolors='none',edgecolors='k',marker='^',label="total purely paper")
 
-    axes[1,2].plot(second_x,resy_br/brennan_fdp,color='k',label="ratio all/brennan")
+    axes[1,2].plot(second_x,resy_br/brennan_fdp,color='k',label="ratio N&F/brennan")
     axes[1,2].plot(second_x,hönl/brennan_fdp,color='b',label="ratio hönl/brennan")
-    axes[1,2].plot(second_x,resy_br/hönl,color='g',label="ratio all/hönl")
+    axes[1,2].plot(second_x,resy_br/hönl,color='g',label="ratio N&F/hönl")
     axes[1,2].plot(second_x,(fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl)/hönl,color='r',label="ratio hönl/hönl_integral")
     axes[1,2].axhline(y=1,linestyle='dashed',color='gray')
 
@@ -1930,19 +1927,21 @@ if __name__ == "__main__":
     exit()
   
   if numplot == True: 
-    x = numpy.linspace(0.9,1.3,2*steps)
+    x = numpy.linspace(0.9,2,2*steps)
     eta_nach_hoenl = np.zeros_like(x)
     eta_nach_integral = np.zeros_like(x)
     eta_nach_unserem = np.zeros_like(x)
     nprime = np.zeros_like(x)
+    inprime = np.zeros_like(x)
     K_recursive = np.zeros_like(x)
+    K_recursive_imag = np.zeros_like(x)
     SE = np.zeros_like(x)
     
     nu_0 = (get_ionization_energy_1s(el_nr) / h)
     Z_s_sq = get_Zeff_1s(el_nr)**2
     e_ion = get_ionization_energy_1s(el_nr)
-    nu_k = e_ion / h
-    delta_K = 1 + alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+    #nu_k = e_ion / h
+    delta_K = delta_edge(el_nr, 1, 0, 0) #21a in Hoenl
 
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
       res = pool.starmap(eta_K, zip(x, repeat(1), repeat(nu_0),repeat(delta_K)))
@@ -1958,11 +1957,13 @@ if __name__ == "__main__":
       from matrix_coefficients_v2 import n_prime_from_z, K_recursive_from_z
       res = pool.starmap(n_prime_from_z, zip(x,repeat(1)))
       for i,r in enumerate(res):
-        nprime[i] = r
+        nprime[i] = r.real
+        inprime[i] = r.imag
         
       res = pool.starmap(K_recursive_from_z, zip(repeat(0),repeat(1), repeat(b(1,0,el_nr)), x,repeat(1)))
       for i,r in enumerate(res):
-        K_recursive[i] = r
+        K_recursive[i] = r.real
+        K_recursive_imag[i] = r.imag
       res = pool.starmap(sugiura_exps, zip(x,repeat(1)))
       for i,r in enumerate(res):
         SE[i] = r
@@ -1992,9 +1993,13 @@ if __name__ == "__main__":
     axes[1,1].axvline(x=1,linestyle='dashed',color='gray')
     axes[0,1].axvline(x=1,linestyle='dashed',color='gray')
     
-    axes[0,1].plot(x,nprime,label="nprime(z)")
-    #axes[1,1].plot(x,SE,label="sugiura(z)")
-    axes[1,1].plot(x,K_recursive,label="K(z)")
+    axes[0,1].plot(x,nprime,label="Re prime(z)")
+    axes[0,1].plot(x,inprime,label="Im nprime(z)")
+    axes[0,1].legend()
+    axes[1,1].plot(x,SE*1E-10,label="sugiura(z)")
+    axes[1,1].plot(x,K_recursive,label="Re K(z)")
+    axes[1,1].plot(x,K_recursive_imag,label="Im K(z)")
+    axes[1,1].legend()
     print(eta_nach_hoenl[-1]/eta_nach_integral[-1], eta_nach_unserem[-1]/eta_nach_integral[-1])
     
     plt.show()
