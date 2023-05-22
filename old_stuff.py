@@ -1,9 +1,11 @@
 import numpy as np
 import math
 from constants_and_atomic_properties import *
+from matrix_coefficients_v2 import *
+from hoenl_like import *
 import scipy.integrate as integrate
 import scipy.special as special
-# OLD STUFF BELOW
+
 def integrand_a_la_hoenl(n_j,nu,n_0):
   var = (n_j/n_0)
   part1 = 128/(3.0*n_0)
@@ -175,8 +177,8 @@ def hoenl_like_k_print(steps=20, Z=None, ener=8047.8):
   #nu = 6.4077E18
   #x_j = 0.1 * x_j
   print("x_j:     " + "{:.2e}".format(x_j))
-  integral1 = integrate.quad(integrand_damped_abs,nu_k,(1-epsilon)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
-  integral2 = integrate.quad(integrand_damped_abs,(1+epsilon)*nu,1000*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
+  integral1 = integrate.quad(real_general_integration,nu_k,(1-epsilon)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
+  integral2 = integrate.quad(real_general_integration,(1+epsilon)*nu,1000*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
   integral = integral1[0] + integral2[0]
   print(" Int:          " + "{: .8e}".format(integral) +                 " PrefInt:          " + "{: .8e}".format(integral*prefactor))
   integral_a_la_hoenl_damp = integrate.quad(integrand_a_la_hoenl_damp,nu_k,(1-epsilon)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)[0] \
@@ -185,7 +187,7 @@ def hoenl_like_k_print(steps=20, Z=None, ener=8047.8):
   lower_limit = n_0
   if (1-epsilon2)*nu > n_0:
     lower_limit = (1-epsilon2)*nu
-  imag_integral1 = integrate.quad(imag_integrand_damped_abs,lower_limit,(1+epsilon2)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
+  imag_integral1 = integrate.quad(imag_general_integration,lower_limit,(1+epsilon2)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
   imag_integral = imag_integral1[0]
   print(" ImagInt:      " + "{: .8e}".format(imag_integral) +            " ImagPrefInt:      " + "{: .8e}".format(imag_integral*prefactor))
   imag_integral_a_la_hoenl = integrate.quad(imag_integrand_damped_a_la_hoenl,lower_limit,(1+epsilon2)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)[0]
@@ -236,15 +238,15 @@ def hoenl_like_k(Z=None, ener=8047.8):
   epsilon = 1E-12
   epsilon2 = 0.001
   x_j = nu*1E-7
-  integral1 = integrate.quad(integrand_damped_abs,nu_k,(1-epsilon)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
-  integral2 = integrate.quad(integrand_damped_abs,(1+epsilon)*nu,1000*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
+  integral1 = integrate.quad(real_general_integration,nu_k,(1-epsilon)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
+  integral2 = integrate.quad(real_general_integration,(1+epsilon)*nu,1000*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
   integral = integral1[0] + integral2[0]
   integral_a_la_hoenl_damp = integrate.quad(integrand_a_la_hoenl_damp,nu_k,(1-epsilon)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)[0] \
     + integrate.quad(integrand_a_la_hoenl_damp,(1+epsilon)*nu,1000*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)[0]
   lower_limit = n_0
   if (1-epsilon2)*nu > n_0:
     lower_limit = (1-epsilon2)*nu
-  imag_integral1 = integrate.quad(imag_integrand_damped_abs,lower_limit,(1+epsilon2)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
+  imag_integral1 = integrate.quad(imag_general_integration,lower_limit,(1+epsilon2)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)
   imag_integral = imag_integral1[0]
   imag_integral_a_la_hoenl = integrate.quad(imag_integrand_damped_a_la_hoenl,lower_limit,(1+epsilon2)*nu,args=(x_j,nu,n_0),limit=200000,epsabs=1E-60)[0]
 
@@ -280,8 +282,8 @@ def hoenl_like_k_with_imag(Z=None, ener=8047.8):
 
   #REAL PART
   #When telling hte quad alorithm that nu is a "position to be carefull with" the results don't require epsilon
-  inte1 = integrate.quad(integrand_damped_abs,nu_k,nu,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
-  inte2 = integrate.quad(integrand_damped_abs,nu,20*nu,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
+  inte1 = integrate.quad(real_general_integration,nu_k,nu,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
+  inte2 = integrate.quad(real_general_integration,nu,20*nu,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-50,epsrel=1E-10)
   if inte1[1] > 0.5*abs(inte1[0]):
     print("!!! inaccurate REAL1 integral at nu_k/nu = " + "{:8.4f}".format(nu_k/nu) + " " + str(inte1) + str(inte1[1]/abs(inte1[0])))
   if inte2[1] > 0.5*abs(inte2[0]):
@@ -297,7 +299,7 @@ def hoenl_like_k_with_imag(Z=None, ener=8047.8):
     upper_limit = 10*nu_k
   else:
     upper_limit = (1+epsilon2)*nu
-  imag_integral = integrate.quad(imag_integrand_damped_abs,lower_limit,upper_limit,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10)
+  imag_integral = integrate.quad(imag_general_integration,lower_limit,upper_limit,args=(x_j,nu,n_0),points=nu,limit=200000,epsabs=1E-55,epsrel=1E-10)
   imag_integral_a_la_hoenl = integrate.quad(imag_integrand_damped_a_la_hoenl,lower_limit,upper_limit,points=nu,args=(x_j,nu,n_0_Hoenl),limit=200000,epsabs=1E-55,epsrel=1E-10)
   if imag_integral[1] > 0.5*abs(imag_integral[0]):
     print("!!! inaccurate IMAG integral at nu_k/nu = " + "{:6.4f}".format(nu_k/nu) + " " + str(imag_integral) + " " + str(imag_integral[1]/abs(imag_integral[0])) + " lower_limit is with epsilon?: " + str((1-epsilon2)*nu == lower_limit))
@@ -346,3 +348,157 @@ def hoenl_27_with_imag_and_real_Z(Z=None, ener=8047.8):
   ausdruck = (2.0*math.pi*alpha_K_Hoenl_27)/(1-4.0*math.pi/3*alpha_K_Hoenl_27)
   factor = 2*math.pi*el_mass*pow(nu,2)/pow(el_charge,2)
   return -ausdruck.real/2.0*factor, -ausdruck.imag/2.0*factor
+
+def f_a(Z,l,k,z,nu_in,n_0,p_limit):
+  if z <= 1: return 0
+  b_ = b(n_0,0,Z)
+  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
+  matrix_value = 0
+  if n_0 == 1:
+    matrix_value = A_l_from_z(b_,z,n_0,l,nu_in,p_limit)
+  elif n_0 == 2:
+    matrix_value = C_l_from_z(b_,z,n_0,l,nu_in,p_limit)
+  postfactor = matrix_value * matrix_value.conjugate()
+  return prefactor*postfactor
+
+def f_b(Z,l,g_k,z,nu_in,n_0,p_limit):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
+  matrix_value1 = B1_from_z(b_, z, n_0, l, nu_in, p_limit)
+  conjugate_function = dummy_func
+  if g_k == 0: 
+    conjugate_function = B0_from_z
+  elif g_k == 1:
+    conjugate_function = B1_from_z
+  elif g_k == 2:
+    conjugate_function = B2_from_z 
+  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+  return prefactor * matrix_value1 * matrix_value2
+
+def f_c_0(Z,l,g_k,z,nu_in,n_0,p_limit):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  N0sq = pow(N0(b_),2)
+  prefactor = N0sq * N_square(l,0,b_,n_0,z)
+  matrix_value1 = B0_from_z(b_, z, n_0, l, nu_in, p_limit)
+  conjugate_function = dummy_func
+  if g_k == 0: 
+    conjugate_function = B0_from_z
+  elif g_k == 1:
+    conjugate_function = B1_from_z
+  elif g_k == 2:
+    conjugate_function = B2_from_z 
+  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+  return prefactor * matrix_value1 * matrix_value2
+
+def f_c_2(Z,l,g_k,z,nu_in,n_0,p_limit):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  N0sq = pow(N0(b_),2)
+  prefactor = N0sq * N_square(l,2,b_,n_0,z)
+  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
+  conjugate_function = dummy_func
+  if g_k == 0: 
+    conjugate_function = B0_from_z
+  elif g_k == 1:
+    conjugate_function = B1_from_z
+  elif g_k == 2:
+    conjugate_function = B2_from_z 
+  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+  return prefactor * matrix_value1 * matrix_value2
+
+def f_d(Z,l,g_k,z,nu_in,n_0,p_limit):
+  if z <= 1: return 0
+  b_ = b(n_0, 1, Z)
+  prefactor = pow(N0(b_),2) * N_square(l,2,b_,n_0,z)
+  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
+  conjugate_function = dummy_func
+  if g_k == 0: 
+    conjugate_function = B0_from_z
+  elif g_k == 1:
+    conjugate_function = B1_from_z
+  elif g_k == 2:
+    conjugate_function = B2_from_z 
+  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
+  return prefactor * matrix_value1 * matrix_value2
+def integrand_matrix(z,f_function,z0, Z, l, k, nu_in, n_0, p_limit):
+  if z<1: return 0
+  return 2*z/(z*z-z0*z0)*f_function(Z,l,k,z,nu_in,n_0,p_limit).real
+
+def integrand_matrix_s(z,z0, Z, l,k, nu_in, n_0, p_limit):
+  if z<1: return 0
+  return 2*z/(z*z-z0*z0) * \
+      f_a(Z,l,k,z,nu_in,n_0,p_limit).real 
+
+def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
+  if z<1: return 0
+  return 2*z/(z*z-z0*z0)\
+    *1/3*(\
+      f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
+      f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
+        )
+    
+def A_l_from_z(b_, z, n_0, l, nu, p_limit):
+  part1 = b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
+  sum = 0
+  for p in range(p_limit):
+    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+    J1 = J(1,p,1,l,W11)
+    if (J == 0):
+      continue
+    K1 = K_recursive_from_z(p,l,b_,z, n_0)
+    sum += n1 * J1 * K1
+  return part1 * sum
+
+def C_l_from_z(b_, z, n_0, l, nu, p_limit):
+  part1 = b_/pow(-2*b_*math.sqrt(z-1),l+1)
+  sum = 0
+  for p in range(p_limit):
+    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+    J_ = J(1,p,1,l,W11)
+    if (J_ == 0):
+      continue
+    K1 = K_recursive_from_z(p,l,b_,z, n_0)
+    K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
+    K2_mod = b_/2*K2
+    sum += n1 * J_ * (K1-K2_mod)
+  return part1 * sum
+  
+def B2_from_z(b_, z, n_0, l, nu, p_limit):
+  part1 = b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
+  sum = 0
+  for p in range(p_limit):
+    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+    J1 = J(2,p,2,l,W22)
+    if (J1 == 0):
+      continue
+    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+    sum += n1 * J1 * K1
+  return part1 * sum
+
+def B1_from_z(b_, z, n_0, l, nu, p_limit):
+  part1 = b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
+  sum = 0
+  for p in range(p_limit):
+    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+    J1 = J(1,p+1,1,l,W11)
+    if J == 0:
+      continue
+    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+    sum += n1 * J1 * K1
+  return part1 * sum
+  
+def B0_from_z(b_, z, n_0, l, nu, p_limit):
+  part1 = b_/pow(-2*b_*math.sqrt(z-1),l+1)
+  sum = 0
+  for p in range(p_limit):
+    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
+    J1 = 0.25 * J(2,p,0,l, W20)
+    J2 = J(0,p,0,l, W00)
+    if J1 == 0 and J2 == 0:
+      continue
+    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
+    K2 = K_recursive_from_z(p,l,b_,z,n_0)
+    sum += n1 * (2*b_*J1 * K1 - J2 * K2)
+  return part1 * sum

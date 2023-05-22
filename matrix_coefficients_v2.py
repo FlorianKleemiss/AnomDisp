@@ -254,70 +254,6 @@ W22 = make_matrix_W(2, 2, 20)
 W31 = make_matrix_W(3, 1, 20)
 W33 = make_matrix_W(3, 3, 20)
 ################################# END OF CALC Js ###################################    
-#def A_l_from_z(b_, z, n_0, l, nu, p_limit):
-#  part1 = b_/2/pow(-2*b_*math.sqrt(z-1),l+1)
-#  sum = 0
-#  for p in range(p_limit):
-#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-#    J1 = J(1,p,1,l,W11)
-#    if (J == 0):
-#      continue
-#    K1 = K_recursive_from_z(p,l,b_,z, n_0)
-#    sum += n1 * J1 * K1
-#  return part1 * sum
-#
-#def C_l_from_z(b_, z, n_0, l, nu, p_limit):
-#  part1 = b_/pow(-2*b_*math.sqrt(z-1),l+1)
-#  sum = 0
-#  for p in range(p_limit):
-#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-#    J_ = J(1,p,1,l,W11)
-#    if (J_ == 0):
-#      continue
-#    K1 = K_recursive_from_z(p,l,b_,z, n_0)
-#    K2 = K_recursive_from_z(p+1,l,b_,z, n_0)
-#    K2_mod = b_/2*K2
-#    sum += n1 * J_ * (K1-K2_mod)
-#  return part1 * sum
-#  
-#def B2_from_z(b_, z, n_0, l, nu, p_limit):
-#  part1 = b_*b_/(4*pow(-2*b_*math.sqrt(z-1),l+1))
-#  sum = 0
-#  for p in range(p_limit):
-#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-#    J1 = J(2,p,2,l,W22)
-#    if (J1 == 0):
-#      continue
-#    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-#    sum += n1 * J1 * K1
-#  return part1 * sum
-#
-#def B1_from_z(b_, z, n_0, l, nu, p_limit):
-#  part1 = b_*b_/(2*pow(-2*b_*math.sqrt(z-1),l+1))
-#  sum = 0
-#  for p in range(p_limit):
-#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-#    J1 = J(1,p+1,1,l,W11)
-#    if J == 0:
-#      continue
-#    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-#    sum += n1 * J1 * K1
-#  return part1 * sum
-#  
-#def B0_from_z(b_, z, n_0, l, nu, p_limit):
-#  part1 = b_/pow(-2*b_*math.sqrt(z-1),l+1)
-#  sum = 0
-#  for p in range(p_limit):
-#    n1 = pow(complex(0,-q(nu)),p) / math.factorial(p)
-#    J1 = 0.25 * J(2,p,0,l, W20)
-#    J2 = J(0,p,0,l, W00)
-#    if J1 == 0 and J2 == 0:
-#      continue
-#    K1 = K_recursive_from_z(p+1,l,b_,z,n_0)
-#    K2 = K_recursive_from_z(p,l,b_,z,n_0)
-#    sum += n1 * (2*b_*J1 * K1 - J2 * K2)
-#  return part1 * sum
-
 def A_l_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) -> complex:
   J_ = J(1,p,1,l,W11)
   if (J_ == 0): return 0.0
@@ -491,94 +427,6 @@ def G4_from_z_for_p(b_: float, z: float, n_0: int, l: int, nu: float, p: int) ->
 ################## END of matrix element calculation
 
 ## Start of f functions for angle independant part of matrix products:
-
-#def f_a(Z,l,k,z,nu_in,n_0,p_limit):
-#  if z <= 1: return 0
-#  b_ = b(n_0,0,Z)
-#  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
-#  matrix_value = 0
-#  if n_0 == 1:
-#    matrix_value = A_l_from_z(b_,z,n_0,l,nu_in,p_limit)
-#  elif n_0 == 2:
-#    matrix_value = C_l_from_z(b_,z,n_0,l,nu_in,p_limit)
-#  postfactor = matrix_value * matrix_value.conjugate()
-#  return prefactor*postfactor
-#
-#def f_b(Z,l,g_k,z,nu_in,n_0,p_limit):
-#  if z <= 1: return 0
-#  b_ = b(n_0, 1, Z)
-#  prefactor = pow(N0(b_),2) * N_lm_square_from_z(l,1,z,b_,n_0)
-#  matrix_value1 = B1_from_z(b_, z, n_0, l, nu_in, p_limit)
-#  if g_k == 0: 
-#    conjugate_function = B0_from_z
-#  elif g_k == 1:
-#    conjugate_function = B1_from_z
-#  elif g_k == 2:
-#    conjugate_function = B2_from_z 
-#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-#  return prefactor * matrix_value1 * matrix_value2
-#
-#def f_c_0(Z,l,g_k,z,nu_in,n_0,p_limit):
-#  if z <= 1: return 0
-#  b_ = b(n_0, 1, Z)
-#  N0sq = pow(N0(b_),2)
-#  prefactor = N0sq * N_square(l,0,b_,n_0,z)
-#  matrix_value1 = B0_from_z(b_, z, n_0, l, nu_in, p_limit)
-#  if g_k == 0: 
-#    conjugate_function = B0_from_z
-#  elif g_k == 1:
-#    conjugate_function = B1_from_z
-#  elif g_k == 2:
-#    conjugate_function = B2_from_z 
-#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-#  return prefactor * matrix_value1 * matrix_value2
-#
-#def f_c_2(Z,l,g_k,z,nu_in,n_0,p_limit):
-#  if z <= 1: return 0
-#  b_ = b(n_0, 1, Z)
-#  N0sq = pow(N0(b_),2)
-#  prefactor = N0sq * N_square(l,2,b_,n_0,z)
-#  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
-#  if g_k == 0: 
-#    conjugate_function = B0_from_z
-#  elif g_k == 1:
-#    conjugate_function = B1_from_z
-#  elif g_k == 2:
-#    conjugate_function = B2_from_z 
-#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-#  return prefactor * matrix_value1 * matrix_value2
-#
-#def f_d(Z,l,g_k,z,nu_in,n_0,p_limit):
-#  if z <= 1: return 0
-#  b_ = b(n_0, 1, Z)
-#  prefactor = pow(N0(b_),2) * N_square(l,2,b_,n_0,z)
-#  matrix_value1 = B2_from_z(b_, z, n_0, l, nu_in, p_limit)
-#  if g_k == 0: 
-#    conjugate_function = B0_from_z
-#  elif g_k == 1:
-#    conjugate_function = B1_from_z
-#  elif g_k == 2:
-#    conjugate_function = B2_from_z 
-#  matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p_limit).conjugate()
-#  return prefactor * matrix_value1 * matrix_value2
-
-#def integrand_matrix(z,f_function,z0, Z, l, k, nu_in, n_0, p_limit):
-#  if z<1: return 0
-#  return 2*z/(z*z-z0*z0)*f_function(Z,l,k,z,nu_in,n_0,p_limit).real
-#
-#def integrand_matrix_s(z,z0, Z, l,k, nu_in, n_0, p_limit):
-#  if z<1: return 0
-#  return 2*z/(z*z-z0*z0) * \
-#      f_a(Z,l,k,z,nu_in,n_0,p_limit).real 
-#
-#def integrand_matrix_p(z,z0, Z, nu_in, n_0, p_limit):
-#  if z<1: return 0
-#  return 2*z/(z*z-z0*z0)\
-#    *1/3*(\
-#      f_c_0(Z,0,0,z,nu_in,n_0,p_limit).real - \
-#      f_c_2(Z,2,0,z,nu_in,n_0,p_limit).real * 20\
-#        )
-
 def f_a_for_p(Z: int,l: int,k: int,z: float,nu_in:float,n_0:int,p: int) -> "list[complex]":
   if z <= 0: return [complex(0,0)] * (2*p+1)
   b_ = b(n_0,0,Z)
@@ -682,7 +530,7 @@ def f_d_el_for_p(Z: int,l: int,g_m: int,g_k: int,z: float,nu_in: float,n_0: int,
 
 ## end of angle independant part
 
-def print_Js():
+def print_Js() -> None:
   p_limit = 6
   l_limit = 6
   Js = np.zeros((4,l_limit,p_limit))

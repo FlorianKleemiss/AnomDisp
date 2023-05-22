@@ -146,7 +146,7 @@ def get_ionization_energy_1s(Z: int) -> float:
                          101137,103922,106755,109651,112601,115606
                          ]
   if Z<=92:
-    return float(ionization_energies[Z-1])
+    return ionization_energies[Z-1]
   else:
     #extrapoalte from fourth order regression of tabulated data
     a1 =  4.00729846e-04
@@ -190,7 +190,7 @@ def get_ionization_energy_2s(Z: int) -> float:
   b1 = 4.99999128e+01
   c  = 1.27894569e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=3:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -235,7 +235,7 @@ def get_ionization_energy_2p1_2(Z: int) -> float:
   b1 = 4.99597550e+01
   c  = 1.48993379e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=5:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -280,7 +280,7 @@ def get_ionization_energy_2p3_2(Z: int) -> float:
   b1 = 6.02739274e+01
   c  = 2.60817688e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=7:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -325,7 +325,7 @@ def get_ionization_energy_3s(Z: int) -> float:
   b1 = 2.98052563e+01
   c  = 6.63407582e-05
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -370,7 +370,7 @@ def get_ionization_energy_3p_1_2(Z: int) -> float:
   b1 = 2.65575820e+00
   c  = 4.99863585e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -415,7 +415,7 @@ def get_ionization_energy_3p_3_2(Z: int) -> float:
   b1 =-4.18496392e+00
   c  = 4.99999983e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -460,7 +460,7 @@ def get_ionization_energy_3d_3_2(Z: int) -> float:
   b1 =-8.92936626e+00
   c  = 4.99999918e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
@@ -505,7 +505,7 @@ def get_ionization_energy_3d_5_2(Z: int) -> float:
   b1 =-8.82796315e+00
   c  = 4.99877841e+02
   if Z<=92:
-    result = float(ionization_energies[Z-1])
+    result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
         result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
