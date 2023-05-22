@@ -1,29 +1,27 @@
 import math
-import numpy
 import scipy.integrate as integrate
 from constants_and_atomic_properties import *
 
 parallel = True
 
-def calc_stuff(position, number, n_disp_K, n_disp_L, n_disp_M, axis, edge):
+def calc_stuff(position: int, number: int, n_disp_K: float, n_disp_L:float, n_disp_M:float, axis: str, edge: float) -> "list[float]":
+  energy = 0
+  x = 0
   if axis == "relative":
     energy = 1/(position * 0.001) * edge
     rel_pos = position * 0.001
+    x = (rel_pos) #For relative to K-edge
   elif axis == "keV":
     energy = position
+    x = (energy/1000) #for absolute energy spectra in keV
   elif axis == "Angstrom" or axis == "fixed":
     energy = 1E10*h*speed_of_light/(position*0.0001)
     wavelength = (position*0.0001)
+    x = (wavelength) #for wavelength in A
   if energy == edge:
-    return
+    return [0,0,0,0,0,0,0,0,0]
   else:
     result_s, result_s_imag = sugiura_k(number,energy)
-    if axis == "relative":
-      x = (rel_pos) #For relative to K-edge
-    elif axis == "keV":
-      x = (energy/1000) #for absolute energy spectra in keV
-    elif axis == "Angstrom" or axis == "fixed":
-      x = (wavelength) #for wavelength in A
     y_s = 2*result_s - n_disp_K
     y_s_imag = 2*result_s_imag
     result_real, result_imag = l_with_imag(number,energy)
@@ -36,10 +34,10 @@ def calc_stuff(position, number, n_disp_K, n_disp_L, n_disp_M, axis, edge):
     y_d = 2*result_s+2*result_real+2*result_real_M-(n_disp_K+n_disp_L+n_disp_M)
     y_d_imag = 2*result_s_imag+2*result_imag+2*result_imag_M
     if axis == "fixed":
-      print("{:5.3f} ".format(x[len(x)-1])+"{:8e} ".format(2*result_s-n_disp_K)+"{:8e} ".format(2*result_real-n_disp_L)+"{:8e} ".format(2*result_s_imag)+"{:8e} ".format(2*result_imag)+"{:8e} ".format(math.sqrt(pow(i+2*result_s-n_disp_K+2*result_real-n_disp_L,2)+pow(2*result_s_imag+2*result_imag,2))) )
-    return x,y_s,y_s_imag,y_l_real,y_l_imag,y_m_real,y_m_imag,y_d,y_d_imag
+      print("{:5.3f} ".format(x)+"{:8e} ".format(2*result_s-n_disp_K)+"{:8e} ".format(2*result_real-n_disp_L)+"{:8e} ".format(2*result_s_imag)+"{:8e} ".format(2*result_imag)+"{:8e} ".format(math.sqrt(pow(i+2*result_s-n_disp_K+2*result_real-n_disp_L,2)+pow(2*result_s_imag+2*result_imag,2))) )
+    return [x,y_s,y_s_imag,y_l_real,y_l_imag,y_m_real,y_m_imag,y_d,y_d_imag]
 
-def calc_hoenllike(energy_in_ev, Z):
+def calc_hoenllike(energy_in_ev: float, Z: int) -> "list[float]":
   junk, result_s_imag = sugiura_k(Z,energy_in_ev)
   y_s_imag = 2*result_s_imag
   junk, result_imag = l_with_imag(Z,energy_in_ev)
@@ -48,7 +46,7 @@ def calc_hoenllike(energy_in_ev, Z):
   y_m_imag = 2*result_imag_M
 
   y_d_imag = 2*result_s_imag+2*result_imag+2*result_imag_M
-  return y_s_imag,y_l_imag,y_m_imag,y_d_imag
+  return [y_s_imag,y_l_imag,y_m_imag,y_d_imag]
 
 def integrand_for_disp_els_K(n_j,n_0):
   z=n_j/n_0
@@ -80,21 +78,24 @@ def integrand_for_disp_els_M_4_5(n_j,n_0):
   part1 = 1024/5.0*2/n_0*(5*z*z+46*z+48)/(pow(z,8))
   return part1*sugiura_exps(z,3)
 
-def real_general_integration(n_j,chi_j,nu,n_0,oscillator_density_function):
+def real_general_integration(n_j,chi_j,nu,n_0,oscillator_density_function) -> float:
   res = (pow(n_j,2)-pow(nu,2))/(pow(pow(n_j,2)-pow(nu,2),2)+pow(nu*chi_j,2))
   return res*oscillator_density_function(n_j,n_0)
 
-def imag_general_integration(n_j,chi_j,nu,n_0,oscillator_density_function):
+def imag_general_integration(n_j,chi_j,nu,n_0,oscillator_density_function) -> float:
   res = -nu*chi_j/(pow(pow(n_j,2)-pow(nu,2),2)+pow(nu*chi_j,2))
   return res*oscillator_density_function(n_j,n_0)
 
-def sugiura_k(Z=None, ener=8047.8, disp_only=False):
+@overload
+def sugiura_k(Z: int = -1, ener:float =8047.8, disp_only: Literal[False] = ...) -> "list[float]": ...
+
+@overload
+def sugiura_k(Z: int = -1, ener:float =8047.8, disp_only: Literal[True] = ...) -> float: ...
+
+def sugiura_k(Z: int = -1, ener:float =8047.8, disp_only: bool=False) -> Union[float,"list[float]"]:
     # Z is integer number of 
-  if type(Z) != type(int(20)):
-    print("Z MUST BE INTEGER!")
-    return
-  if Z == None:
-    Z = 6
+  if Z == -1:
+    raise ValueError("Z MUST BE POSITIVE INTEGER!")
   Z_s_sq = pow(get_Zeff_1s(Z),2)
   e_ion = get_ionization_energy_1s(Z)
   nu_k = e_ion / h
@@ -135,15 +136,18 @@ def sugiura_k(Z=None, ener=8047.8, disp_only=False):
   alpha_K_sugiura_damp = complex(integral,imag_integral[0])
   ausdruck = alpha_K_sugiura_damp/(1-4.0*math.pi/3*alpha_K_sugiura_damp*prefactor)
   factor = pow(nu,2)
-  return -ausdruck.real*factor, -ausdruck.imag*factor
+  return [-ausdruck.real*factor, -ausdruck.imag*factor]
 
-def l_with_imag(Z=None, ener=8047.8, disp_only=False):
+@overload
+def l_with_imag(Z: int = -1, ener:float =8047.8, disp_only: Literal[False] = ...) -> "list[float]": ...
+
+@overload
+def l_with_imag(Z: int = -1, ener:float =8047.8, disp_only: Literal[True] = ...) -> float: ...
+
+def l_with_imag(Z: int = -1, ener:float =8047.8, disp_only: bool=False) -> Union[float,"list[float]"]:
   # Z is integer number of 
-  if type(Z) != type(int(20)):
-    print("Z MUST BE INTEGER!")
-    return
-  if Z == None:
-    Z = 6
+  if Z == -1:
+    raise ValueError("Z MUST BE POSITIVE INTEGER!")
   nu_l1 = get_ionization_energy_2s(Z)   /h
   nu_l2 = get_ionization_energy_2p1_2(Z)/h
   nu_l3 = get_ionization_energy_2p3_2(Z)/h
@@ -232,15 +236,18 @@ def l_with_imag(Z=None, ener=8047.8, disp_only=False):
   alpha_L_sugiura_damp = complex(integral_1+integral_2+integral_3*2,imag_integral_1[0]+imag_integral_2[0]+2*imag_integral_3[0])
   ausdruck = (alpha_L_sugiura_damp)/(1-4.0*math.pi/3*alpha_L_sugiura_damp*prefactor)
   factor = pow(nu,2)
-  return -ausdruck.real*factor, -ausdruck.imag*factor
+  return [-ausdruck.real*factor, -ausdruck.imag*factor]
 
-def m_with_imag(Z=None, ener=8047.8, disp_only=False):
+@overload
+def m_with_imag(Z: int = -1, ener:float =8047.8, disp_only: Literal[False] = ...) -> "list[float]": ...
+
+@overload
+def m_with_imag(Z: int = -1, ener:float =8047.8, disp_only: Literal[True] = ...) -> float: ...
+
+def m_with_imag(Z: int=-1, ener:float=8047.8, disp_only:bool =False) -> Union[float,"list[float]"]:
   # Z is integer number of 
-  if type(Z) != type(int(20)):
-    print("Z MUST BE INTEGER!")
-    return
-  if Z == None:
-    Z = 6
+  if Z == -1:
+    raise ValueError("Z MUST BE POSITIVE INTEGER!")
   nu_m1 = get_ionization_energy_3s(Z)    / h
   nu_m2 = get_ionization_energy_3p_1_2(Z)/ h
   nu_m3 = get_ionization_energy_3p_3_2(Z)/ h
@@ -380,7 +387,7 @@ def m_with_imag(Z=None, ener=8047.8, disp_only=False):
                                  imag_integral_1[0]+imag_integral_2[0]+2*imag_integral_3[0]+3*imag_integral_4[0]+2*imag_integral_5[0])
   ausdruck = (alpha_M_sugiura_damp)/(1-4.0*math.pi/3*alpha_M_sugiura_damp*prefactor)
   factor = pow(nu,2)
-  return -ausdruck.real*factor, -ausdruck.imag*factor
+  return [-ausdruck.real*factor, -ausdruck.imag*factor]
 
 def test_florian():
   a=52
@@ -483,6 +490,7 @@ def test_florian():
 
 if __name__ == '__main__':
   import matplotlib.pyplot as plt
+  from matplotlib import ticker
   fig, axs = plt.subplots(4,2,sharex=True)
   stop = False
   Zs = [42,52,92]
@@ -648,14 +656,13 @@ if __name__ == '__main__':
   axs[1, 0].set(ylabel=r'$\frac{1-n_0}{\lambda^2} * \frac{2 \pi m c^2}{N e^2}$')
   axs[2, 0].set(ylabel=r'$\frac{1-n_0}{\lambda^2} * \frac{2 \pi m c^2}{N e^2}$')
   axs[3, 0].set(ylabel=r'$\Delta f\ /e$')
-  import matplotlib
   for ax in fig.get_axes():
     if axis == "Angstrom" or axis == "fixed":
       #ax.set_xscale('log')
       ax.set_xlim(3.0,0.05)
       ax.set_xticks([0.1,0.2,0.3,0.5,0.7,1.0,1.5,2.0,3.0])
       ax.get_xaxis().get_major_formatter().labelOnlyBase = False
-      ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+      ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
     elif axis == "relative":
       ax.set_xlim(0.0,2.0) #for relative spectra
     elif axis == "keV":
@@ -664,13 +671,10 @@ if __name__ == '__main__':
 
   print("Done")
 
-def sugiura_k_purely_imag(Z=None, ener=8047.8):
-    # Z is integer number of 
-  if type(Z) != type(int(20)):
-    print("Z MUST BE INTEGER!")
-    return
-  if Z == None:
-    Z = 6
+def sugiura_k_purely_imag(Z:int=-1, ener:float=8047.8) -> float:
+  # Z is integer number of 
+  if Z <= 0:
+    raise ValueError("Z MUST BE Positive INTEGER!")
   Z_s_sq = pow(get_Zeff_1s(Z),2)
   e_ion = get_ionization_energy_1s(Z)
   nu_k = e_ion / h

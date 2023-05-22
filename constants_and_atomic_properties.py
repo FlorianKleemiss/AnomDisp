@@ -1,6 +1,8 @@
 import numpy
 import math
 import scipy.special as special
+from typing import Any, Union, overload
+from typing_extensions import Literal
 
 a0 = 0.529177210903E-10 #in m
 h = 6.62607015E-34/1.602176634E-19 #in eV*s
@@ -17,7 +19,10 @@ angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
 barn2bohr = 2.80028520539078E+7
 constant_factor = 4*math.pi*math.pi*el_mass/h/h #p_0 according to Hönl's Waller paper (1933) Page 646
 
-def sugiura_exps(z,n_0):
+def dummy_func(*args, **kwargs) -> Any:
+  pass
+
+def sugiura_exps(z: float,n_0: int) -> float:
   z_1 = z-1
   if(z<=1):
     sqrt_var = numpy.sqrt(abs(z_1))
@@ -47,7 +52,7 @@ relcor = [ 0.0, 0.0,                                                            
            0.689999998,         0.721000016,0.753000021,0.786000013,0.819000006,0.853999972,0.888999999,0.925000012,0.962000012,1.00000000,1.03900003,1.07900000,1.11899996,1.16100001,1.20400000,1.24800003,1.29299998,1.33800006,1.38499999,1.43299997,1.48199999,1.53199995,1.58299994,1.63600004,1.68900001,1.74300003,1.79900002,1.85599995,1.91400003,1.97300005,2.03299999,2.09500003,
            2.15700006,           2.22099996, 2.28699994, 2.35299993, 2.42100000, 2.49000001]  
 
-def exp_from_z(z,n_0):
+def exp_from_z(z: float,n_0: int) -> float:
   z_1 = z-1
   temp = 0.0
   sqrt_var = numpy.sqrt(abs(z_1))
@@ -57,11 +62,11 @@ def exp_from_z(z,n_0):
   return math.exp(-2*n_0*temp)
   return math.exp(-2*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
-def exp_squared_from_z(z,n_0):
+def exp_squared_from_z(z: float,n_0: int) -> float:
   return exp_from_z(z,n_0)**2
   return math.exp(-4*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
-def delta(Z,n0,l,j):
+def delta(Z: int,n0: int,l: int ,j: float) -> float:
   if n0 == 1:
     if l != 0: raise ValueError("unknown orbital type!")
     else: 
@@ -130,7 +135,7 @@ elements = ["DUMMY","H",                                                        
             "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn",
             "Fr","Ra","Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"]
 
-def get_ionization_energy_1s(Z):
+def get_ionization_energy_1s(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [  13.6,                                                                                                                                                                                                                    24.6,
                            54.7, 111.5,                                                                                                                                                                         188.0, 284.2, 409.9, 543.1, 696.7, 870.2,
@@ -166,7 +171,7 @@ def get_ionization_energy_1s(Z):
   plt.plot(x,func(x, *result), 'r-')
   plt.show()
 
-def get_ionization_energy_2s(Z):
+def get_ionization_energy_2s(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,  37.3,  41.6, 0.000,  48.5,
@@ -211,7 +216,7 @@ def get_ionization_energy_2s(Z):
     plt.plot(x2,func(x2, *result), 'r-')
     plt.show() 
 
-def get_ionization_energy_2p1_2(Z):
+def get_ionization_energy_2p1_2(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  21.7,
@@ -256,7 +261,7 @@ def get_ionization_energy_2p1_2(Z):
     plt.plot(x2,func(x2, *result), 'r-')
     plt.show()   
 
-def get_ionization_energy_2p3_2(Z):
+def get_ionization_energy_2p3_2(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  21.6,
@@ -301,7 +306,7 @@ def get_ionization_energy_2p3_2(Z):
     plt.plot(x2,func(x2, *result), 'r-')
     plt.show()
 
-def get_ionization_energy_3s(Z):
+def get_ionization_energy_3s(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
@@ -346,7 +351,7 @@ def get_ionization_energy_3s(Z):
   plt.plot(x2,func(x2, *result), 'r-')
   plt.show()
 
-def get_ionization_energy_3p_1_2(Z):
+def get_ionization_energy_3p_1_2(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
@@ -391,7 +396,7 @@ def get_ionization_energy_3p_1_2(Z):
   plt.plot(x2,func(x2, *result), 'r-')
   plt.show()
 
-def get_ionization_energy_3p_3_2(Z):
+def get_ionization_energy_3p_3_2(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
@@ -436,7 +441,7 @@ def get_ionization_energy_3p_3_2(Z):
   plt.plot(x2,func(x2, *result), 'r-')
   plt.show()
 
-def get_ionization_energy_3d_3_2(Z):
+def get_ionization_energy_3d_3_2(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
@@ -481,7 +486,7 @@ def get_ionization_energy_3d_3_2(Z):
   plt.plot(x2,func(x2, *result), 'r-')
   plt.show()
   
-def get_ionization_energy_3d_5_2(Z):
+def get_ionization_energy_3d_5_2(Z: int) -> float:
   #table from X-ray data booklet, in eV
   ionization_energies = [   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
@@ -526,7 +531,7 @@ def get_ionization_energy_3d_5_2(Z):
   plt.plot(x2,func(x2, *result), 'r-')
   plt.show()
   
-def get_line_width_K(Z):
+def get_line_width_K(Z: int) -> float:
   #returns line width in eV
   #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
   Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
@@ -539,7 +544,7 @@ def get_line_width_K(Z):
                          ]
   return Linewidths[Z-1]
 
-def get_line_width_Lp_3_2(Z):
+def get_line_width_Lp_3_2(Z: int) -> float:
   #returns line width in eV
   #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
   Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
@@ -552,7 +557,7 @@ def get_line_width_Lp_3_2(Z):
                          ]
   return Linewidths[Z-1]
 
-def get_line_width_Lp_1_2(Z):
+def get_line_width_Lp_1_2(Z: int) -> float:
   #returns line width in eV
   #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
   Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
@@ -565,7 +570,7 @@ def get_line_width_Lp_1_2(Z):
                          ]
   return Linewidths[Z-1]
   
-def get_line_width_Ls(Z):
+def get_line_width_Ls(Z: int) -> float:
   #returns line width in eV
   #according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
   Linewidths          = [   0.0,                                                                                                                                                                                                                     0.0,
@@ -578,7 +583,7 @@ def get_line_width_Ls(Z):
                          ]
   return Linewidths[Z-1]
     
-def get_Zeff_1s(Z):
+def get_Zeff_1s(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    1.0,                                                                                                                                                                                                                  1.618,
            2.618, 3.614,                                                                                                                                                                         4.603, 5.587, 6.570, 7.553, 8.534, 9.515,
@@ -589,8 +594,9 @@ def get_Zeff_1s(Z):
           86.182,87.176,88.171,89.165,90.158,91.149,92.143,93.134,94.123,95.115,96.105,97.093,98.081,99.067,100.051,101.034,102.017,102.997,103.976,104.941,105.914,106.884,107.851,108.815,109.775,110.731,111.684,112.631,113.574,114.511,115.442,116.367
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_2s(Z):
+def get_Zeff_2s(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [   0.0,                                                                                                                                                                                                                      0.0,
             1.550, 2.266,                                                                                                                                                                         3.036, 3.776, 4.505, 5.257, 5.997, 6.731,
@@ -601,8 +607,9 @@ def get_Zeff_2s(Z):
            83.287,84.304,85.322,86.340,87.359,88.376,89.397,90.416,91.435,92.455,93.476,94.495,95.515,96.534,97.552,98.571,99.589,100.607,101.623,102.631,103.644,104.656,105.666,106.674,107.680,108.684,109.684,110.682,111.676,112.666,113.651,114.631
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_2p_1_2(Z):
+def get_Zeff_2p_1_2(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                         2.268, 2.916, 3.547, 4.022, 4.598, 5.185,
@@ -613,8 +620,9 @@ def get_Zeff_2p_1_2(Z):
            82.354,83.380,84.406,85.434,86.463,87.492,88.523,89.554,90.586,91.618,92.652,93.687,94.722,95.757,96.794,97.831,98.868,99.906,100.945,101.982,103.021,104.061,105.101,106.141,107.181,108.220,109.260,110.299,111.337,112.374,113.410,114.444
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_2p_3_2(Z):
+def get_Zeff_2p_3_2(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                         2.268, 2.916, 3.546, 4.082, 4.615, 5.175,
@@ -625,8 +633,9 @@ def get_Zeff_2p_3_2(Z):
            80.615,81.590,82.565,83.539,84.515,85.489,86.464,87.439,88.413,89.386,90.361,91.334,92.307,93.279,94.251,95.223,96.194,97.164,98.134,99.103,100.072,101.040,102.007,102.974,103.940,104.905,105.870,106.834,107.797,108.759,109.721,110.682
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_3s(Z):
+def get_Zeff_3s(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
@@ -637,8 +646,9 @@ def get_Zeff_3s(Z):
            76.642,77.685,78.730,79.777,80.827,81.876,82.930,83.985,85.041,86.100,87.161,88.222,89.286,90.352,91.418,92.487,93.558,94.629,95.702,96.770,97.844,98.920,99.997,101.074,102.151,103.230,104.308,105.386,106.464,107.541,108.617,109.691
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_3p_1_2(Z):
+def get_Zeff_3p_1_2(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
@@ -649,8 +659,9 @@ def get_Zeff_3p_1_2(Z):
            74.904,75.957,77.012,78.069,79.130,80.193,81.258,82.327,83.398,84.470,85.546,86.624,87.706,88.789,89.876,90.965,92.057,93.151,94.248,95.346,96.448,97.554,98.662,99.772,100.886,102.003,103.122,104.245,105.370,106.497,107.627,108.759
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_3p_3_2(Z):
+def get_Zeff_3p_3_2(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
@@ -661,8 +672,9 @@ def get_Zeff_3p_3_2(Z):
            72.076,73.038,74.001,74.963,75.927,76.891,77.855,78.819,79.783,80.747,81.712,82.676,83.641,84.605,85.570,86.535,87.499,88.463,89.527,90.391,91.355,92.319,93.283,94.246,95.209,96.172,97.135,98.098,99.060,100.023,100.984,101.946
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_3d_3_2(Z):
+def get_Zeff_3d_3_2(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
@@ -673,8 +685,9 @@ def get_Zeff_3d_3_2(Z):
            69.602,70.573,71.545,72.516,73.487,74.459,75.431,76.403,77.379,78.351,79.322,80.295,81.268,82.242,83.215,84.189,85.161,86.133,87.105,88.077,89.048,90.020,90.991,91.961,92.932,93.902,94.872,95.842,96.811,97.781,98.749,99.718
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
 
-def get_Zeff_3d_5_2(Z):
+def get_Zeff_3d_5_2(Z: int) -> float:
   #Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
   Zeff = [    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
@@ -685,3 +698,4 @@ def get_Zeff_3d_5_2(Z):
            68.814,69.762,70.709,71.657,72.606,73.554,74.502,75.450,76.395,77.341,78.288,79.233,80.178,81.122,82.066,83.009,83.952,84.893,85.835,86.776,87.716,88.656,89.595,90.534,91.472,92.409,93.346,94.282,95.217,96.151,97.085,98.018
           ]
   if Z<=118: return Zeff[Z-1]
+  else: raise ValueError("Atomic Number not known!")
