@@ -15,3 +15,7 @@
 /__pycache__
 /PDFs/*
 .vscode/settings.json
+factor_profiling_stats.txt
+test.hkl
+paralle_orthogonal_calc.docx
+.prof_stats

@@ -1,8 +1,10 @@
-import numpy
-import math
+import numpy as np
+import numpy.typing as npt
+import math, cmath
 import scipy.special as special
-from typing import Any, Union, overload
+from typing import Any, Union, overload, Callable
 from typing_extensions import Literal
+# distutils: language=Py3
 
 a0 = 0.529177210903E-10 #in m
 h = 6.62607015E-34/1.602176634E-19 #in eV*s
@@ -19,23 +21,298 @@ angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
 barn2bohr = 2.80028520539078E+7
 constant_factor = 4*math.pi*math.pi*el_mass/h/h #p_0 according to Hönl's Waller paper (1933) Page 646
 
+foa = Union[float,npt.NDArray]
+
 def dummy_func(*args, **kwargs) -> Any:
   pass
 
-def sugiura_exps(z: float,n_0: int) -> float:
+@overload
+def sugiura_exps(z: float,n_0: int) -> float: ...
+
+@overload
+def sugiura_exps(z: npt.NDArray,n_0: int) -> npt.NDArray: ...
+
+def sugiura_exps(z: Union[float,npt.NDArray], n_0: int) -> Union[float,npt.NDArray]:
   z_1 = z-1
   if(z<=1):
-    sqrt_var = numpy.sqrt(abs(z_1))
-    temp = numpy.arctan(sqrt_var)/sqrt_var - 2/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
-    part2 = numpy.exp(-4*n_0*temp)
-    part3 = 1-numpy.exp(-2*n_0*math.pi/sqrt_var)
+    sqrt_var = np.sqrt(abs(z_1))
+    temp = np.arctan(sqrt_var)/sqrt_var - 2/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
+    part2 = np.exp(-4*n_0*temp)
+    part3 = 1-np.exp(-2*n_0*math.pi/sqrt_var)
   else:
-    sqrt_var = numpy.sqrt(z_1)
-    part2 = numpy.exp(-4*n_0/sqrt_var*numpy.arctan(sqrt_var))
-    part3 = 1-numpy.exp(-2*n_0*math.pi/sqrt_var)
+    sqrt_var = np.sqrt(z_1)
+    part2 = np.exp(-4*n_0/sqrt_var*np.arctan(sqrt_var))
+    part3 = 1-np.exp(-2*n_0*math.pi/sqrt_var)
   return part2/part3
   #The one above is without the correction for the part when z is <1 where we continue the function using the hyp2f1
   return np.exp(-4*n_0/np.sqrt(z-1)*np.arctan(np.sqrt(z-1)))/(1-np.exp(-2*n_0*math.pi/np.sqrt(z-1)))
+
+@overload
+def f_s_1_hoenl(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_1_hoenl(z: float) -> float: ...
+
+def f_s_1_hoenl(z: foa) -> foa:
+  part1 = 64/(3*np.power(z,3))
+  part2 = sugiura_exps(z,1)
+  return part1*part2
+
+
+@overload
+def f_s_2_1_hoenl(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_2_1_hoenl(z: float) -> float: ...
+
+def f_s_2_1_hoenl(z: foa) -> foa:
+  part1 = 256*(z-2)/(15*z**5)
+  part2 = sugiura_exps(z,1)
+  return part1*part2
+
+@overload
+def f_s_2_2_hoenl(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_2_2_hoenl(z: float) -> float: ...
+
+def f_s_2_2_hoenl(z: foa) -> foa:
+  part1 = 256*(4*z-3)/(15*z**5)
+  part2 = sugiura_exps(z,1)
+  return part1*part2
+
+@overload
+def f_s_1_EM(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_1_EM(z: float) -> float: ...
+
+def f_s_1_EM(z: foa) -> foa:
+  part1 = 512*(z+3)/(3*z**4)
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+@overload
+def f_s_2_1_EM(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_2_1_EM(z: float) -> float: ...
+
+def f_s_2_1_EM(z: foa) -> foa:
+  part1 = 512*(z-2)*(z+3)/(15*z**6)
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+@overload
+def f_s_2_2_EM(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_2_2_EM(z: float) -> float: ...
+
+def f_s_2_2_EM(z: foa) -> foa:
+  part1 = 2048*pow(z-1,2)*(z+3)/(15*z**7)
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+@overload
+def f_p_1_EM(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_p_1_EM(z: float) -> float: ...
+
+def f_p_1_EM(z: foa) -> foa:
+  part1 = 512*(z+8./3.)/(3*z**5)
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+@overload
+def f_p_2_1_EM(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_p_2_1_EM(z: float) -> float: ...
+
+def f_p_2_1_EM(z: foa) -> foa:
+  return (z-2)/z**2/5 * f_p_1_EM(z)
+  part1 = 512*(z-2)*(z+8./3.)/(15*pow(z,7))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+@overload
+def f_p_2_2_EM(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_p_2_2_EM(z: float) -> float: ...
+
+def f_p_2_2_EM(z: foa) -> foa:
+  return 2*(11*z-6)*(z+3)/(z+8./3.)/z**2/15 * f_p_1_EM(z)
+  part1 = 1024*(11*z-6)*(z+3)/(45*pow(z,7))
+  part2 = sugiura_exps(z,2)
+  return part1*part2
+
+@overload
+def f_s_1_WA(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_1_WA(z: float) -> float: ...
+
+def f_s_1_WA(z: foa) -> foa:
+  part1 = 64*(3*z+4)**2*(z+8)/z**6
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+@overload
+def f_s_2_1_WA(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_2_1_WA(z: float) -> float: ...
+
+def f_s_2_1_WA(z: foa) -> foa:
+  part1 = 256*pow(3*z+4,2)*(z+8)*(z-2)/(45*z**8)
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+@overload
+def f_s_2_2_WA(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_s_2_2_WA(z: float) -> float: ...
+
+def f_s_2_2_WA(z: foa) -> foa:
+  part1 = 256*(3*z-4)*(z+8)*(4*z+5)*(3*z-4)/(45*z**8)
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+@overload
+def f_p_1_WA(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_p_1_WA(z: float) -> float: ...
+
+def f_p_1_WA(z: foa) -> foa:
+  part1 = 512*(3*z**2+26*z+28)/z**6
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+@overload
+def f_d_1_WA(z: npt.NDArray) -> npt.NDArray: ...
+
+@overload
+def f_d_1_WA(z: float) -> float: ...
+
+def f_d_1_WA(z: foa) -> foa:
+  part1 = 1024/5.0*(5*z**2+46*z+48)/(z**7)
+  part2 = sugiura_exps(z,3)
+  return part1*part2
+
+#2pi m/s^2 
+@overload
+def q(nu: float) -> float: ...
+
+@overload
+def q(nu: npt.NDArray) -> npt.NDArray: ...
+
+def q(nu: foa) -> foa:
+  return 2*math.pi*nu/speed_of_light
+
+def b(n_0: int, l_0:int , Z: int) -> float:
+  Z_eff = -20
+  if n_0 == 1:
+    Z_eff = get_Zeff_1s(Z)
+  elif n_0 == 2:
+    if l_0 == 0:
+      Z_eff = get_Zeff_2s(Z)
+    elif l_0 == 1:
+      Z_eff = get_Zeff_2p_1_2(Z)
+    elif l_0 == 2:
+      Z_eff = get_Zeff_2p_3_2(Z)
+  elif n_0 == 3:
+    if l_0 ==0:
+      Z_eff = get_Zeff_3s(Z)
+    elif l_0 == 1:
+      Z_eff = get_Zeff_3p_1_2(Z)
+    elif l_0 == 2:
+      Z_eff = get_Zeff_3d_3_2(Z)
+  if Z_eff == -20:
+    raise ValueError("Errr in calculation of b, unkown case")
+  return Z_eff/(n_0*a0)
+
+@overload
+def xn(nu_in: float,n_0: int, el_nr: int, l_0: int, n: int) -> float: ...
+
+@overload
+def xn(nu_in: npt.NDArray,n_0: int, el_nr: int, l_0: int, n: int) -> npt.NDArray: ...
+
+def xn(nu_in: foa,n_0: int, el_nr: int, l_0: int, n: int) -> foa:
+  return pow(n_0 * q(nu_in)/b(n_0, l_0, el_nr), n)
+
+@overload
+def x2(nu_in: float, n_0: int, el_nr: int, l_0: int) -> float: ...
+
+@overload
+def x2(nu_in: npt.NDArray, n_0: int, el_nr: int, l_0: int) -> npt.NDArray: ...
+
+def x2(nu_in: foa,n_0: int, el_nr: int, l_0: int) -> foa:
+  return xn(nu_in,n_0, el_nr, l_0, 2)
+
+def z_EE(E: float,E2: float) -> float:
+  return (E+abs(E2))/abs(E2)
+
+def z_kb(k: float,b: float) -> float:
+  return pow(k,2)/pow(b,2) + 1
+
+def z_nprime(n_prime:float, n_0:int) -> float:
+  return n_0*n_0/pow(n_prime,2) + 1
+
+def n_prime_from_z(z:float,n_0:int) -> complex:
+  return n_0/cmath.sqrt(z-1)
+
+def z_nunu(nu_j: float, nu_2: float) -> float:
+  return nu_j/nu_2
+
+def k(E: float) -> float:
+  return 2*math.pi / h * math.sqrt(2*el_mass*E)
+
+def n_prime(E: float, Z: int, n: int,l: int) -> float:
+  return 2*b(n,l,Z)/k(E)
+
+#introduces m^3 / pi
+def N0_square(b_: float) -> float:
+  return pow(b_,3)/math.pi
+
+def N0(b_: float) -> float:
+  return math.sqrt(N0_square(b_))
+
+def product_n_prime_from_z(n_0: int,z: float,l: int) -> complex:
+  n_p = n_prime_from_z(z,n_0)
+  fact = complex(1.0)
+  for nu in range(1,l+1):
+    fact *= n_p * n_p + nu*nu
+  if z < 1:
+    denom = 1-complex(np.cos(-2*math.pi*n_p.imag),np.sin(-2*math.pi*n_p.imag))
+  else: 
+    denom = 1-math.exp(-2*math.pi*n_p.real)
+  return fact/denom
+
+#Introduces factors 2pi m_e /h^2 and m
+def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
+  if (m > l):
+    return 0
+  result = (2*l+1)*math.factorial(l-m)/math.factorial(l+m) * constant_factor / math.pi * n_0 * b_ * product_n_prime_from_z(n_0,z,l)
+  if m >= 1:
+    result *= 2
+  return result
+
+def N(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
+  return cmath.sqrt(N_square_from_z(l,m,b_,n_0,z))
+
+def N_square(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
+  return N_square_from_z(l,m,b_,n_0,z)
+
+def N_lm_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> complex:
+  return N(l,m,b_,n_0, z)
+
+def N_lm_square_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> complex:
+  return N_square(l,m,b_,n_0,z)
 
 kpcor =  [ 0.0,    0.0,                                                                                                                                                                                                                   0.0,
           1E-3,    0.0,                                                                                                                                                                              1E-3,  1E-3,  2E-3,  3E-3,  4E-3,  4E-3,
@@ -55,10 +332,10 @@ relcor = [ 0.0, 0.0,                                                            
 def exp_from_z(z: float,n_0: int) -> float:
   z_1 = z-1
   temp = 0.0
-  sqrt_var = numpy.sqrt(abs(z_1))
+  sqrt_var = np.sqrt(abs(z_1))
   if(z<=1):
     temp -= 2/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
-  temp += numpy.arctan(sqrt_var)/sqrt_var
+  temp += np.arctan(sqrt_var)/sqrt_var
   return math.exp(-2*n_0*temp)
   return math.exp(-2*n_0/math.sqrt(z-1)*math.atan(math.sqrt(z-1)))
 
@@ -72,62 +349,62 @@ def kronecke_delta(a: Union[int,float],b: Union[int,float]) -> int:
   else:
       return 0
 
-def delta_edge(Z: int,n0: int,l: int ,j: float) -> float:
+def one_minus_delta_edge(Z: int, n0: int,l: int ,j: float) -> float:
   if n0 == 1:
     if l != 0: raise ValueError("unknown orbital type!")
     else: 
       Z_s_sq = pow(get_Zeff_1s(Z),2)
       e_ion = get_ionization_energy_1s(Z)
-      delta_K = 1 + alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-      return delta_K
+      delta_K = alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+      return -delta_K
   elif n0 == 2:
     if l == 0:
       Z_s_sq = pow(get_Zeff_2s(Z),2)
       e_ion = get_ionization_energy_2s(Z)
-      delta_l1 = 1 + alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-      return delta_l1
+      delta_l1 = alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+      return -delta_l1
     elif l == 1:
       if j == 0.5:
         Z_s_sq = pow(get_Zeff_2p_1_2(Z),2)
         e_ion = get_ionization_energy_2p1_2(Z)
-        delta_l2 = 1 + alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-        return delta_l2
+        delta_l2 = alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return -delta_l2
       elif j == 1.5:
         Z_s_sq = pow(get_Zeff_2p_3_2(Z),2)
         e_ion = get_ionization_energy_2p3_2(Z)
-        delta_l2 = 1 + alpha_sq * Z_s_sq * 0.0625 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-        return delta_l2
+        delta_l2 = alpha_sq * Z_s_sq * 0.0625 - 4*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return -delta_l2
       else: raise ValueError("unknown orbital type!")
     else: raise ValueError("unknown orbital type!")
   elif n0 == 3:
     if l == 0:
       Z_s_sq = pow(get_Zeff_3s(Z),2)
       e_ion = get_ionization_energy_3s(Z)
-      delta_m1 = 1 + alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-      return delta_m1
+      delta_m1 = alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+      return -delta_m1
     elif l == 1:
       if j == 0.5:
         Z_s_sq = pow(get_Zeff_3p_1_2(Z),2)
         e_ion = get_ionization_energy_3p_1_2(Z)
-        delta_m2 = 1 + alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-        return delta_m2
+        delta_m2 = alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return -delta_m2
       elif j == 1.5:
         Z_s_sq = pow(get_Zeff_3p_3_2(Z),2)
         e_ion = get_ionization_energy_3p_3_2(Z)
-        delta_m3 = 1 + alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-        return delta_m3
+        delta_m3 = alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return -delta_m3
       else: raise ValueError("unknown orbital type!")
     elif l == 2:
       if j == 1.5:
         Z_s_sq = pow(get_Zeff_3d_3_2(Z),2)
         e_ion = get_ionization_energy_3d_3_2(Z)
-        delta_m4 = 1 + alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-        return delta_m4
+        delta_m4 = alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return -delta_m4
       elif j == 2.5:
         Z_s_sq = pow(get_Zeff_3d_5_2(Z),2)
         e_ion = get_ionization_energy_3d_5_2(Z)
-        delta_m5 = 1 + alpha_sq * Z_s_sq /36 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
-        return delta_m5
+        delta_m5 = alpha_sq * Z_s_sq /36 - 9*e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+        return -delta_m5
       else: raise ValueError("unknown orbital type!")
     else: raise ValueError("unknown orbital type!")
   else: raise ValueError("unknown orbital type!")
@@ -161,7 +438,7 @@ def get_ionization_energy_1s(Z: int) -> float:
     a4 = -6.43729353e+01
     c  =  1.99592659e+02
     return float(a1 * pow(Z,4) + a2 * pow(Z,3) + a3 * pow(Z,2) + a4 * Z + c)
-  import numpy as np
+  import np as np
   from scipy.optimize import curve_fit
   def func(x,a1,a2,a3,a4,c):
     return a1*x*x*x*x + a2*x*x*x + a3*x*x + a4*x + c
@@ -199,15 +476,15 @@ def get_ionization_energy_2s(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=3:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-    import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+    import np as np
     from scipy.optimize import curve_fit
     def func(x,a1,a2,a3,a4,a5,b1,c):
-      return a1*numpy.exp2(a2*(x-b1)) + a3*x*x*x + a4*x*x + a5*x + c
+      return a1*np.exp2(a2*(x-b1)) + a3*x*x*x + a4*x*x + a5*x + c
     x = range(10,93)
     x2 = range(1,103)
     y = ionization_energies[9:]
@@ -244,15 +521,15 @@ def get_ionization_energy_2p1_2(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=5:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-    import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+    import np as np
     from scipy.optimize import curve_fit
     def func(x,n1,n2,n3,n4,n5,m1,o):
-      return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+      return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
     x = range(10,93)
     x2 = range(1,103)
     y = ionization_energies[9:]
@@ -289,15 +566,14 @@ def get_ionization_energy_2p3_2(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=7:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-    import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     from scipy.optimize import curve_fit
     def func(x,n1,n2,n3,n4,n5,m1,o):
-      return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+      return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
     x = range(10,93)
     x2 = range(7,103)
     y = ionization_energies[9:]
@@ -334,15 +610,14 @@ def get_ionization_energy_3s(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-  import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
-    return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
   x = range(19,93)
   x2 = range(7,103)
   y = ionization_energies[18:]
@@ -379,15 +654,14 @@ def get_ionization_energy_3p_1_2(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-  import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
-    return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
   x = range(19,93)
   x2 = range(7,103)
   y = ionization_energies[18:]
@@ -424,15 +698,14 @@ def get_ionization_energy_3p_3_2(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-  import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
-    return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
   x = range(19,93)
   x2 = range(7,103)
   y = ionization_energies[18:]
@@ -469,15 +742,14 @@ def get_ionization_energy_3d_3_2(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-  import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
-    return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
   x = range(19,93)
   x2 = range(7,103)
   y = ionization_energies[18:]
@@ -514,15 +786,14 @@ def get_ionization_energy_3d_5_2(Z: int) -> float:
     result = ionization_energies[Z-1]
     if result == 0.0:
       if Z>=18:
-        result = float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
+        result = float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
     return result
   else:
     #extrapoalte from fourth order regression of tabulated data
-    return float(a1*numpy.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
-  import numpy as np
+    return float(a1*np.exp2(a2*(Z-b1)) + a3*Z**3 + a4*Z**2 + a5*Z + c)
   from scipy.optimize import curve_fit
   def func(x,n1,n2,n3,n4,n5,m1,o):
-    return n1*numpy.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
   x = range(19,93)
   x2 = range(7,103)
   y = ionization_energies[18:]

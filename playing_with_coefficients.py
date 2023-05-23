@@ -1,13 +1,22 @@
-from legendre_plynomials import alpha_bar_coef,alpha_coef,beta_bar_coef,beta_coef
-from matrix_coefficients_v2 import f_p_el_for_p,f_a_for_p,f_d_el_for_p,sugiura_exps,q,b
-#from matrix_coefficients_v2 import f_a,f_c_0, f_c_2, integrand_matrix_p, integrand_matrix_s
-from constants_and_atomic_properties import *
 from matplotlib import ticker
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import numpy as np
+import numpy.typing as npt
 import multiprocessing
 from itertools import repeat
+import tkinter as tk
+from tkinter import ttk
+from brennan import brennan
+from time import time
+import math, cmath
+import pyximport
+pyximport.install(language_level=3)
+
+from legendre_plynomials import *
+from matrix_coefficients_v2 import f_p_el_for_p,f_a_for_p,f_d_el_for_p,sugiura_exps,b
+#from matrix_coefficients_v2 import f_a,f_c_0, f_c_2, integrand_matrix_p, integrand_matrix_s
+from constants_and_atomic_properties import *
 from hoenl_like import calc_hoenllike, sugiura_k_purely_imag
 #from mpl_toolkits import mplot3d
 
@@ -27,90 +36,23 @@ for l in range(10):
   bbl11.append(beta_bar_coef(l,1,1,0,0))
   bbl33.append(beta_bar_coef(l,3,3,0,0))
 
-def f_s_1_hoenl(z: float) -> float:
-  part1 = 64/(3*pow(z,3))
-  part2 = sugiura_exps(z,1)
-  return part1*part2
+@overload
+def apply_angle_part_s_parallel(a_l: float, theta0:float, alpha:float, l:int) -> float: ...
 
-def f_s_2_1_hoenl(z: float) -> float:
-  part1 = 256*(z-2)/(15*pow(z,5))
-  part2 = sugiura_exps(z,1)
-  return part1*part2
+@overload
+def apply_angle_part_s_parallel(a_l: npt.NDArray, theta0:float, alpha:float, l:int) -> npt.NDArray: ...
 
-def f_s_2_2_hoenl(z: float) -> float:
-  part1 = 256*(4*z-3)/(15*pow(z,5))
-  part2 = sugiura_exps(z,1)
-  return part1*part2
-
-def f_s_1_EM(z: float) -> float:
-  part1 = 512*(z+3)/(3*pow(z,4))
-  part2 = sugiura_exps(z,2)
-  return part1*part2
-
-def f_s_2_1_EM(z: float) -> float:
-  part1 = 512*(z-2)*(z+3)/(15*pow(z,6))
-  part2 = sugiura_exps(z,2)
-  return part1*part2
-
-def f_s_2_2_EM(z: float) -> float:
-  part1 = 2048*pow(z-1,2)*(z+3)/(15*pow(z,7))
-  part2 = sugiura_exps(z,2)
-  return part1*part2
-
-def f_p_1_EM(z: float) -> float:
-  part1 = 512*(z+8./3.)/(3*pow(z,5))
-  part2 = sugiura_exps(z,2)
-  return part1*part2
-
-def f_p_2_1_EM(z: float) -> float:
-  return (z-2)/z/z/5 * f_p_1_EM(z)
-  part1 = 512*(z-2)*(z+8./3.)/(15*pow(z,7))
-  part2 = sugiura_exps(z,2)
-  return part1*part2
-
-def f_p_2_2_EM(z: float) -> float:
-  return 2*(11*z-6)*(z+3)/(z+8./3.)/z/z/15 * f_p_1_EM(z)
-  part1 = 1024*(11*z-6)*(z+3)/(45*pow(z,7))
-  part2 = sugiura_exps(z,2)
-  return part1*part2
-
-def f_s_1_WA(z: float) -> float:
-  part1 = 64*pow(3*z+4,2)*(z+8)/(pow(z,6))
-  part2 = sugiura_exps(z,3)
-  return part1*part2
-
-def f_s_2_1_WA(z: float) -> float:
-  part1 = 256*pow(3*z+4,2)*(z+8)*(z-2)/(45*pow(z,8))
-  part2 = sugiura_exps(z,3)
-  return part1*part2
-
-def f_s_2_2_WA(z: float) -> float:
-  part1 = 256*(3*z-4)*(z+8)*(4*z+5)*(3*z-4)/(45*pow(z,8))
-  part2 = sugiura_exps(z,3)
-  return part1*part2
-
-def f_p_1_WA(z: float) -> float:
-  part1 = 512*(3*z*z+26*z+28)/(pow(z,6))
-  part2 = sugiura_exps(z,3)
-  return part1*part2
-
-def f_d_1_WA(z: float) -> float:
-  part1 = 1024/5.0*(5*z*z+46*z+48)/(pow(z,7))
-  part2 = sugiura_exps(z,3)
-  return part1*part2
-
-def xn(nu_in: float,n_0: int, el_nr: int, l_0: int, n: int) -> float:
-  return pow(n_0 * q(nu_in)/b(n_0, l_0, el_nr), n)
-def x2(nu_in: float,n_0: int, el_nr: int, l_0: int) -> float:
-  return xn(nu_in,n_0, el_nr, l_0, 2)
-
-cf2 = 4*math.pi**3*el_mass/el_charge**2
-
-def apply_angle_part_s_parallel(a_l: float,theta0:float,alpha:float, l:int) -> float:
+def apply_angle_part_s_parallel(a_l: Union[float,npt.NDArray], theta0:float, alpha:float, l:int) -> Union[float,npt.NDArray]:
   a_l *= alpha_coef(l,1,1,theta0,alpha)
   return a_l
 
-def apply_angle_part_s_orthogonal(a_l: float,theta0: float,alpha:float, l: int) -> float:
+@overload
+def apply_angle_part_s_orthogonal(a_l: float, theta0:float, alpha:float, l:int) -> float: ...
+
+@overload
+def apply_angle_part_s_orthogonal(a_l: npt.NDArray, theta0:float, alpha:float, l:int) -> npt.NDArray: ...
+
+def apply_angle_part_s_orthogonal(a_l: Union[float,npt.NDArray],theta0: float,alpha:float, l: int) -> Union[float,npt.NDArray]:
   a_l *= beta_coef(l,1,1,theta0,alpha)
   return a_l
 
@@ -274,18 +216,18 @@ def calc_Intensity_s_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
   z_temp = None
   if n0 == 1:
     z_temp = nu_in / (get_ionization_energy_1s(el_nr) / h)
-    de = delta_edge(el_nr,1,0,0)
+    de = one_minus_delta_edge(el_nr,1,0,0)
   elif n0 == 2:
     z_temp = nu_in / (get_ionization_energy_2s(el_nr) / h)
-    de = delta_edge(el_nr,2,0,0)
+    de = one_minus_delta_edge(el_nr,2,0,0)
   elif n0 == 3:
     z_temp = nu_in / (get_ionization_energy_3s(el_nr) / h)
-    de = delta_edge(el_nr,3,0,0)
+    de = one_minus_delta_edge(el_nr,3,0,0)
   else:
     z_temp = 0
     de = 0
   if z_temp < 1: return 0
-  z_temp *= (1-de)
+  z_temp *= de
 
   par = 0
   orth = 0
@@ -312,22 +254,22 @@ def calc_Intensity_p_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
   elif n0 == 2:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_2p1_2(el_nr) / h)
-      de = delta_edge(el_nr,2,1,0.5)
+      de = one_minus_delta_edge(el_nr,2,1,0.5)
     else:
       z_temp = nu_in / (get_ionization_energy_2p3_2(el_nr) / h)
-      de = delta_edge(el_nr,2,1,1.5)
+      de = one_minus_delta_edge(el_nr,2,1,1.5)
   elif n0 == 3:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_3p_1_2(el_nr) / h)
-      de = delta_edge(el_nr,3,1,0.5)
+      de = one_minus_delta_edge(el_nr,3,1,0.5)
     else:
       z_temp = nu_in / (get_ionization_energy_3p_3_2(el_nr) / h)
-      de = delta_edge(el_nr,3,1,1.5)
+      de = one_minus_delta_edge(el_nr,3,1,1.5)
   else:
     z_temp = 0
     de = 0
   if z_temp < 1: return 0
-  z_temp *= (1-de)
+  z_temp *= de
 
   par = 0
   orth = 0
@@ -360,15 +302,15 @@ def calc_Intensity_d_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
   elif n0 == 3:
     if subshell == 1:
       z_temp = nu_in / (get_ionization_energy_3d_3_2(el_nr) / h)
-      de = delta_edge(el_nr,3,2,1.5)
+      de = one_minus_delta_edge(el_nr,3,2,1.5)
     else:
       z_temp = nu_in / (get_ionization_energy_3d_5_2(el_nr) / h)
-      de = delta_edge(el_nr,3,2,2.5)
+      de = one_minus_delta_edge(el_nr,3,2,2.5)
   else:
     z_temp = 0
     de = 0
   if z_temp < 1: return 0
-  z_temp *= (1-de)
+  z_temp *= de
 
   par = 0
   orth = 0
@@ -422,23 +364,20 @@ def calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr):
 
   return t1,t2,t3,t4+2*t5,t6+2*t7,3*t8+2*t9
 
-def fdp_from_z(z, delta, osz_func):
+def fdp_from_z(z:float, eins_minus_delta:float, osz_func) -> float:
   if z<1:  return 0
-  return osz_func((1 - delta) * z)*2*math.pi
+  return osz_func(eins_minus_delta * z)*2*math.pi
   #return 2**7/3.0 *sugiura_exps((1 - delta) * z,n0)/((1 - delta) * z)**3*math.pi
 
-def eta_K(z,n0,nu_0,delta_K):
+def eta_K(z: float,n0:int,nu_0:float,eins_minus_delta_K:float) -> float:
   if z<1: return 0
-  emd = 1 - delta_K
-  z_eff = emd * z
+  z_eff = eins_minus_delta_K * z
   nu = z * nu_0
   #return 2**7/3/z_eff**4*sugiura_exps(z_eff,n0)/nu_0/nu*math.pi/2*emd
   return f_s_1_hoenl(z_eff)/nu**2*math.pi
 
-def eta_K_unsers(z, nu_0, el_nr, delta_K):
-  #emd = 1 - delta_K
+def eta_K_unsers(z: float, nu_0:float, el_nr:int) -> float:
   nu_in = z * nu_0
-  #z_eff = emd * z
   f = calc_stuff_only_sums(nu_in,0,7,1,el_nr)[0]
   #return 2**7/3/z_eff**4*sugiura_exps(z_eff,n0)/nu_0/nu*math.pi/2*emd
   return f/nu_in**2*math.pi
@@ -461,8 +400,6 @@ if __name__ == "__main__":
   steps = 300
   x = None
 
-  import tkinter as tk
-  from tkinter import ttk
   root = tk.Tk()
   root.title("Calculation Setup Selection")
   root.resizable(True,False)
@@ -589,7 +526,7 @@ if __name__ == "__main__":
           +0.040810*np.exp(-57.7997 * pow(x, 2))
           +0.003038)
     axes.plot(x,Z2,".",label="SFAC")
-    for p in range(50,600,150):
+    for p in range(50,301,150):
       print(p)
       Z = final(p)(x)
       axes.plot(x,Z, label="t = %d"%p)
@@ -619,10 +556,9 @@ if __name__ == "__main__":
     x30_2 = xn(nu_in, 3, el_nr, 0, 2)
     x31_2 = xn(nu_in, 3, el_nr, 1, 2)
     x32_2 = xn(nu_in, 3, el_nr, 2, 2)
-    from time import time
-    numpy.random.seed(int(np.ceil(time())))
-    t0 = numpy.random.random(1)[0] * math.pi
-    #alp = numpy.random.random(1)[0] * math.pi * 2
+    np.random.seed(int(np.ceil(time())))
+    t0 = np.random.random(1)[0] * math.pi
+    #alp = np.random.random(1)[0] * math.pi * 2
     third = 1./3.
     res_2 = [0,0,0]
     res_4 = [0,0,0,0,0]
@@ -829,49 +765,49 @@ if __name__ == "__main__":
       o_result[i] += apply_angle_part_s_parallel(f_p_2_2_EM(z)*constant_factor*x21_2, t0, alp, 2)
     
     fig, axes = plt.subplots(2,2)
-    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
-    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
-    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
-    axes[0,0].plot(x,a_result,color='b')
-    axes[0,0].plot(x,b_result,color='g')
-    axes[0,0].plot(x,c_result,color='r')
-    axes[0,0].plot(x,b0_result,linestyle='dotted')
-    axes[0,0].plot(x,b1_result,linestyle='dotted')
-    axes[0,0].plot(x,b2_result,linestyle='dotted')
-    axes[0,0].plot(x,k_s,color='black')
-    axes[0,0].legend()
-    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
+    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)") # type: ignore
+    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)") # type: ignore
+    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)") # type: ignore
+    axes[0,0].plot(x,a_result,color='b')# type: ignore
+    axes[0,0].plot(x,b_result,color='g')# type: ignore
+    axes[0,0].plot(x,c_result,color='r')# type: ignore
+    axes[0,0].plot(x,b0_result,linestyle='dotted')# type: ignore
+    axes[0,0].plot(x,b1_result,linestyle='dotted')# type: ignore
+    axes[0,0].plot(x,b2_result,linestyle='dotted')# type: ignore
+    axes[0,0].plot(x,k_s,color='black')# type: ignore
+    axes[0,0].legend()# type: ignore
+    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
   
-    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
-    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
-    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
-    axes[1,0].plot(x,d_result,color='b')
-    axes[1,0].plot(x,e_result,color='g')
-    axes[1,0].plot(x,f_result,color='r')
-    axes[1,0].plot(x,e0_result,linestyle='dotted')
-    axes[1,0].plot(x,e1_result,linestyle='dotted')
-    axes[1,0].plot(x,e2_result,linestyle='dotted')
-    axes[1,0].plot(x,l_s,color='black')
-    axes[1,0].legend()
-    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
+    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")# type: ignore
+    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")# type: ignore
+    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")# type: ignore
+    axes[1,0].plot(x,d_result,color='b')# type: ignore
+    axes[1,0].plot(x,e_result,color='g')# type: ignore
+    axes[1,0].plot(x,f_result,color='r')# type: ignore
+    axes[1,0].plot(x,e0_result,linestyle='dotted')# type: ignore
+    axes[1,0].plot(x,e1_result,linestyle='dotted')# type: ignore
+    axes[1,0].plot(x,e2_result,linestyle='dotted')# type: ignore
+    axes[1,0].plot(x,l_s,color='black')# type: ignore
+    axes[1,0].legend()# type: ignore
+    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
     
-    axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)").legend_elements()
-    axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)").legend_elements()
-    axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)").legend_elements()
-    ours1, = axes[0,1].plot(x,p0_result,color='b')
-    ours2, = axes[0,1].plot(x,p2_0_result,color='g')
-    ours3, = axes[0,1].plot(x,p2_1_result,color='r')
-    ours4, = axes[0,1].plot(x,p4_0_result,linestyle='dotted')
-    ours5, = axes[0,1].plot(x,p4_1_result,linestyle='dotted')
-    ours6, = axes[0,1].plot(x,p4_2_result,linestyle='dotted')
-    ours7, = axes[0,1].plot(x,p6_0_result,linestyle='dashed')
-    ours8, = axes[0,1].plot(x,p6_1_result,linestyle='dashed')
-    ours9, = axes[0,1].plot(x,p6_2_result,linestyle='dashed')
-    ours10, = axes[0,1].plot(x,p6_3_result,linestyle='dashed')
-    ours11, = axes[0,1].plot(x,l_p,color='black')
-    axes[0,1].legend()
-    axes[0,1].axhline(y=0,linestyle='dashed',color='gray')
-    legend1 = axes[1,1].legend(
+    axes[0,1].scatter(x,m_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fp_1^(0)").legend_elements()# type: ignore
+    axes[0,1].scatter(x,n_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fp_1^(2)").legend_elements()# type: ignore
+    axes[0,1].scatter(x,o_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fp_2^(2)").legend_elements()# type: ignore
+    ours1, = axes[0,1].plot(x,p0_result,color='b')# type: ignore
+    ours2, = axes[0,1].plot(x,p2_0_result,color='g')# type: ignore
+    ours3, = axes[0,1].plot(x,p2_1_result,color='r')# type: ignore
+    ours4, = axes[0,1].plot(x,p4_0_result,linestyle='dotted')# type: ignore
+    ours5, = axes[0,1].plot(x,p4_1_result,linestyle='dotted')# type: ignore
+    ours6, = axes[0,1].plot(x,p4_2_result,linestyle='dotted')# type: ignore
+    ours7, = axes[0,1].plot(x,p6_0_result,linestyle='dashed')# type: ignore
+    ours8, = axes[0,1].plot(x,p6_1_result,linestyle='dashed')# type: ignore
+    ours9, = axes[0,1].plot(x,p6_2_result,linestyle='dashed')# type: ignore
+    ours10, = axes[0,1].plot(x,p6_3_result,linestyle='dashed')# type: ignore
+    ours11, = axes[0,1].plot(x,l_p,color='black')# type: ignore
+    axes[0,1].legend()# type: ignore
+    axes[0,1].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    legend1 = axes[1,1].legend(# type: ignore
                     handles=[ours1,
                              ours2,ours3,
                              ours4,ours5,ours6,
@@ -883,24 +819,24 @@ if __name__ == "__main__":
                             "0/6 + 6/0","1/5 + 5/1","2/4 + 4/2","3/3",
                             "sum"],
                     loc = 'upper left',
-                    bbox_to_anchor=(-0.15,1.0))
+                    bbox_to_anchor=(-0.15,1.0))# type: ignore
     
-    axes[1,1].plot(x,p0_result,color='b')
-    axes[1,1].plot(x,p2_0_result,color='g')
-    axes[1,1].plot(x,p2_1_result,color='r')
-    axes[1,1].plot(x,p4_0_result,linestyle='dotted')
-    axes[1,1].plot(x,p4_1_result,linestyle='dotted')
-    axes[1,1].plot(x,p4_2_result,linestyle='dotted')
-    axes[1,1].plot(x,l_p,color='k')
-    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 with M")
-    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[1,1].scatter(x,p4_0_result_M,s=20,facecolors='none',edgecolor='b',marker='o',label="p=4 0/4 with M")
-    axes[1,1].scatter(x,p4_1_result_M,s=20,facecolors='none',edgecolor='orange',marker='o',label="p=4 1/3 with M")
-    axes[1,1].scatter(x,p4_2_result_M,s=20,facecolors='none',edgecolor='g',marker='o',label="p=4 2/2 with M")
-    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='k',marker='*',label="sum")
-    axes[1,1].legend(loc='upper right')
-    axes[1,1].add_artist(legend1)
+    axes[1,1].plot(x,p0_result  ,color='b')# type: ignore
+    axes[1,1].plot(x,p2_0_result,color='g')# type: ignore
+    axes[1,1].plot(x,p2_1_result,color='r')# type: ignore
+    axes[1,1].plot(x,p4_0_result,linestyle='dotted')# type: ignore
+    axes[1,1].plot(x,p4_1_result,linestyle='dotted')# type: ignore
+    axes[1,1].plot(x,p4_2_result,linestyle='dotted')# type: ignore
+    axes[1,1].plot(x,l_p,color='k')# type: ignore
+    axes[1,1].scatter(x,p0_result_M  ,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 with M")# type: ignore
+    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[1,1].scatter(x,p4_0_result_M,s=20,facecolors='none',edgecolor='b',marker='o',label="p=4 0/4 with M")# type: ignore
+    axes[1,1].scatter(x,p4_1_result_M,s=20,facecolors='none',edgecolor='orange',marker='o',label="p=4 1/3 with M")# type: ignore
+    axes[1,1].scatter(x,p4_2_result_M,s=20,facecolors='none',edgecolor='g',marker='o',label="p=4 2/2 with M")# type: ignore
+    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='k',marker='*',label="sum")# type: ignore
+    axes[1,1].legend(loc='upper right')# type: ignore
+    axes[1,1].add_artist(legend1)# type: ignore
   
     plt.subplots_adjust(left=0.025, bottom=0.04, right=1.0, top=1.0, wspace=0.15, hspace=0.05)
     fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
@@ -921,10 +857,9 @@ if __name__ == "__main__":
     x30_2 = xn(nu_in, 3, el_nr, 0, 2)
     x31_2 = xn(nu_in, 3, el_nr, 1, 2)
     x32_2 = xn(nu_in, 3, el_nr, 2, 2)
-    from time import time
-    numpy.random.seed(int(np.ceil(time())))
-    t0 = numpy.random.random(1)[0] * math.pi
-    alp = numpy.random.random(1)[0] * math.pi * 2
+    np.random.seed(int(np.ceil(time())))
+    t0 = np.random.random(1)[0] * math.pi
+    alp = np.random.random(1)[0] * math.pi * 2
     third = 1./3.
     res_2 = [0, 0, 0]
   
@@ -1211,44 +1146,44 @@ if __name__ == "__main__":
     
     fig, axes = plt.subplots(3,3)
     #K-shell s-orbitals
-    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
-    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
-    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
-    axes[0,0].plot(x,a_result,color='b')
-    axes[0,0].plot(x,b_result,color='g')
-    axes[0,0].plot(x,c_result,color='r')
-    axes[0,0].plot(x,k_s,color='black')
-    axes[0,0].legend()
-    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
-    axes[0,0].set_title("K-shell s-electrons", y=1.0, pad=-14)
+    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")# type: ignore
+    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")# type: ignore
+    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")# type: ignore
+    axes[0,0].plot(x,a_result,color='b')# type: ignore
+    axes[0,0].plot(x,b_result,color='g')# type: ignore
+    axes[0,0].plot(x,c_result,color='r')# type: ignore
+    axes[0,0].plot(x,k_s,color='black')# type: ignore
+    axes[0,0].legend()# type: ignore
+    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[0,0].set_title("K-shell s-electrons", y=1.0, pad=-14)# type: ignore
     #L-shell s-orbital
-    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
-    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
-    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
-    axes[1,0].plot(x,d_result,color='b')
-    axes[1,0].plot(x,e_result,color='g')
-    axes[1,0].plot(x,f_result,color='r')
-    axes[1,0].plot(x,l_s,color='black')
-    axes[1,0].legend()
-    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
-    axes[1,0].set_title("L-shell s-electrons", y=1.0, pad=-14)
+    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")# type: ignore
+    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")# type: ignore
+    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")# type: ignore
+    axes[1,0].plot(x,d_result,color='b')# type: ignore
+    axes[1,0].plot(x,e_result,color='g')# type: ignore
+    axes[1,0].plot(x,f_result,color='r')# type: ignore
+    axes[1,0].plot(x,l_s,color='black')# type: ignore
+    axes[1,0].legend()# type: ignore
+    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[1,0].set_title("L-shell s-electrons", y=1.0, pad=-14)# type: ignore
     #M-shell s-orbital
-    axes[2,0].scatter(x,x_result,s=20,facecolors='none',edgecolors='b',marker='^',label="WA fs_1^(0)")
-    axes[2,0].scatter(x,y_result,s=20,facecolors='none',edgecolors='g',marker='^',label="WA fs_1^(2)")
-    axes[2,0].scatter(x,z_result,s=20,facecolors='none',edgecolors='r',marker='^',label="WA fs_2^(2)")
-    axes[2,0].plot(x,Ms0_result,color='b')
-    axes[2,0].plot(x,Ms1_result,color='g')
-    axes[2,0].plot(x,Ms2_result,color='r')
-    axes[2,0].plot(x,m_s,color='black')
-    axes[2,0].legend()
-    axes[2,0].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,0].set_title("M-shell s-electrons", y=1.0, pad=-14)
+    axes[2,0].scatter(x,x_result,s=20,facecolors='none',edgecolors='b',marker='^',label="WA fs_1^(0)")# type: ignore
+    axes[2,0].scatter(x,y_result,s=20,facecolors='none',edgecolors='g',marker='^',label="WA fs_1^(2)")# type: ignore
+    axes[2,0].scatter(x,z_result,s=20,facecolors='none',edgecolors='r',marker='^',label="WA fs_2^(2)")# type: ignore
+    axes[2,0].plot(x,Ms0_result,color='b')# type: ignore
+    axes[2,0].plot(x,Ms1_result,color='g')# type: ignore
+    axes[2,0].plot(x,Ms2_result,color='r')# type: ignore
+    axes[2,0].plot(x,m_s,color='black')# type: ignore
+    axes[2,0].legend()# type: ignore
+    axes[2,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[2,0].set_title("M-shell s-electrons", y=1.0, pad=-14)# type: ignore
     
-    ours1, = axes[1,1].plot(x,p0_result,color='b')
-    ours2, = axes[1,1].plot(x,p2_0_result,color='g')
-    ours3, = axes[1,1].plot(x,p2_1_result,color='r')
-    ours11, = axes[1,1].plot(x,l_p,color='black')
-    legend1 = axes[1,1].legend(
+    ours1, = axes[1,1].plot(x,p0_result,color='b')# type: ignore
+    ours2, = axes[1,1].plot(x,p2_0_result,color='g')# type: ignore
+    ours3, = axes[1,1].plot(x,p2_1_result,color='r')# type: ignore
+    ours11, = axes[1,1].plot(x,l_p,color='black')# type: ignore
+    legend1 = axes[1,1].legend(# type: ignore
                     handles=[ours1,
                              ours2,ours3,
                              ours11],
@@ -1256,53 +1191,53 @@ if __name__ == "__main__":
                             "0/2 + 2/0","1/1",
                             "sum"],
                     loc = 'upper left',
-                    bbox_to_anchor=(0.5,1.5))
+                    bbox_to_anchor=(0.5,1.5))# type: ignore
     
-    axes[1,1].plot(x,p0_result,  color='b')
-    axes[1,1].plot(x,p2_0_result,color='g')
-    axes[1,1].plot(x,p2_1_result,color='r')
-    axes[1,1].scatter(x,m_result,s=40,facecolors='none',edgecolors='b',marker='o',label="EM fp_1^(0)")
-    axes[1,1].scatter(x,n_result,s=40,facecolors='none',edgecolors='g',marker='o',label="EM fp_1^(2)")
-    axes[1,1].scatter(x,o_result,s=40,facecolors='none',edgecolors='r',marker='o',label="EM fp_2^(2)")
-    axes[1,1].plot(x,l_p,color='black')
-    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-    axes[1,1].legend()
-    axes[1,1].add_artist(legend1)
-    axes[1,1].axhline(y=0,linestyle='dashed',color='gray')
-    axes[1,1].set_title("L-shell p-electrons", y=1.0, pad=-14)
+    axes[1,1].plot(x,p0_result,  color='b')# type: ignore
+    axes[1,1].plot(x,p2_0_result,color='g')# type: ignore
+    axes[1,1].plot(x,p2_1_result,color='r')# type: ignore
+    axes[1,1].scatter(x,m_result,s=40,facecolors='none',edgecolors='b',marker='o',label="EM fp_1^(0)")# type: ignore
+    axes[1,1].scatter(x,n_result,s=40,facecolors='none',edgecolors='g',marker='o',label="EM fp_1^(2)")# type: ignore
+    axes[1,1].scatter(x,o_result,s=40,facecolors='none',edgecolors='r',marker='o',label="EM fp_2^(2)")# type: ignore
+    axes[1,1].plot(x,l_p,color='black')# type: ignore
+    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")# type: ignore
+    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")# type: ignore
+    axes[1,1].legend()# type: ignore
+    axes[1,1].add_artist(legend1)# type: ignore
+    axes[1,1].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[1,1].set_title("L-shell p-electrons", y=1.0, pad=-14)# type: ignore
     
-    axes[2,1].plot(x,M_p0_result,  color='b')
-    axes[2,1].plot(x,M_p2_0_result,color='g')
-    axes[2,1].plot(x,M_p2_1_result,color='r')
-    axes[2,1].plot(x,m_p,color='black')
-    axes[2,1].scatter(x,M_p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-    axes[2,1].scatter(x,M_p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[2,1].scatter(x,M_p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[2,1].scatter(x,WA_p0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld p-els D")
-    axes[2,1].scatter(x,m_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-    axes[2,1].legend()
-    axes[2,1].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,1].set_title("M-shell p-electrons", y=1.0, pad=-14)
+    axes[2,1].plot(x,M_p0_result,  color='b')# type: ignore
+    axes[2,1].plot(x,M_p2_0_result,color='g')# type: ignore
+    axes[2,1].plot(x,M_p2_1_result,color='r')# type: ignore
+    axes[2,1].plot(x,m_p,color='black')# type: ignore
+    axes[2,1].scatter(x,M_p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")# type: ignore
+    axes[2,1].scatter(x,M_p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[2,1].scatter(x,M_p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[2,1].scatter(x,WA_p0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld p-els D")# type: ignore
+    axes[2,1].scatter(x,m_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")# type: ignore
+    axes[2,1].legend()# type: ignore
+    axes[2,1].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[2,1].set_title("M-shell p-electrons", y=1.0, pad=-14)# type: ignore
 
-    axes[0,1].set_axis_off()
-    axes[0,2].set_axis_off()
-    axes[1,2].set_axis_off()
+    axes[0,1].set_axis_off()# type: ignore
+    axes[0,2].set_axis_off()# type: ignore
+    axes[1,2].set_axis_off()# type: ignore
 
-    axes[2,2].plot(x,M_d0_result,  color='b')
-    axes[2,2].plot(x,M_d2_0_result,color='g')
-    axes[2,2].plot(x,M_d2_1_result,color='r')
-    axes[2,2].plot(x,m_d,color='black')
-    axes[2,2].scatter(x,M_d0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-    axes[2,2].scatter(x,M_d2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[2,2].scatter(x,M_d2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[2,2].scatter(x,WA_d0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld d-els D")
-    axes[2,2].scatter(x,m_d_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-    axes[2,2].legend()
-    axes[2,2].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,2].set_title("M-shell d-electrons", y=1.0, pad=-14)
+    axes[2,2].plot(x,M_d0_result,  color='b')# type: ignore
+    axes[2,2].plot(x,M_d2_0_result,color='g')# type: ignore
+    axes[2,2].plot(x,M_d2_1_result,color='r')# type: ignore
+    axes[2,2].plot(x,m_d,color='black')# type: ignore
+    axes[2,2].scatter(x,M_d0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")# type: ignore
+    axes[2,2].scatter(x,M_d2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[2,2].scatter(x,M_d2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[2,2].scatter(x,WA_d0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld d-els D")# type: ignore
+    axes[2,2].scatter(x,m_d_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")# type: ignore
+    axes[2,2].legend()# type: ignore
+    axes[2,2].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[2,2].set_title("M-shell d-electrons", y=1.0, pad=-14)# type: ignore
   
     plt.subplots_adjust(left=0.04, bottom=0.04, right=1.0, top=0.95, wspace=0.15, hspace=0.1)
     fig.suptitle("PARA alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
@@ -1320,11 +1255,10 @@ if __name__ == "__main__":
     x30_2 = xn(nu_in, 3, el_nr, 0, 2)
     x31_2 = xn(nu_in, 3, el_nr, 1, 2)
     x32_2 = xn(nu_in, 3, el_nr, 2, 2)
-    from time import time
-    numpy.random.seed(int(np.ceil(time())))
-    t0 = numpy.random.random(1)[0] * math.pi
+    np.random.seed(int(np.ceil(time())))
+    t0 = np.random.random(1)[0] * math.pi
     #t0 = math.pi / 2
-    alp = numpy.random.random(1)[0] * math.pi * 2
+    alp = np.random.random(1)[0] * math.pi * 2
     #alp = math.pi
     third = 1./3.
     res_2 = [0, 0, 0]
@@ -1612,44 +1546,44 @@ if __name__ == "__main__":
     
     fig, axes = plt.subplots(3,3)
     #K-shell s-orbitals
-    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")
-    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")
-    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")
-    axes[0,0].plot(x,a_result,color='b')
-    axes[0,0].plot(x,b_result,color='g')
-    axes[0,0].plot(x,c_result,color='r')
-    axes[0,0].plot(x,k_s,color='black')
-    axes[0,0].legend()
-    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')
-    axes[0,0].set_title("K-shell s-electrons", y=1.0, pad=-14)
+    axes[0,0].scatter(x,g_result,s=20,facecolors='none',edgecolors='b',marker='^',label="Hönl fs_1^(0)")# type: ignore
+    axes[0,0].scatter(x,h_result,s=20,facecolors='none',edgecolors='g',marker='^',label="Hönl fs_1^(2)")# type: ignore
+    axes[0,0].scatter(x,i_result,s=20,facecolors='none',edgecolors='r',marker='^',label="Hönl fs_2^(2)")# type: ignore
+    axes[0,0].plot(x,a_result,color='b')# type: ignore
+    axes[0,0].plot(x,b_result,color='g')# type: ignore
+    axes[0,0].plot(x,c_result,color='r')# type: ignore
+    axes[0,0].plot(x,k_s,color='black')# type: ignore
+    axes[0,0].legend()# type: ignore
+    axes[0,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[0,0].set_title("K-shell s-electrons", y=1.0, pad=-14)# type: ignore
     #L-shell s-orbital
-    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")
-    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")
-    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")
-    axes[1,0].plot(x,d_result,color='b')
-    axes[1,0].plot(x,e_result,color='g')
-    axes[1,0].plot(x,f_result,color='r')
-    axes[1,0].plot(x,l_s,color='black')
-    axes[1,0].legend()
-    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')
-    axes[1,0].set_title("L-shell s-electrons", y=1.0, pad=-14)
+    axes[1,0].scatter(x,j_result,s=20,facecolors='none',edgecolors='b',marker='^',label="EM fs_1^(0)")# type: ignore
+    axes[1,0].scatter(x,k_result,s=20,facecolors='none',edgecolors='g',marker='^',label="EM fs_1^(2)")# type: ignore
+    axes[1,0].scatter(x,l_result,s=20,facecolors='none',edgecolors='r',marker='^',label="EM fs_2^(2)")# type: ignore
+    axes[1,0].plot(x,d_result,color='b')# type: ignore
+    axes[1,0].plot(x,e_result,color='g')# type: ignore
+    axes[1,0].plot(x,f_result,color='r')# type: ignore
+    axes[1,0].plot(x,l_s,color='black')# type: ignore
+    axes[1,0].legend()# type: ignore
+    axes[1,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[1,0].set_title("L-shell s-electrons", y=1.0, pad=-14)# type: ignore
     #M-shell s-orbital
-    axes[2,0].scatter(x,x_result,s=20,facecolors='none',edgecolors='b',marker='^',label="WA fs_1^(0)")
-    axes[2,0].scatter(x,y_result,s=20,facecolors='none',edgecolors='g',marker='^',label="WA fs_1^(2)")
-    axes[2,0].scatter(x,z_result,s=20,facecolors='none',edgecolors='r',marker='^',label="WA fs_2^(2)")
-    axes[2,0].plot(x,Ms0_result,color='b')
-    axes[2,0].plot(x,Ms1_result,color='g')
-    axes[2,0].plot(x,Ms2_result,color='r')
-    axes[2,0].plot(x,m_s,color='black')
-    axes[2,0].legend()
-    axes[2,0].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,0].set_title("M-shell s-electrons", y=1.0, pad=-14)
+    axes[2,0].scatter(x,x_result,s=20,facecolors='none',edgecolors='b',marker='^',label="WA fs_1^(0)")# type: ignore
+    axes[2,0].scatter(x,y_result,s=20,facecolors='none',edgecolors='g',marker='^',label="WA fs_1^(2)")# type: ignore
+    axes[2,0].scatter(x,z_result,s=20,facecolors='none',edgecolors='r',marker='^',label="WA fs_2^(2)")# type: ignore
+    axes[2,0].plot(x,Ms0_result,color='b')# type: ignore
+    axes[2,0].plot(x,Ms1_result,color='g')# type: ignore
+    axes[2,0].plot(x,Ms2_result,color='r')# type: ignore
+    axes[2,0].plot(x,m_s,color='black')# type: ignore
+    axes[2,0].legend()# type: ignore
+    axes[2,0].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[2,0].set_title("M-shell s-electrons", y=1.0, pad=-14)# type: ignore
     
-    ours1, = axes[1,1].plot(x,p0_result,color='b')
-    ours2, = axes[1,1].plot(x,p2_0_result,color='g')
-    ours3, = axes[1,1].plot(x,p2_1_result,color='r')
-    ours11, = axes[1,1].plot(x,l_p,color='black')
-    legend1 = axes[1,1].legend(
+    ours1, = axes[1,1].plot(x,p0_result,color='b')# type: ignore
+    ours2, = axes[1,1].plot(x,p2_0_result,color='g')# type: ignore
+    ours3, = axes[1,1].plot(x,p2_1_result,color='r')# type: ignore
+    ours11, = axes[1,1].plot(x,l_p,color='black')# type: ignore
+    legend1 = axes[1,1].legend(# type: ignore
                     handles=[ours1,
                              ours2,ours3,
                              ours11],
@@ -1657,53 +1591,53 @@ if __name__ == "__main__":
                             "0/2 + 2/0","1/1",
                             "sum"],
                     loc = 'upper left',
-                    bbox_to_anchor=(0.5,1.5))
+                    bbox_to_anchor=(0.5,1.5))# type: ignore
     
-    axes[1,1].plot(x,p0_result,  color='b')
-    axes[1,1].plot(x,p2_0_result,color='g')
-    axes[1,1].plot(x,p2_1_result,color='r')
-    axes[1,1].scatter(x,m_result,s=40,facecolors='none',edgecolors='b',marker='o',label="EM fp_1^(0)")
-    axes[1,1].scatter(x,n_result,s=40,facecolors='none',edgecolors='g',marker='o',label="EM fp_1^(2)")
-    axes[1,1].scatter(x,o_result,s=40,facecolors='none',edgecolors='r',marker='o',label="EM fp_2^(2)")
-    axes[1,1].plot(x,l_p,color='black')
-    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-    axes[1,1].legend()
-    axes[1,1].add_artist(legend1)
-    axes[1,1].axhline(y=0,linestyle='dashed',color='gray')
-    axes[1,1].set_title("L-shell p-electrons", y=1.0, pad=-14)
+    axes[1,1].plot(x,p0_result,  color='b')# type: ignore
+    axes[1,1].plot(x,p2_0_result,color='g')# type: ignore
+    axes[1,1].plot(x,p2_1_result,color='r')# type: ignore
+    axes[1,1].scatter(x,m_result,s=40,facecolors='none',edgecolors='b',marker='o',label="EM fp_1^(0)")# type: ignore
+    axes[1,1].scatter(x,n_result,s=40,facecolors='none',edgecolors='g',marker='o',label="EM fp_1^(2)")# type: ignore
+    axes[1,1].scatter(x,o_result,s=40,facecolors='none',edgecolors='r',marker='o',label="EM fp_2^(2)")# type: ignore
+    axes[1,1].plot(x,l_p,color='black')# type: ignore
+    axes[1,1].scatter(x,p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")# type: ignore
+    axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[1,1].scatter(x,p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")# type: ignore
+    axes[1,1].legend()# type: ignore
+    axes[1,1].add_artist(legend1)# type: ignore
+    axes[1,1].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[1,1].set_title("L-shell p-electrons", y=1.0, pad=-14)# type: ignore
     
-    axes[2,1].plot(x,M_p0_result,  color='b')
-    axes[2,1].plot(x,M_p2_0_result,color='g')
-    axes[2,1].plot(x,M_p2_1_result,color='r')
-    axes[2,1].plot(x,m_p,color='black')
-    axes[2,1].scatter(x,M_p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-    axes[2,1].scatter(x,M_p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[2,1].scatter(x,M_p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[2,1].scatter(x,WA_p0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld p-els D")
-    axes[2,1].scatter(x,m_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-    axes[2,1].legend()
-    axes[2,1].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,1].set_title("M-shell p-electrons", y=1.0, pad=-14)
+    axes[2,1].plot(x,M_p0_result,  color='b')# type: ignore
+    axes[2,1].plot(x,M_p2_0_result,color='g')# type: ignore
+    axes[2,1].plot(x,M_p2_1_result,color='r')# type: ignore
+    axes[2,1].plot(x,m_p,color='black')# type: ignore
+    axes[2,1].scatter(x,M_p0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")# type: ignore
+    axes[2,1].scatter(x,M_p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[2,1].scatter(x,M_p2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[2,1].scatter(x,WA_p0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld p-els D")# type: ignore
+    axes[2,1].scatter(x,m_p_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")# type: ignore
+    axes[2,1].legend()# type: ignore
+    axes[2,1].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[2,1].set_title("M-shell p-electrons", y=1.0, pad=-14)# type: ignore
 
-    axes[0,1].set_axis_off()
-    axes[0,2].set_axis_off()
-    axes[1,2].set_axis_off()
+    axes[0,1].set_axis_off()# type: ignore
+    axes[0,2].set_axis_off()# type: ignore
+    axes[1,2].set_axis_off()# type: ignore
 
-    axes[2,2].plot(x,M_d0_result,  color='b')
-    axes[2,2].plot(x,M_d2_0_result,color='g')
-    axes[2,2].plot(x,M_d2_1_result,color='r')
-    axes[2,2].plot(x,m_d,color='black')
-    axes[2,2].scatter(x,M_d0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")
-    axes[2,2].scatter(x,M_d2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")
-    axes[2,2].scatter(x,M_d2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")
-    axes[2,2].scatter(x,WA_d0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld d-els D")
-    axes[2,2].scatter(x,m_d_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")
-    axes[2,2].legend()
-    axes[2,2].axhline(y=0,linestyle='dashed',color='gray')
-    axes[2,2].set_title("M-shell d-electrons", y=1.0, pad=-14)
+    axes[2,2].plot(x,M_d0_result,  color='b')# type: ignore
+    axes[2,2].plot(x,M_d2_0_result,color='g')# type: ignore
+    axes[2,2].plot(x,M_d2_1_result,color='r')# type: ignore
+    axes[2,2].plot(x,m_d,color='black')# type: ignore
+    axes[2,2].scatter(x,M_d0_result_M,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 0/0 with M")# type: ignore
+    axes[2,2].scatter(x,M_d2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
+    axes[2,2].scatter(x,M_d2_1_result_M,s=20,facecolors='none',edgecolor='r',marker='^',label="p=2 1/1 with M")# type: ignore
+    axes[2,2].scatter(x,WA_d0_result,s=40,facecolors='none',edgecolor='b',marker='o',label="Wagenfeld d-els D")# type: ignore
+    axes[2,2].scatter(x,m_d_M,s=20,facecolors='none',edgecolor='black',marker='*',label="sum")# type: ignore
+    axes[2,2].legend()# type: ignore
+    axes[2,2].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes[2,2].set_title("M-shell d-electrons", y=1.0, pad=-14)# type: ignore
   
     plt.subplots_adjust(left=0.04, bottom=0.04, right=1.0, top=0.95, wspace=0.15, hspace=0.1)
     fig.suptitle("ORTHO alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
@@ -1711,223 +1645,230 @@ if __name__ == "__main__":
     exit()
     
   if form_factor_test:
-    print("Performing Disp Correction Calculation")
-    #axis x is in nu
-    x = np.logspace(math.log10(speed_of_light*1E10/lam_min), 
-                    math.log10(speed_of_light*1E10/lam_max), 
-                    steps)
-
-    from time import time
-    numpy.random.seed(int(np.ceil(time())))
-    #t0 = numpy.random.random(1)[0] * math.pi
-    t0 = 0
-    TS = (1+pow(np.cos(t0),2))/2
-    e = elements[el_nr]
-    
-    factor_x = 2*math.pi
-
-    from brennan import brennan
-    br = brennan()
-
-    #K-shell
-    k_s    = np.zeros_like(x)
-    
-    #L-shell
-    l_s    = np.zeros_like(x)
-    l_p1   = np.zeros_like(x)
-    l_p3   = np.zeros_like(x)
-    
-    #M-shell
-    m_s    = np.zeros_like(x)
-    m_p1   = np.zeros_like(x)
-    m_p3   = np.zeros_like(x)
-    m_d3   = np.zeros_like(x)
-    m_d5   = np.zeros_like(x)
-
-    zero_angle = np.zeros_like(x)
-    hönl_K  = np.zeros_like(x)
-    hönl_L  = np.zeros_like(x)
-    hönl_M  = np.zeros_like(x)
-    hönl    = np.zeros_like(x)
-    brennan_fdp = np.zeros_like(x)
-    
-    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-      res = pool.starmap(calc_stuff_with_brennan, zip(x, repeat(t0), repeat(l_max), repeat(p_max), repeat(el_nr), repeat(br), repeat(e)))
-      for i,r in enumerate(res):
-        k_s[i],\
-        l_s[i],\
-        m_s[i],\
-        l_p1[i],l_p3[i],\
-        m_p1[i],m_p3[i],\
-        m_d3[i],m_d5[i], brennan_fdp[i],\
-        hönl_K[i], hönl_L[i], hönl_M[i], hönl[i] = r
+    #import cProfile
+    #from pstats import Stats, SortKey
+    #with cProfile.Profile() as pr:
+      print("Performing Disp Correction Calculation")
+      #axis x is in nu
+      x = np.logspace(math.log10(speed_of_light*1E10/lam_min), 
+                      math.log10(speed_of_light*1E10/lam_max), 
+                      steps)
+  
+      np.random.seed(int(np.ceil(time())))
+      t0 = np.random.random(1)[0] * math.pi
+      #t0 = 0
+      TS = (1.0+np.cos(t0)**2)/2.0
+      e = elements[el_nr]
       
-      #res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(0), repeat(l_max), repeat(p_max), repeat(el_nr)))
-      #for i,r in enumerate(res):
-      #  zero_angle[i] = sum(np.sqrt(r))
-    
-    second_x = speed_of_light / x * 1E10
-    achse_z   = x / (get_ionization_energy_1s(el_nr)     / h)
-    achse_z1  = x / (get_ionization_energy_2s(el_nr)     / h)
-    achse_z2  = x / (get_ionization_energy_2p1_2(el_nr)  / h)
-    achse_z3  = x / (get_ionization_energy_2p3_2(el_nr)  / h)
-    achse_zm1 = x / (get_ionization_energy_3s(el_nr)     / h)
-    achse_zm2 = x / (get_ionization_energy_3p_1_2(el_nr) / h)
-    achse_zm3 = x / (get_ionization_energy_3p_3_2(el_nr) / h)
-    achse_zm4 = x / (get_ionization_energy_3d_3_2(el_nr) / h)
-    achse_zm5 = x / (get_ionization_energy_3d_5_2(el_nr) / h)
-    fdp_nach_hoenl = np.zeros_like(achse_z)
-    fdp_nach_EM = np.zeros_like(achse_z)
-    fdp_nach_Wa = np.zeros_like(achse_z)
-    delta_K  = delta_edge(el_nr,1,0,0)
-    delta_l1 = delta_edge(el_nr,2,0,0)
-    delta_l2 = delta_edge(el_nr,2,1,0.5)
-    delta_l3 = delta_edge(el_nr,2,1,1.5)
-    delta_m1 = delta_edge(el_nr,3,0,0)
-    delta_m2 = delta_edge(el_nr,3,1,0.5)
-    delta_m3 = delta_edge(el_nr,3,1,1.5)
-    delta_m4 = delta_edge(el_nr,3,2,1.5)
-    delta_m5 = delta_edge(el_nr,3,2,2.5)
-    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-      res = pool.starmap(fdp_from_z, zip(achse_z, repeat(delta_K), repeat(f_s_1_hoenl)))
-      for i,r in enumerate(res):
-        fdp_nach_hoenl[i] = r
+      factor_x = 2*math.pi
+  
+      br = brennan()
+  
+      #K-shell
+      k_s    = np.zeros_like(x)
       
-      res = pool.starmap(fdp_from_z, zip(achse_z1, repeat(delta_l1), repeat(f_s_1_EM)))
-      for i,r in enumerate(res):
-        fdp_nach_EM[i] += r
-      res = pool.starmap(fdp_from_z, zip(achse_z2, repeat(delta_l2), repeat(f_p_1_EM)))
-      for i,r in enumerate(res):
-        fdp_nach_EM[i] += r
-      res = pool.starmap(fdp_from_z, zip(achse_z3, repeat(delta_l3), repeat(f_p_1_EM)))
-      for i,r in enumerate(res):
-        fdp_nach_EM[i] += 2*r
+      #L-shell
+      l_s    = np.zeros_like(x)
+      l_p1   = np.zeros_like(x)
+      l_p3   = np.zeros_like(x)
       
-      res = pool.starmap(fdp_from_z, zip(achse_zm1, repeat(delta_m1), repeat(f_s_1_WA)))
-      for i,r in enumerate(res):
-        fdp_nach_Wa[i] += r
-      res = pool.starmap(fdp_from_z, zip(achse_zm2, repeat(delta_m2), repeat(f_p_1_WA)))
-      for i,r in enumerate(res):
-        fdp_nach_Wa[i] += r
-      res = pool.starmap(fdp_from_z, zip(achse_zm3, repeat(delta_m3), repeat(f_p_1_WA)))
-      for i,r in enumerate(res):
-        fdp_nach_Wa[i] += 2*r
-      res = pool.starmap(fdp_from_z, zip(achse_zm4, repeat(delta_m4), repeat(f_d_1_WA)))
-      for i,r in enumerate(res):
-        fdp_nach_Wa[i] += 3*r
-      res = pool.starmap(fdp_from_z, zip(achse_zm5, repeat(delta_m5), repeat(f_d_1_WA)))
-      for i,r in enumerate(res):
-        fdp_nach_Wa[i] += 2*r
+      #M-shell
+      m_s    = np.zeros_like(x)
+      m_p1   = np.zeros_like(x)
+      m_p3   = np.zeros_like(x)
+      m_d3   = np.zeros_like(x)
+      m_d5   = np.zeros_like(x)
+  
+      zero_angle = np.zeros_like(x)
+      hönl_K  = np.zeros_like(x)
+      hönl_L  = np.zeros_like(x)
+      hönl_M  = np.zeros_like(x)
+      hönl    = np.zeros_like(x)
+      brennan_fdp = np.zeros_like(x)
       
-    fig, axes = plt.subplots(3,3)
-
-    def plot_stuff(ax,o,p,t,name):
-      ax.scatter(x2,o,s=20,facecolors='none',edgecolors='b',marker='^',label="orthogonal")
-      ax.scatter(x2,p,s=20,facecolors='none',edgecolors='g',marker='^',label="parallel")
-      ax.plot(x2,t,color='r',label="total")
-      ax.axhline(y=0,linestyle='dashed',color='gray')
-      ax.set_title(name, y=1.0, pad=-14)
-
-    def plot(ax,t,p1=None,p2=None,name=""):
-      if p1 is not None:
-        ax.scatter(x2,p1,s=20,facecolors='none',edgecolors='b',marker='^',label="subshell1")
-      if p2 is not None:
-        ax.scatter(x2,p2,s=20,facecolors='none',edgecolors='g',marker='^',label="subshell2")
-      ax.plot(x2,t,color='r',label="total")
-      ax.axhline(y=0,linestyle='dashed',color='gray')
-      ax.set_title(name, y=1.0, pad=-14)
-    
-    #plot(axes[0,0],np.sqrt(k_s)*factor_x,name="K-shell s-electrons")
-    #plot(axes[1,0],np.sqrt(l_s)*factor_x,name="L-shell s-electrons")
-    #plot(axes[2,0],np.sqrt(m_s)*factor_x,name="M-shell s-electrons")
-
-    #r1, r2 = np.sqrt(l_p1)*factor_x, np.sqrt(l_p3)*factor_x
-    #plot(axes[1,1],r1+2*r2,r1,r2,"L-shell p-electrons")
-    #r1, r2 = np.sqrt(m_p1)*factor_x, np.sqrt(m_p3)*factor_x
-    #plot(axes[2,1],r1+2*r2,r1,r2,"M-shell p-electrons")
-
-    #r1, r2 = np.sqrt(m_d3)*factor_x, np.sqrt(m_d5)*factor_x
-    #plot(axes[2,2],3*r1+2*r2,r1,r2,"M-shell d-electrons")
-    #del r1
-    #del r2
-
-    res_K = k_s*factor_x
-    res_L = (l_s+l_p1+2*l_p3)*factor_x
-    res_M = (m_s+m_p1+2*m_p3+3*m_d3+2*m_d5)*factor_x
-    resy = res_K+res_L+res_M
-    resy_br = resy
-
-    axes[0,2].plot(second_x,resy_br,color='k',label="Norbert & Florian")
-    axes[0,2].axhline(y=0,linestyle='dashed',color='gray')
-    axes[0,2].plot(second_x,brennan_fdp,color='r',label="brennan")
-    axes[0,2].plot(second_x,hönl,color='b',label="hönl")
-
-    axes[0,1].scatter(second_x,fdp_nach_hoenl,facecolors='none',edgecolors='g',marker='^',label="K purely paper")
-    axes[0,1].scatter(second_x,fdp_nach_EM,facecolors='none',edgecolors='b',marker='^',label="L purely paper")
-    axes[0,1].scatter(second_x,fdp_nach_Wa,facecolors='none',edgecolors='r',marker='^',label="M purely paper")
-    
-    axes[0,2].scatter(second_x,fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl,facecolors='none',edgecolors='k',marker='^',label="total purely paper")
-
-    axes[1,2].plot(second_x,resy_br/brennan_fdp,color='k',label="ratio N&F/brennan")
-    axes[1,2].plot(second_x,hönl/brennan_fdp,color='b',label="ratio hönl/brennan")
-    axes[1,2].plot(second_x,resy_br/hönl,color='g',label="ratio N&F/hönl")
-    axes[1,2].plot(second_x,(fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl)/hönl,color='r',label="ratio hönl/hönl_integral")
-    axes[1,2].axhline(y=1,linestyle='dashed',color='gray')
-
-    
-
-    axes[0,1].plot(second_x,res_K,label="K-shell electrons")
-    axes[0,1].plot(second_x,res_L,label="L-shell electrons")
-    axes[0,1].plot(second_x,res_M,label="M-shell electrons")
-
-    axes[0,1].plot(second_x,hönl_K,linestyle='dashed',label="Hönl K-shell")
-    axes[0,1].plot(second_x,hönl_L,linestyle='dashed',label="Hönl L-shell")
-    axes[0,1].plot(second_x,hönl_M,linestyle='dashed',label="Hönl M-shell")
-
-    #axes[0,1].axhline(y=1,linestyle='dashed',color='gray')
-    #steps = 1
-    #print("Starting angle calculations!")
-    #for i in range(0,steps+1):
-    #  theta = i*(1./steps)*math.pi
-    #  temp = np.zeros_like(zero_angle)
-    #  print("{}/{} steps".format(i,steps))
-    #  with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-    #    res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(theta), repeat(l_max), repeat(p_max), repeat(el_nr)))
-    #    for j,r in enumerate(res):
-    #      temp[j] = sum(np.sqrt(r))
-    #    axes[0,1].plot(x2,zero_angle/temp*(1+pow(np.cos(theta),2))/2,label=r"$\theta_0 = ${:4.2f}$\pi$".format(theta/math.pi))
-
-    #axes[0,1].plot(x2,zero_angle/resy * TS,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))
-    #axes[0,1].set_title(r"Ratio between $\theta_0=0$ and $\theta_0$", y=1.0, pad=-14)
-
-    ticks = np.array([0.2,0.3,0.5,0.7,1.0,1.5,2.0,3.0])
-
-    for ax in fig.get_axes():
-      ax.set_xscale('log')
-      ax.set_xlim(lam_min,lam_max)
-      ax.set_xticks(ticks)
-      ax.get_xaxis().get_major_formatter().labelOnlyBase = False
-      ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
-      ax.legend()
-
-    ##This adds the frequency in ExaHz on top of the 1,2 axes
-    def tickfunc(x):
-      N = speed_of_light / x * 1E-8
-      return  ["%.3f" %z for z in N]
-    ax2 = axes[1,2].twiny()
-    ax2.set_xscale('log')
-    ax2.set_xlim(lam_min,lam_max)
-    ax2.set_xticks(ticks)
-    ax2.set_xticklabels(tickfunc(ticks))
-
-    
-    fig.suptitle(r"$\theta_0$ = {:4.2f} $\pi$".format(t0/math.pi))
-    plt.subplots_adjust(left=0.05, bottom=0.04, right=1.0, top=0.95, wspace=0.10, hspace=0.175)
-    plt.show()
-    exit()
+      with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        res = pool.starmap(calc_stuff_with_brennan, zip(x, repeat(t0), repeat(l_max), repeat(p_max), repeat(el_nr), repeat(br), repeat(e)))
+        for i,r in enumerate(res):
+          k_s[i],\
+          l_s[i],\
+          m_s[i],\
+          l_p1[i],l_p3[i],\
+          m_p1[i],m_p3[i],\
+          m_d3[i],m_d5[i], brennan_fdp[i],\
+          hönl_K[i], hönl_L[i], hönl_M[i], hönl[i] = r
+        
+        #res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(0), repeat(l_max), repeat(p_max), repeat(el_nr)))
+        #for i,r in enumerate(res):
+        #  zero_angle[i] = sum(np.sqrt(r))
+      
+      second_x = speed_of_light / x * 1E10
+      achse_z   = x / (get_ionization_energy_1s(el_nr)     / h)
+      achse_z1  = x / (get_ionization_energy_2s(el_nr)     / h)
+      achse_z2  = x / (get_ionization_energy_2p1_2(el_nr)  / h)
+      achse_z3  = x / (get_ionization_energy_2p3_2(el_nr)  / h)
+      achse_zm1 = x / (get_ionization_energy_3s(el_nr)     / h)
+      achse_zm2 = x / (get_ionization_energy_3p_1_2(el_nr) / h)
+      achse_zm3 = x / (get_ionization_energy_3p_3_2(el_nr) / h)
+      achse_zm4 = x / (get_ionization_energy_3d_3_2(el_nr) / h)
+      achse_zm5 = x / (get_ionization_energy_3d_5_2(el_nr) / h)
+      fdp_nach_hoenl = np.zeros_like(achse_z)
+      fdp_nach_EM = np.zeros_like(achse_z)
+      fdp_nach_Wa = np.zeros_like(achse_z)
+      delta_K  = one_minus_delta_edge(el_nr,1,0,0)
+      delta_l1 = one_minus_delta_edge(el_nr,2,0,0)
+      delta_l2 = one_minus_delta_edge(el_nr,2,1,0.5)
+      delta_l3 = one_minus_delta_edge(el_nr,2,1,1.5)
+      delta_m1 = one_minus_delta_edge(el_nr,3,0,0)
+      delta_m2 = one_minus_delta_edge(el_nr,3,1,0.5)
+      delta_m3 = one_minus_delta_edge(el_nr,3,1,1.5)
+      delta_m4 = one_minus_delta_edge(el_nr,3,2,1.5)
+      delta_m5 = one_minus_delta_edge(el_nr,3,2,2.5)
+      with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        res = pool.starmap(fdp_from_z, zip(achse_z, repeat(delta_K), repeat(f_s_1_hoenl)))
+        for i,r in enumerate(res):
+          fdp_nach_hoenl[i] = r
+        
+        res = pool.starmap(fdp_from_z, zip(achse_z1, repeat(delta_l1), repeat(f_s_1_EM)))
+        for i,r in enumerate(res):
+          fdp_nach_EM[i] += r
+        res = pool.starmap(fdp_from_z, zip(achse_z2, repeat(delta_l2), repeat(f_p_1_EM)))
+        for i,r in enumerate(res):
+          fdp_nach_EM[i] += r
+        res = pool.starmap(fdp_from_z, zip(achse_z3, repeat(delta_l3), repeat(f_p_1_EM)))
+        for i,r in enumerate(res):
+          fdp_nach_EM[i] += 2*r
+        
+        res = pool.starmap(fdp_from_z, zip(achse_zm1, repeat(delta_m1), repeat(f_s_1_WA)))
+        for i,r in enumerate(res):
+          fdp_nach_Wa[i] += r
+        res = pool.starmap(fdp_from_z, zip(achse_zm2, repeat(delta_m2), repeat(f_p_1_WA)))
+        for i,r in enumerate(res):
+          fdp_nach_Wa[i] += r
+        res = pool.starmap(fdp_from_z, zip(achse_zm3, repeat(delta_m3), repeat(f_p_1_WA)))
+        for i,r in enumerate(res):
+          fdp_nach_Wa[i] += 2*r
+        res = pool.starmap(fdp_from_z, zip(achse_zm4, repeat(delta_m4), repeat(f_d_1_WA)))
+        for i,r in enumerate(res):
+          fdp_nach_Wa[i] += 3*r
+        res = pool.starmap(fdp_from_z, zip(achse_zm5, repeat(delta_m5), repeat(f_d_1_WA)))
+        for i,r in enumerate(res):
+          fdp_nach_Wa[i] += 2*r
+        
+      fig, axes = plt.subplots(3,3)
+  
+      def plot_stuff(ax,o,p,t,name):
+        ax.scatter(second_x,o,s=20,facecolors='none',edgecolors='b',marker='^',label="orthogonal")
+        ax.scatter(second_x,p,s=20,facecolors='none',edgecolors='g',marker='^',label="parallel")
+        ax.plot(second_x,t,color='r',label="total")
+        ax.axhline(y=0,linestyle='dashed',color='gray')
+        ax.set_title(name, y=1.0, pad=-14)
+  
+      def plot(ax,t,p1=None,p2=None,name=""):
+        if p1 is not None:
+          ax.scatter(second_x,p1,s=20,facecolors='none',edgecolors='b',marker='^',label="subshell1")
+        if p2 is not None:
+          ax.scatter(second_x,p2,s=20,facecolors='none',edgecolors='g',marker='^',label="subshell2")
+        ax.plot(second_x,t,color='r',label="total")
+        ax.axhline(y=0,linestyle='dashed',color='gray')
+        ax.set_title(name, y=1.0, pad=-14)
+      
+      #plot(axes[0,0],np.sqrt(k_s)*factor_x,name="K-shell s-electrons")
+      #plot(axes[1,0],np.sqrt(l_s)*factor_x,name="L-shell s-electrons")
+      #plot(axes[2,0],np.sqrt(m_s)*factor_x,name="M-shell s-electrons")
+  
+      #r1, r2 = np.sqrt(l_p1)*factor_x, np.sqrt(l_p3)*factor_x
+      #plot(axes[1,1],r1+2*r2,r1,r2,"L-shell p-electrons")
+      #r1, r2 = np.sqrt(m_p1)*factor_x, np.sqrt(m_p3)*factor_x
+      #plot(axes[2,1],r1+2*r2,r1,r2,"M-shell p-electrons")
+  
+      #r1, r2 = np.sqrt(m_d3)*factor_x, np.sqrt(m_d5)*factor_x
+      #plot(axes[2,2],3*r1+2*r2,r1,r2,"M-shell d-electrons")
+      #del r1
+      #del r2
+  
+      res_K = k_s*factor_x/TS
+      res_L = (l_s+l_p1+2*l_p3)*factor_x/TS
+      res_M = (m_s+m_p1+2*m_p3+3*m_d3+2*m_d5)*factor_x/TS
+      resy = res_K+res_L+res_M
+      resy_br = resy
+  
+      axes[0,2].plot(second_x,resy_br,color='k',label="Norbert & Florian")# type: ignore
+      axes[0,2].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+      axes[0,2].plot(second_x,brennan_fdp,color='r',label="brennan")# type: ignore
+      axes[0,2].plot(second_x,hönl,color='b',label="hönl")# type: ignore
+  
+      axes[0,1].scatter(second_x,fdp_nach_hoenl,facecolors='none',edgecolors='g',marker='^',label="K purely paper")# type: ignore
+      axes[0,1].scatter(second_x,fdp_nach_EM,facecolors='none',edgecolors='b',marker='^',label="L purely paper")# type: ignore
+      axes[0,1].scatter(second_x,fdp_nach_Wa,facecolors='none',edgecolors='r',marker='^',label="M purely paper")# type: ignore
+      
+      #axes[0,2].scatter(second_x,fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl,facecolors='none',edgecolors='k',marker='^',label="total purely paper")
+  
+      axes[1,2].plot(second_x,resy_br/brennan_fdp,color='k',label="ratio N&F/brennan")# type: ignore
+      axes[1,2].plot(second_x,hönl/brennan_fdp,color='b',label="ratio hönl/brennan")# type: ignore
+      axes[1,2].plot(second_x,resy_br/hönl,color='g',label="ratio N&F/hönl")# type: ignore
+      axes[1,2].plot(second_x,(fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl)/hönl,color='r',label="ratio hönl/hönl_integral")# type: ignore
+      axes[1,2].axhline(y=1,linestyle='dashed',color='gray')# type: ignore
+  
+      
+  
+      axes[0,1].plot(second_x,res_K,label="K-shell electrons")# type: ignore
+      axes[0,1].plot(second_x,res_L,label="L-shell electrons")# type: ignore
+      axes[0,1].plot(second_x,res_M,label="M-shell electrons")# type: ignore
+  
+      axes[0,1].plot(second_x,hönl_K,linestyle='dashed',label="Hönl K-shell")# type: ignore
+      axes[0,1].plot(second_x,hönl_L,linestyle='dashed',label="Hönl L-shell")# type: ignore
+      axes[0,1].plot(second_x,hönl_M,linestyle='dashed',label="Hönl M-shell")# type: ignore
+  
+      #axes[0,1].axhline(y=1,linestyle='dashed',color='gray')
+      #steps = 1
+      #print("Starting angle calculations!")
+      #for i in range(0,steps+1):
+      #  theta = i*(1./steps)*math.pi
+      #  temp = np.zeros_like(zero_angle)
+      #  print("{}/{} steps".format(i,steps))
+      #  with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+      #    res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(theta), repeat(l_max), repeat(p_max), repeat(el_nr)))
+      #    for j,r in enumerate(res):
+      #      temp[j] = sum(np.sqrt(r))
+      #    axes[0,1].plot(x2,zero_angle/temp*(1+pow(np.cos(theta),2))/2,label=r"$\theta_0 = ${:4.2f}$\pi$".format(theta/math.pi))
+  
+      #axes[0,1].plot(x2,zero_angle/resy * TS,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))
+      #axes[0,1].set_title(r"Ratio between $\theta_0=0$ and $\theta_0$", y=1.0, pad=-14)
+  
+      ticks = np.array([0.2,0.3,0.5,0.7,1.0,1.5,2.0,3.0])
+  
+      for ax in fig.get_axes():
+        ax.set_xscale('log')
+        ax.set_xlim(lam_min,lam_max)
+        ax.set_xticks(ticks)
+        ax.get_xaxis().get_major_formatter().labelOnlyBase = False
+        ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
+        ax.legend()
+  
+      ##This adds the frequency in ExaHz on top of the 1,2 axes
+      def tickfunc(x):
+        N = speed_of_light / x * 1E-8
+        return  ["%.3f" %z for z in N]
+      ax2 = axes[1,2].twiny()# type: ignore
+      ax2.set_xscale('log')
+      ax2.set_xlim(lam_min,lam_max)
+      ax2.set_xticks(ticks)
+      ax2.set_xticklabels(tickfunc(ticks))
+  
+      
+      fig.suptitle(r"$\theta_0$ = {:4.2f} $\pi$".format(t0/math.pi))
+      plt.subplots_adjust(left=0.05, bottom=0.04, right=1.0, top=0.95, wspace=0.10, hspace=0.175)
+      plt.show()
+    #with open('factor_profiling_stats.txt', 'w') as stream:
+    #    stats = Stats(pr, stream=stream)
+    #    stats.strip_dirs()
+    #    stats.sort_stats('time')
+    #    stats.dump_stats('.prof_stats')
+    #    stats.print_stats()
+      exit()
   
   if numplot == True: 
-    x = numpy.linspace(0.9,2,2*steps)
+    x = np.linspace(0.9,2,2*steps)
     eta_nach_hoenl = np.zeros_like(x)
     eta_nach_integral = np.zeros_like(x)
     eta_nach_unserem = np.zeros_like(x)
@@ -1941,16 +1882,16 @@ if __name__ == "__main__":
     Z_s_sq = get_Zeff_1s(el_nr)**2
     e_ion = get_ionization_energy_1s(el_nr)
     #nu_k = e_ion / h
-    delta_K = delta_edge(el_nr, 1, 0, 0) #21a in Hoenl
+    omdelta_K = one_minus_delta_edge(el_nr, 1, 0, 0) #21a in Hoenl
 
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-      res = pool.starmap(eta_K, zip(x, repeat(1), repeat(nu_0),repeat(delta_K)))
+      res = pool.starmap(eta_K, zip(x, repeat(1), repeat(nu_0),repeat(omdelta_K)))
       for i,r in enumerate(res):
         eta_nach_hoenl[i] = r
       res = pool.starmap(sugiura_k_purely_imag, zip(repeat(el_nr), x*get_ionization_energy_1s(el_nr)))
       for i,r in enumerate(res):
         eta_nach_integral[i] = r
-      res = pool.starmap(eta_K_unsers, zip(x,repeat(nu_0), repeat(el_nr), repeat(delta_K)))
+      res = pool.starmap(eta_K_unsers, zip(x,repeat(nu_0), repeat(el_nr)))
       for i,r in enumerate(res):
         eta_nach_unserem[i] = r
         
@@ -1970,13 +1911,13 @@ if __name__ == "__main__":
       
 
     fig, axes = plt.subplots(2,2)
-    axes[0,0].plot(x,eta_nach_hoenl,label="without integral")
-    axes[0,0].plot(x,eta_nach_unserem,label="unsers")
-    axes[0,0].plot(x,eta_nach_integral,label="with integral")
-    axes[0,0].legend()
+    axes[0,0].plot(x,eta_nach_hoenl,label="without integral")# type: ignore
+    axes[0,0].plot(x,eta_nach_unserem,label="unsers")# type: ignore
+    axes[0,0].plot(x,eta_nach_integral,label="with integral")# type: ignore
+    axes[0,0].legend()# type: ignore
 
-    ratio1 = numpy.zeros_like(eta_nach_hoenl)
-    ratio2 = numpy.zeros_like(eta_nach_hoenl)
+    ratio1 = np.zeros_like(eta_nach_hoenl)
+    ratio2 = np.zeros_like(eta_nach_hoenl)
     for i,e in enumerate(eta_nach_hoenl):
       ratio1[i] = eta_nach_hoenl[i]  /eta_nach_integral[i]
       ratio2[i] = eta_nach_unserem[i]/eta_nach_integral[i]
@@ -1984,22 +1925,22 @@ if __name__ == "__main__":
         ratio1[i] += 1
         ratio2[i] += 1
 
-    axes[1,0].plot(x,ratio1,label="ratio")
-    axes[1,0].plot(x,ratio2,label="ratio unsers")
-    axes[1,0].legend()
+    axes[1,0].plot(x,ratio1,label="ratio")# type: ignore
+    axes[1,0].plot(x,ratio2,label="ratio unsers")# type: ignore
+    axes[1,0].legend()# type: ignore
 
-    axes[0,0].axvline(x=1/(1-delta_K),linestyle='dashed',color='gray')
-    axes[1,0].axvline(x=1/(1-delta_K),linestyle='dashed',color='gray')
-    axes[1,1].axvline(x=1,linestyle='dashed',color='gray')
-    axes[0,1].axvline(x=1,linestyle='dashed',color='gray')
+    axes[0,0].axvline(x=1/omdelta_K,linestyle='dashed',color='gray')# type: ignore
+    axes[1,0].axvline(x=1/omdelta_K,linestyle='dashed',color='gray')# type: ignore
+    axes[1,1].axvline(x=1,linestyle='dashed',color='gray')# type: ignore
+    axes[0,1].axvline(x=1,linestyle='dashed',color='gray')# type: ignore
     
-    axes[0,1].plot(x,nprime,label="Re prime(z)")
-    axes[0,1].plot(x,inprime,label="Im nprime(z)")
-    axes[0,1].legend()
-    axes[1,1].plot(x,SE*1E-10,label="sugiura(z)")
-    axes[1,1].plot(x,K_recursive,label="Re K(z)")
-    axes[1,1].plot(x,K_recursive_imag,label="Im K(z)")
-    axes[1,1].legend()
+    axes[0,1].plot(x,nprime,label="Re prime(z)")# type: ignore
+    axes[0,1].plot(x,inprime,label="Im nprime(z)")# type: ignore
+    axes[0,1].legend()# type: ignore
+    axes[1,1].plot(x,SE*1E-10,label="sugiura(z)")# type: ignore
+    axes[1,1].plot(x,K_recursive,label="Re K(z)")# type: ignore
+    axes[1,1].plot(x,K_recursive_imag,label="Im K(z)")# type: ignore
+    axes[1,1].legend()# type: ignore
     print(eta_nach_hoenl[-1]/eta_nach_integral[-1], eta_nach_unserem[-1]/eta_nach_integral[-1])
     
     plt.show()

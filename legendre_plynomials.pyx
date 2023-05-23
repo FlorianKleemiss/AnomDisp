@@ -1,7 +1,10 @@
 import scipy.special
 import numpy as np
+import numpy.typing as npt
+from typing import overload, Union
+# distutils: language=Py3
 
-def alpha_coef(l,m,m_,theta0, alpha):
+def alpha_coef(l: int,m: int,m_: int,theta0:float, alpha:float) -> float:
   st0 = np.sin(theta0/2)
   ct0 = np.cos(theta0/2)
   if m > l or m_ > l:
@@ -52,7 +55,7 @@ def alpha_coef(l,m,m_,theta0, alpha):
   return part1 * sum
 
 #NOT TESTED!
-def alpha_l11(l, theta0, alpha):
+def alpha_l11(l: int, theta0: float, alpha: float) -> float:
   if l == 0: return 0.0
   st0 = np.sin(theta0/2)
   ct0 = np.cos(theta0/2)
@@ -88,8 +91,9 @@ def alpha_l11(l, theta0, alpha):
     else:
       s = 0
     sum += pow(-1,rho) * f0 * s
+  return part1 * sum
 
-def alpha_bar_coef(l,m,m_,theta0, alpha):
+def alpha_bar_coef(l:int,m:int,m_:int,theta0:float, alpha:float) -> float:
   if l-m < 0:
     return 0
   st0 = np.sin(theta0/2)
@@ -135,7 +139,7 @@ def alpha_bar_coef(l,m,m_,theta0, alpha):
       sum += pow(-1,rho) * f0 * s
   return part1 * sum
 
-def beta_coef(l,m,m_,theta0, alpha):
+def beta_coef(l:int,m:int,m_:int,theta0:float, alpha:float) -> float:
   if l-m < 0:
     return 0
   if m_ == 0:
@@ -176,7 +180,7 @@ def beta_coef(l,m,m_,theta0, alpha):
   return part1 * sum
 
 #NOT TESTED
-def beta_l11(l,theta0, alpha):
+def beta_l11(l: int,theta0: float, alpha:float) -> float:
   if l-1 < 0:
     return 0
   st0 = np.sin(theta0/2)
@@ -211,7 +215,7 @@ def beta_l11(l,theta0, alpha):
     sum += pow(-1,rho) * f0 * s
   return part1 * sum
 
-def beta_bar_coef(l,m,m_,theta0, alpha):
+def beta_bar_coef(l:int,m:int,m_:int,theta0:float, alpha:float) -> float:
   if l-m < 0:
     return 0
   if m_ == 0:

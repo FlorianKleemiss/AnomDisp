@@ -553,3 +553,102 @@ def J0_hat(p,l):
     return 1/35 * kronecke_delta(l,1) - 1/315 * kronecke_delta(l,3) - 4/693 * kronecke_delta(l,5)
   else:
     return 0.25 * J(2,p,0,l, W20)
+  
+def test_florian() -> None:
+  a=52
+  #
+  #x = numpy.linspace(3,113,110)
+  #y1 = []
+  #y2 = []
+  #y3 = []
+  #y4 = []
+  #for i in x:
+  #  y1.append(get_Zeff_1s(int(i)))
+  #  y2.append(get_Zeff_2s(int(i)))
+  #  y3.append(get_Zeff_2p_1_2(int(i)))
+  #  y4.append(get_Zeff_2p_3_2(int(i)))
+  #
+  #plt.plot(x,y1,label='1s')
+  #plt.plot(x,y2,label='2s')
+  #plt.plot(x,y3,label='2p')
+  #plt.plot(x,y3,label='2p2')
+  #plt.legend()
+  #plt.show()
+  #
+  Z_s_sq = pow(get_Zeff_1s(a),2)
+  ZK = get_Zeff_1s(a)
+  e_ion = get_ionization_energy_1s(a)
+  nu_k = e_ion / h
+  delta_K = 1 + alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq) #21a in Hoenl
+  n_0 = nu_k/(1-delta_K) #22 in Hoenl
+  #this yields the number of dispersion electrons, which is independant of the wavelenght used
+  n_disp_el = integrate.quad(integrand_for_disp_els_K,nu_k,20000*nu_k,args=(n_0),limit=200000,epsabs=1E-60)
+  print("K_electrons: " + str(2*n_disp_el[0]) +  " delta_K: " + str(delta_K))
+  print("Missed part right: " + str(integrate.quad(integrand_for_disp_els_K,20000*nu_k,50000*nu_k,args=(n_0),limit=2000000,epsabs=1E-30,epsrel=1E-10)) )
+  #
+  #
+  ##en = get_ionization_energy_2s(a)
+  ZL1 = get_Zeff_2s(a)
+  Z_s_sq1 = pow(ZL1,2)
+  ZL2 = get_Zeff_2p_1_2(a)
+  Z_s_sq2 = pow(ZL2,2) #according to the tables there is no difference between the effective core charge for 2p electrons
+  ZL3 = get_Zeff_2p_3_2(a)
+  Z_s_sq3 = pow(ZL3,2)
+  e_ion_1 = get_ionization_energy_2s(a)
+  e_ion_2 = get_ionization_energy_2p1_2(a)
+  e_ion_3 = get_ionization_energy_2p3_2(a)
+  nu_l1 = e_ion_1 / h
+  nu_l2 = e_ion_2 / h
+  nu_l3 = e_ion_3 / h
+  delta_l1 = 1 + alpha_sq * Z_s_sq1 * 0.3125 - 4*e_ion_1/(Ryd_ener * Z_s_sq1) #33 in Hoenl
+  delta_l2 = 1 + alpha_sq * Z_s_sq2 * 0.3125 - 4*e_ion_2/(Ryd_ener * Z_s_sq2) #33 in Hoenl
+  delta_l3 = 1 + alpha_sq * Z_s_sq3 * 0.0625 - 4*e_ion_3/(Ryd_ener * Z_s_sq3) #33 in Hoenl
+  n_0_1 = nu_l1/(1-delta_l1) #22 in Hoenl
+  n_0_2 = nu_l2/(1-delta_l2) #22 in Hoenl
+  n_0_3 = nu_l3/(1-delta_l3) #22 in Hoenl
+  
+  #plt.axvline(x=nu_l1, color="blue", linestyle="--")
+  #plt.axvline(x=nu_l2, color="orange", linestyle="--")
+  #plt.axvline(x=nu_l3, color="green", linestyle="--")
+  #if delta_l1 <0:
+  #  lower_limit=(1+delta_l1)*nu_l1/n_0_1
+  #else:
+  lower_limit=nu_l1
+  upper_limit=20000*nu_l1
+  #plt.axvline(x=upper_limit, color="gray", linestyle="--")
+  #x = numpy.linspace(lower_limit,upper_limit,5000)
+  #y = []
+  inte1 = integrate.quad(integrand_for_disp_els_L1,lower_limit,upper_limit,args=(n_0_1),limit=200000,epsabs=1E-60,epsrel=1E-10)
+  print("LI n_disp: " +str(inte1) + " delta_L: " + str(delta_l1))
+  #inte1_2 = integrate.quad(integrand_for_disp_els_L1,nu_l1,upper_limit,args=(n_0_1),limit=200000,epsabs=1E-60,epsrel=1E-10)
+  #print("nu_l1 Imag: " +str(inte1))
+  print("Missed part right: " + str(integrate.quad(integrand_for_disp_els_L1,upper_limit,50000*nu_l1,args=(n_0_1),limit=2000000,epsabs=1E-30,epsrel=1E-10)) )
+  #for i in x:
+  #  y.append(integrand_for_disp_els_L1(i,n_0_1))
+  #plt.plot(x,y,'+:',label="LI")
+  
+  lower_limit=nu_l2
+  #x = numpy.linspace(lower_limit,upper_limit,5000)
+  #y = []
+  inte2 = integrate.quad(integrand_for_disp_els_L2_3,lower_limit,upper_limit,args=(n_0_2),limit=200000,epsabs=1E-60,epsrel=1E-10)
+  print("LII n_disp: " +str(inte2) + " delta_L: " + str(delta_l2))
+  #for i in x:
+  #  y.append(integrand_for_disp_els_L2_3(i,n_0_2))
+  #plt.plot(x,y,'+:',label="LII")
+  
+  lower_limit=nu_l3
+  #x = numpy.linspace(lower_limit,upper_limit,5000)
+  #y = []
+  inte3 = integrate.quad(integrand_for_disp_els_L2_3,lower_limit,upper_limit,args=(n_0_3),limit=200000,epsabs=1E-60,epsrel=1E-10)
+  print("LIII n_disp: " +str(inte3) + " delta_L: " + str(delta_l3))
+  #for i in x:
+  #  y.append(integrand_for_disp_els_L2_3(i,n_0_3))
+  #plt.plot(x,y,'+:',label="LIII")
+  print("Number: " + str(2*inte1[0]+2*inte2[0]+4*inte3[0]))
+  #plt.axhline(y=0, color="gray", linestyle="--")
+  #plt.legend(loc='upper right')
+  #plt.show()
+  #exit()
+  print("done")
+
+#test_florian()

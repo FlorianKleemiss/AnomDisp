@@ -1,5 +1,6 @@
 import math
-def sort(n,a,b):
+from typing import Any
+def sort(n:int,a,b) -> None:
   for i in range(n):
     for j in range(i+1,n):
       if a[j] < a[i]:
@@ -12,7 +13,7 @@ def sort(n,a,b):
         b[i]=x
         b[j]=y
 
-def lgndr(index):
+def lgndr(index: int) -> "list[float]":
   x = [0.04691007703067,0.23076534494716]
   a = [0.11846344252810,0.23931433524968,0.28444444444444]
   cc = 0.5
@@ -30,7 +31,7 @@ def lgndr(index):
     cc = -const - x[ip]
   return [bb,cc]
 
-def sigma0(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
+def sigma0(x: float,xsect_barns: float,bind_nrg_au:float,xsect_int: "list[float]",energy_au: float,icount: int) -> Any:
   prod =0.0
   icount -= 1
   prod = energy_au * energy_au * x*x -(bind_nrg_au*bind_nrg_au)
@@ -39,11 +40,11 @@ def sigma0(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
   else:
     return [icount,(xsect_int[icount] * bind_nrg_au* bind_nrg_au* bind_nrg_au/(x*x)-bind_nrg_au*xsect_barns*energy_au*energy_au)/prod]
 
-def sigma1(x,bind_nrg_au,xsect_int,energy_au,icount):
+def sigma1(x:float,bind_nrg_au:float,xsect_int:"list[float]",energy_au:float,icount:int) -> Any:
   icount -= 1
   return [icount,0.5*xsect_int[icount] * bind_nrg_au* bind_nrg_au* bind_nrg_au/ (math.sqrt(x)*(energy_au*energy_au*x*x-bind_nrg_au*bind_nrg_au*x))]
 
-def sigma2(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
+def sigma2(x:float,xsect_barns:float,bind_nrg_au:float,xsect_int:"list[float]",energy_au:float,icount:int) -> Any:
   icount -= 1
   result = 0.0
   if abs(x) < 1E-31:
@@ -61,12 +62,12 @@ def sigma2(x,xsect_barns,bind_nrg_au,xsect_int,energy_au,icount):
       result = 2.0 * (xsect_int[icount]*math.pow(bind_nrg_au/x,3)/x- bind_nrg_au*xsect_barns*math.pow(energy_au,2))/denom
   return[icount,result]
 
-def sigma3(x,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount):
+def sigma3(x: float,bind_nrg_au: float,xsect_int: "list[float]",energy_au:float,xsect_edge_au:float,icount:int) -> Any:
   icount -= 1
   x2 = math.pow(x,2)
   return [icount,math.pow(bind_nrg_au,3) * (xsect_int[icount]-xsect_edge_au*x2)/ (x2*(x2*math.pow(energy_au,2)-math.pow(bind_nrg_au,2)))]
 
-def gauss(sigma,xsect_barns,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount):
+def gauss(sigma: int,xsect_barns: float,bind_nrg_au: float,xsect_int: "list[float]",energy_au: float,xsect_edge_au: float,icount: int) -> float:
   aa = 0.0
   dd = 0.0
   for i in range(5):
@@ -83,7 +84,7 @@ def gauss(sigma,xsect_barns,bind_nrg_au,xsect_int,energy_au,xsect_edge_au,icount
     aa += bb * dd
   return aa
 
-def mcm(z,energy):
+def mcm(z:int,energy:float) -> "list[float]":
   barns2electron = 1.43110541E-8
   p1 = math.log(energy)
   p2 = p1*p1
@@ -103,7 +104,7 @@ def mcm(z,energy):
       fpp = 0.0
   return [fp,fpp]
 
-def aknint(log_energy, n, log_nrg, log_xsect):
+def aknint(log_energy: float, n: int, log_nrg: "list[float]", log_xsect: "list[float]") -> float:
   index = 0
   if n <= 1:
     return log_xsect[0]
@@ -149,7 +150,7 @@ class brennan:
     self.f_to_mu = 4208.031548 #mu in millimeter
     self.barns_to_electrons = 1.43110541E-8
     
-    self.amu = [0,0,                                                                                                                                                                                                                                                                                                                                                                                                     0,
+    self.amu: "list[float]" = [0,0,                                                                                                                                                                                                                                                                                                                                                                                                     0,
                 6.94099998, 9.01218033,                                                                                                                                                                                                                                                                                                             10.8100004, 12.0109997, 14.0066996, 15.9994001, 18.9983997, 20.1790009,
                 22.9897995, 24.3050003,                                                                                                                                                                                                                                                                                                             26.9815006, 28.0855007, 30.9738007, 32.0600014, 35.4529991, 39.9480019,
                 39.0983009, 40.0800018,                                                                                                                                                                                     44.9558983, 47.8800011, 50.9415016, 51.9959984, 54.9379997, 55.8470001, 58.9332008, 58.6899986, 63.5460014, 65.3799973, 69.7200012, 72.5899963, 74.9216003, 78.9599991, 79.9039993, 83.8000031,
@@ -157,7 +158,7 @@ class brennan:
                 132.905396, 137.330002, 138.905502, 140.119995, 140.907700, 144.240005, 145.000000, 150.360001, 151.960007, 157.250000, 158.925400, 162.500000, 164.930405, 167.259995, 168.934204, 173.039993, 174.966995, 178.490005, 180.947906, 183.850006, 186.207001, 190.199997, 192.220001, 195.080002, 196.966507, 200.589996, 204.382996, 207.199997, 208.980392, 209.000000, 210.000000, 222.000000, 223.000000, 
                 226.025406, 227.027802, 232.038101, 231.035904, 238.028900]
     
-    self.rho = [0,0,                                                                                                                                                                                                                                                                                                                                                                                                                         0,
+    self.rho: "list[float]" = [0,0,                                                                                                                                                                                                                                                                                                                                                                                                                         0,
                 0.532999992,1.84500003,                                                                                                                                                                                                                                                                                                             2.33999991, 2.25999999, 1.165000023E-03, 1.331000007E-03, 1.695999992E-03, 8.390999865E-04,
                 0.968999982,1.73500001,                                                                                                                                                                                                                                                                                                             2.69409990, 2.31999993, 1.82000005,      2.06999993,      3.214000026E-03, 1.659999951E-03,
                 0.860000014,1.54999995,                                                                                                                                                                                     2.98000002, 4.53000021, 6.09999990, 7.17999983, 7.42999983, 7.86000013, 8.89999962, 8.87600040, 8.93999958, 7.11199999, 5.87699986, 5.30700016, 5.71999979,      4.78000021,      3.10999990,      3.483999986E-03,
@@ -165,7 +166,7 @@ class brennan:
                 1.87000000, 3.50000000, 6.12699986, 6.63700008, 6.76100016, 6.99399996, 7.19999981, 7.51000023, 5.22800016, 7.87699986, 8.21399975, 8.52499962, 8.76900005, 9.03899956, 9.29399967, 6.95300007, 9.81099987, 13.2900000, 16.6240005, 19.2999992, 20.9799995, 22.5300007, 22.3899994, 21.4099998, 18.8500004, 13.5220003, 11.8299999, 11.3299999, 9.72999954, 9.30000019,      1.00000000,      9.229999851E-03, 1.00000000,
                 5.00000000, 10.0500002, 11.6999998, 15.3400002, 18.9200001]
     
-    self.ray = [
+    self.ray: "list[float]" = [
            -0.11908000,-0.937089980    ,-0.200540006,1.065899990E-02,
             1.04770005,-8.517999947E-02,-0.403530002,2.693999931E-02,
             1.34370005, 0.181559995    ,-0.423979998,2.661900036E-02,
@@ -259,7 +260,7 @@ class brennan:
             8.30169964, 0.480199993    ,-0.367549986,1.751700044E-02,
             8.33010006, 0.478309989    ,-0.367249995,1.741299964E-02]
     
-    self.comp = [
+    self.comp: "list[float]" = [
           -2.15770006    , 1.32690001,-0.305620015,1.850200072E-02,
           -2.56360006    , 2.02539992,-0.448709995,2.796900086E-02,
           -1.08739996    , 1.03369999,-0.190380007,7.799500134E-03,
@@ -353,21 +354,21 @@ class brennan:
           0.144180000    , 1.69449997,-0.239150003,7.667399943E-03,
           0.108280003    , 1.74160004,-0.254099995,8.950600401E-03]
     
-    self.elements = ["DUMMY","H",                                                                                                                                              "He",
-                     "Li","Be",                                                                                                                        "B", "C", "N", "O", "F","Ne",
-                     "Na","Mg",                                                                                                                       "Al","Si", "P", "S","Cl","Ar",
-                     "K", "Ca",                                                                     "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
-                     "Rb","Sr",                                                                      "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te", "I","Xe",
-                     "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn",
-                     "Fr","Ra","Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"]
+    self.elements: "list[str]" = ["DUMMY","H",                                                                                                                                              "He",
+                                  "Li","Be",                                                                                                                        "B", "C", "N", "O", "F","Ne",
+                                  "Na","Mg",                                                                                                                       "Al","Si", "P", "S","Cl","Ar",
+                                  "K", "Ca",                                                                     "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+                                  "Rb","Sr",                                                                      "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te", "I","Xe",
+                                  "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn",
+                                  "Fr","Ra","Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"]
     #Number of orbitals to be used for each element
-    self.n_orb = [ 0, 1,                                                                                        1,
-                   2, 2,                                                                         3, 3, 4, 4, 4, 4,
-                   4, 4,                                                                         5, 6, 7, 7, 7, 7,
-                   7, 7,                                           7, 7, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                   9,12,                                          12,13,13,14,14,14,14,14,14,14,14,14,14,14,14,14,
-                  17,17,17,18,18,18,18,18,18,19,19,19,19,19,19,19,19,20,20,20,21,21,21,21,21,22,22,23,23,24,24,24,
-                  24,24,24,24,24,24]
+    self.n_orb: "list[int]" = [ 0, 1,                                                                                        1,
+                                2, 2,                                                                         3, 3, 4, 4, 4, 4,
+                                4, 4,                                                                         5, 6, 7, 7, 7, 7,
+                                7, 7,                                           7, 7, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                9,12,                                          12,13,13,14,14,14,14,14,14,14,14,14,14,14,14,14,
+                               17,17,17,18,18,18,18,18,18,19,19,19,19,19,19,19,19,20,20,20,21,21,21,21,21,22,22,23,23,24,24,24,
+                               24,24,24,24,24,24]
     #Binding Energy of Orbitals
     self.bind_nrg = [[0.0], #dummy
                      [14E-3],#H
@@ -576,7 +577,7 @@ class brennan:
     for i in range(93):
       self.total_cor[i] = self.kpcor[i] - self.relcor[i]
     #Energy of Orbitals
-    self.nrg = [None]*93
+    self.nrg = [[]]*93
     #SHARED FOR ALL
     self.nrg[ 0] = [[80.0002518    ,26.7000599     ,8.89995575     ,3.00003362     ,1.00000000     ],
                     [0.0]]
@@ -1921,7 +1922,7 @@ class brennan:
                     [19.2224197    ,0.794326723    ,0.169200003    ,7.148627937E-02,4.656639323E-02],
                     [14.6781130    ,0.606542647    ,0.129199997    ,5.458644778E-02,3.555779159E-02]]
 
-    self.xsc = [None]*93
+    self.xsc = [[]]*93
     # LI
     self.xsc[ 3] = [[1.301553100E-03,5.167718977E-02, 2.04572558    , 73.6826706    , 2367.26001    ,6.531799585E-02, 2174.78979    , 189729.859    , 1618910.88    , 3022227.00    ],
                     [2.456936636E-05,8.661831380E-04,3.219022229E-02, 1.14365172    , 35.4625931    , 2.25543308    , 17745.8359    , 440576.219    , 1333729.63    , 1448481.13    ]]
@@ -3262,7 +3263,7 @@ class brennan:
                     [0.688192070    , 10.4296017    , 105.452431    , 653.458801    , 2669.10205    , 21.7011681    , 3465.78979    , 66133.5859    , 1070067.00    , 5223840.00    ],
                     [0.585494578    , 12.4282341    , 169.844070    , 1460.21033    , 8725.37793    , 54.2631149    , 17623.1504    , 145704.859    , 1739226.38    , 11441855.0    ]]
 
-  def at_angstrom(self, wavelength, element):
+  def at_angstrom(self, wavelength: float, element: str) -> "list[float]":
     """Generates the dispersion correction coefficients f' and f'' at a given wavelength for a given elemnt symbol
 
     Args:
@@ -3291,12 +3292,12 @@ class brennan:
         xsect_barns = 0.0
         nparms = 0
         xsect_edge_au = 0.0
-        xsect_int = [0] * 5
-        xsect_s = [0] * 11
-        log_xsect = [0] * 11
-        nrg_int = [0] * 5
-        nrg_s = [0] * 11
-        log_nrg = [0] * 11
+        xsect_int = [0.0] * 5
+        xsect_s = [0.0] * 11
+        log_xsect = [0.0] * 11
+        nrg_int = [0.0] * 5
+        nrg_s = [0.0] * 11
+        log_nrg = [0.0] * 11
 
         bind_nrg_au = self.bind_nrg[z][i]/self.keV_per_hartree
         if self.funtype[z][i] == 0:
@@ -3368,7 +3369,7 @@ class brennan:
 
     return result
 
-  def get_mu_at_angstrom(self, wavelength, element):
+  def get_mu_at_angstrom(self, wavelength: float, element: str) -> float:
     """Generates linear absorption coefficient mu at a given wavelength
 
     Args:
@@ -3382,7 +3383,7 @@ class brennan:
     mu = self.convert_fdp_to_mu(wavelength, fdp, element)
     return mu
 
-  def get_mu_pure_at_angstrom(self, wavelength, element):
+  def get_mu_pure_at_angstrom(self, wavelength: float, element: str) -> float:
     """Generates linear absorption coefficient mu at a given wavelength without ray and comp contributions
 
     Args:
@@ -3397,7 +3398,7 @@ class brennan:
     mu = (fdp / (energy * self.barns_to_electrons))
     return mu
 
-  def fp_fdp_mu_at_angstrom(self, wavelength, element):
+  def fp_fdp_mu_at_angstrom(self, wavelength: float, element: str) -> "list[float]":
     """Generates f' f'' and linear absorption coefficient µ at a given wavelength
 
     Args:
@@ -3411,7 +3412,7 @@ class brennan:
     mu = self.convert_fdp_to_mu(wavelength, fdp, element)
     return [fp, fdp, mu]
 
-  def print_at_angstrom(self, wavelength, element):
+  def print_at_angstrom(self, wavelength: float, element: str) -> None:
     """Generates linear absorption coefficient mu at a given wavelength
 
     Args:
@@ -3419,10 +3420,10 @@ class brennan:
         element (string): Element symbol in the periodic table
     """
     fp, fdp = self.at_angstrom(wavelength, element)
-    mu = self.get_mu_at_angstrom(wavelength, fdp, element)
+    mu = self.convert_fdp_to_mu(wavelength, fdp, element)
     print(f"{fp:16.7f} {fdp:16.7f} {mu:16.7f}")
 
-  def get_ray_at_angstrom_in_electrons(self, wl, element):
+  def get_ray_at_angstrom_in_electrons(self, wl: float, element: str) -> float:
     """Generates Rayleigh Scattering contribution at given wavelength
 
     Args:
@@ -3445,7 +3446,7 @@ class brennan:
       )
     return ray * energy * self.barns_to_electrons
   
-  def get_comp_at_angstrom_in_electrons(self,wl,element):
+  def get_comp_at_angstrom_in_electrons(self,wl: float,element: str) -> float:
     """Generates Compton Scattering contribution at given wavelength
 
     Args:
@@ -3468,7 +3469,7 @@ class brennan:
       )
     return comp * energy * self.barns_to_electrons
   
-  def get_raycomp_at_angstrom(self,wl,element):
+  def get_raycomp_at_angstrom(self,wl: float,element: str) -> "list[float]":
     """Generates a list of Rayleigh and Compton scattering contribution at a given wavelength in Angstrom for a given element
 
     Args:
@@ -3498,7 +3499,7 @@ class brennan:
       )
     return [ray,comp]
 
-  def convert_fdp_to_mu(self, wavelength, fdp, element):
+  def convert_fdp_to_mu(self, wavelength: float, fdp: float, element: str) -> float:
     """Generates Mu from given fdp at given wavelength
 
     Args:
