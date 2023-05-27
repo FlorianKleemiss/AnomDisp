@@ -19,3 +19,9 @@ factor_profiling_stats.txt
 test.hkl
 paralle_orthogonal_calc.docx
 .prof_stats
+*.exe
+*.ilk
+*.obj
+*.pdb
+*ignore*
+gsl_stuff/gsl-msvc-x64.targets

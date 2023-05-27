@@ -7,7 +7,8 @@
 			"args": [
 			  "/C",
 			  // The path to VsDevCmd.bat depends on the version of Visual Studio you have installed.
-			  "\"C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/VsDevCmd.bat\"",
+        // this one can be used for either x86 or x64 compilation (e.g. 32 or 64 bit)
+			  "\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat\" x86_amd64",
 			  "&&"
 			]
 		  }
@@ -22,10 +23,16 @@
 			"/Zi",
 			"/EHsc",
 			"/FS",
-      "/std:c++17",
+      "/std:c++20",
+      "/I",
+      "${fileDirname}\\gsl_stuff",
 			"/Fe:",
 			"${fileDirname}\\${fileBasenameNoExtension}.exe",
-			"${file}"
+			"${file}",
+      "convenience.cpp",
+      "spherical_density.cpp",
+      "/link",
+      "${fileDirname}\\gsl_stuff\\lib\\x64\\Release\\gsl.lib"
 		  ],
 		  "problemMatcher": ["$msCompile"],
 		  "group": {

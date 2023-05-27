@@ -20,6 +20,7 @@ r_0_for_nu = pow(el_charge,2)/el_charge
 angstrom2eV = 1.23984193 * 10000 # eV*µm * µm/Angstrom
 barn2bohr = 2.80028520539078E+7
 constant_factor = 4*math.pi*math.pi*el_mass/h/h #p_0 according to Hönl's Waller paper (1933) Page 646
+ipi = math.pi*1j
 
 foa = Union[float,npt.NDArray]
 

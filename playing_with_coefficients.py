@@ -10,13 +10,16 @@ from tkinter import ttk
 from brennan import brennan
 from time import time
 import math, cmath
+from typing import overload, Union
 import pyximport
 pyximport.install(language_level=3)
 
-from legendre_plynomials import *
-from matrix_coefficients_v2 import f_p_el_for_p,f_a_for_p,f_d_el_for_p,sugiura_exps,b
+
+from legendre_plynomials import alpha_coef, beta_bar_coef, beta_coef, alpha_bar_coef
+from matrix_coefficients_v2 import f_p_el_for_p,f_a_for_p,f_d_el_for_p
 #from matrix_coefficients_v2 import f_a,f_c_0, f_c_2, integrand_matrix_p, integrand_matrix_s
 from constants_and_atomic_properties import *
+from constants_and_atomic_properties import speed_of_light, constant_factor, h, one_minus_delta_edge, a0, xn, b, elements, sugiura_exps, n_prime_from_z
 from hoenl_like import calc_hoenllike, sugiura_k_purely_imag
 #from mpl_toolkits import mplot3d
 
@@ -359,10 +362,15 @@ def calc_stuff_with_brennan(nu_in, t0, l_max, p_max, el_nr, br, e):
   
   return t1,t2,t3,t4,t5,t6,t7,t8,t9, brennan_fdp, hönl_K, hönl_L, hönl_M, hönl
 
-def calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr):
+def calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr) -> float:
   t1,t2,t3,t4,t5,t6,t7,t8,t9 = calc_stuff(nu_in, t0, l_max, p_max, el_nr)
 
-  return t1,t2,t3,t4+2*t5,t6+2*t7,3*t8+2*t9
+  return sum([t1,t2,t3,t4+2*t5,t6+2*t7,3*t8+2*t9])
+
+def calc_stuff_only_K(nu_in, t0, l_max, p_max, el_nr) -> float:
+  t1,t2,t3,t4,t5,t6,t7,t8,t9 = calc_stuff(nu_in, t0, l_max, p_max, el_nr)
+
+  return t1
 
 def fdp_from_z(z:float, eins_minus_delta:float, osz_func) -> float:
   if z<1:  return 0
@@ -378,7 +386,7 @@ def eta_K(z: float,n0:int,nu_0:float,eins_minus_delta_K:float) -> float:
 
 def eta_K_unsers(z: float, nu_0:float, el_nr:int) -> float:
   nu_in = z * nu_0
-  f = calc_stuff_only_sums(nu_in,0,7,1,el_nr)[0]
+  f = calc_stuff_only_K(nu_in,0,7,1,el_nr)
   #return 2**7/3/z_eff**4*sugiura_exps(z_eff,n0)/nu_0/nu*math.pi/2*emd
   return f/nu_in**2*math.pi
 
@@ -390,14 +398,16 @@ if __name__ == "__main__":
   form_factor_test = False
   numplot=False
   cmaps = ['blue','orange','green','red','black','blue','orange','green','red','black']
-  t0 = 0
-  alp = 0
-  l_max = 7
-  p_max = 1
-  el_nr = 35
-  lam_min = 3.00
-  lam_max = 0.15
-  steps = 300
+  t0:float = 0
+  alp:float = 0
+  l_max:int = 5
+  p_max:int = 1
+  el_nr:int = 52
+  lam_min:float = 3.00
+  lam_max:float = 0.15
+  steps: int = 200
+  theta_steps:int = 3
+  overwrite_theta: bool = False
   x = None
 
   root = tk.Tk()
@@ -417,6 +427,9 @@ if __name__ == "__main__":
   v6.set(str(lam_min))
   v7 = tk.StringVar()
   v7.set(str(steps))
+  v8 = tk.StringVar()
+  v8.set(str(theta_steps))
+  v9 = tk.IntVar()
   options = [
         ('1s-test', 0),
         ('p test', 2),
@@ -442,6 +455,9 @@ if __name__ == "__main__":
   tk.Entry(root, textvariable=v5).pack()
   tk.Label(root,text="Choose lambda min",state="active",justify=tk.CENTER,padx=20).pack()
   tk.Entry(root, textvariable=v6).pack()
+  tk.Label(root,text="Choose number of theta steps",state="active",justify=tk.CENTER,padx=20).pack()
+  tk.Entry(root, textvariable=v8).pack()
+  tk.Checkbutton(root,text = "Choose theta0 = 0?", variable=v9).pack()
   tk.Label(root,text="Choose what to run",state="active",justify=tk.CENTER,padx=20).pack()
   for l,val in options:
     tk.Radiobutton(root,text=l,padx=20,indicatoron=False, width=30, height=2, variable=v,command=set_result,value=val).pack()
@@ -453,6 +469,8 @@ if __name__ == "__main__":
   lam_max = float(v5.get())
   lam_min = float(v6.get())
   steps = int(v7.get())
+  theta_steps = int(v8.get())
+  overwrite_theta = bool(v9.get())
   if result == 0:
     test_1s = True
   elif result == 2:
@@ -558,7 +576,7 @@ if __name__ == "__main__":
     x32_2 = xn(nu_in, 3, el_nr, 2, 2)
     np.random.seed(int(np.ceil(time())))
     t0 = np.random.random(1)[0] * math.pi
-    #alp = np.random.random(1)[0] * math.pi * 2
+    alp = np.random.random(1)[0] * math.pi * 2
     third = 1./3.
     res_2 = [0,0,0]
     res_4 = [0,0,0,0,0]
@@ -579,6 +597,12 @@ if __name__ == "__main__":
       e2_result = np.zeros_like(x)
       l_s       = np.zeros_like(x)
       f_result  = np.zeros_like(x)
+      s_0_result = np.zeros_like(x)
+      s_1_1_result = np.zeros_like(x)#
+      s_1_2_result = np.zeros_like(x)
+      s_2_1_result = np.zeros_like(x)
+      s_2_2_result = np.zeros_like(x)
+      s_2_3_result = np.zeros_like(x)
     
       p0_result   = np.zeros_like(x)
       p2_0_result = np.zeros_like(x)
@@ -617,11 +641,20 @@ if __name__ == "__main__":
     for i,z in enumerate(x):
       for l in range(l_max+1):
         res_0 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 0)[0]
+        s_0_result[i] += apply_angle_part_s_parallel(res_0.real, 0, 0, l)
         res_0 = apply_angle_part_s_parallel(res_0.real, t0, alp, l)
         res_2 = f_a_for_p(el_nr, l, k_, z, nu_in, 1, 2)
+        s_1_1_result[i] += apply_angle_part_s_parallel(res_2[0].real, 0, 0, l)
+        s_1_1_result[i] += apply_angle_part_s_parallel(res_2[-1].real, 0, 0, l)
+        s_1_2_result[i] += apply_angle_part_s_parallel(res_2[1].real, 0, 0, l)
         for runny in range(len(res_2)):
           res_2[runny] = apply_angle_part_s_parallel(res_2[runny].real,t0,alp, l)
         res_4 = f_a_for_p(el_nr,l,k_,z,nu_in,1,4)
+        s_2_1_result[i] += apply_angle_part_s_parallel(res_4[0].real, 0, 0, l)
+        s_2_1_result[i] += apply_angle_part_s_parallel(res_4[-1].real, 0, 0, l)
+        s_2_2_result[i] += apply_angle_part_s_parallel(res_4[1].real, 0, 0, l)
+        s_2_2_result[i] += apply_angle_part_s_parallel(res_4[-2].real, 0, 0, l)
+        s_2_3_result[i] += apply_angle_part_s_parallel(res_4[2].real, 0, 0, l)
         for runny in range(len(res_4)):
           res_4[runny] = apply_angle_part_s_parallel(res_4[runny].real,t0,alp, l)
         a_result[i] += (res_0)
@@ -667,7 +700,7 @@ if __name__ == "__main__":
           p2_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1])
           
           b_l   = f_p_el_for_p(el_nr,l,1,_k,z,nu_in,2,4)
-          c_0_l = f_p_el_for_p(el_nr,l,0,_k,z,nu_in,2,4) 
+          c_0_l = f_p_el_for_p(el_nr,l,0,_k,z,nu_in,2,4)
           c_2_l = f_p_el_for_p(el_nr,l,2,_k,z,nu_in,2,4)
           d_l   = f_p_el_for_p(el_nr,l,2,_k,z,nu_in,2,4)
           for runny in range(len(b_l)):
@@ -680,21 +713,29 @@ if __name__ == "__main__":
           p4_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
           p4_2_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2])
 
-          #b_l   =   f_b_for_p(el_nr,l,_k,z,nu_in,2,6)
-          #c_0_l = f_c_0_for_p(el_nr,l,_k,z,nu_in,2,6) 
-          #c_2_l = f_c_2_for_p(el_nr,l,_k,z,nu_in,2,6)
-          #d_l   =   f_d_for_p(el_nr,l,_k,z,nu_in,2,6)
-          #for runny in range(len(b_l)):
-          #  b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p_parallel(b_l[runny].real,
-          #                                                                       c_0_l[runny].real,
-          #                                                                       c_2_l[runny].real,
-          #                                                                       d_l[runny].real,
-          #                                                                       _k, t0, alp, l)
-          #p6_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
-          #p6_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
-          #p6_1_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2] + b_l[-3] + c_0_l[-3] + c_2_l[-3] + d_l[-3])
-          #p6_3_result[i] += third * (b_l[3] + c_0_l[3] + c_2_l[3] + d_l[3])
+          b_l   = f_p_el_for_p(el_nr,l,1,_k,z,nu_in,2,6)
+          c_0_l = f_p_el_for_p(el_nr,l,0,_k,z,nu_in,2,6)
+          c_2_l = f_p_el_for_p(el_nr,l,2,_k,z,nu_in,2,6)
+          d_l   = f_p_el_for_p(el_nr,l,2,_k,z,nu_in,2,6)
+          for runny in range(len(b_l)):
+            b_l[runny],c_0_l[runny],c_2_l[runny],d_l[runny] = apply_angle_part_p_parallel(b_l[runny].real,
+                                                                                 c_0_l[runny].real,
+                                                                                 c_2_l[runny].real,
+                                                                                 d_l[runny].real,
+                                                                                 _k, t0, alp, l)
+          p6_0_result[i] += third * (b_l[0] + c_0_l[0] + c_2_l[0] + d_l[0] + b_l[-1] + c_0_l[-1] + c_2_l[-1] + d_l[-1])
+          p6_1_result[i] += third * (b_l[1] + c_0_l[1] + c_2_l[1] + d_l[1] + b_l[-2] + c_0_l[-2] + c_2_l[-2] + d_l[-2])
+          p6_2_result[i] += third * (b_l[2] + c_0_l[2] + c_2_l[2] + d_l[2] + b_l[-3] + c_0_l[-3] + c_2_l[-3] + d_l[-3])
+          p6_3_result[i] += third * (b_l[3] + c_0_l[3] + c_2_l[3] + d_l[3])
           
+        s_0_result[i] = apply_angle_part_s_parallel(s_0_result[i],t0,alp,1)
+        s_1_1_result[i] = apply_angle_part_s_parallel(s_1_1_result[i],t0,alp,1)
+        s_1_2_result[i] = apply_angle_part_s_parallel(s_1_2_result[i],t0,alp,2)
+        s_2_1_result[i] = apply_angle_part_s_parallel(s_2_1_result[i],t0,alp,1)
+        s_2_2_result[i] = apply_angle_part_s_parallel(s_2_2_result[i],t0,alp,2)
+        s_2_3_result[i] = apply_angle_part_s_parallel(s_2_3_result[i],t0,alp,3)
+
+
         #for p = 0 using the 0 angle applying a common angle function later
         b_l   = f_p_el_for_p(el_nr,l,1,1,z,nu_in,2,0)[0].real
         c_0_l = f_p_el_for_p(el_nr,l,0,0,z,nu_in,2,0)[0].real
@@ -731,20 +772,20 @@ if __name__ == "__main__":
         p4_1_result_M[i] += ((res_4[1]+res_4[-2]))
         p4_2_result_M[i] += ((res_4[2]))
       
-        ##for p = 6 using the 0 angle applying a common angle function later
-        #b_l   = f_p_el_for_p(el_nr,l,1,1,z,nu_in,2,6) 
-        #c_0_l = f_p_el_for_p(el_nr,l,0,0,z,nu_in,2,6) 
-        #c_2_l = f_p_el_for_p(el_nr,l,2,2,z,nu_in,2,6) 
-        #fac = [0,1,2,3,2,1,0]
-        #for runny in range(len(b_l)):
-        #  res_6[runny] = apply_angle_part_s_parallel(third * (  b_l[runny].real * alpha_coef(l,1,1,0,0) 
-        #                                             + c_0_l[runny].real * alpha_coef(l,0,0,0,0)
-        #                                             + c_2_l[runny].real * (alpha_coef(l,2,2,0,0) + beta_bar_coef(l,2,2,0,0)))
-        #                                    , t0, alp, fac[runny])
-        #p6_0_result_M[i] += ((res_6[0]+res_6[-1]))
-        #p6_1_result_M[i] += ((res_6[1]+res_6[-2]))
-        #p6_2_result_M[i] += ((res_6[2]+res_6[-3]))
-        #p6_3_result_M[i] += ((res_6[3]))
+        #for p = 6 using the 0 angle applying a common angle function later
+        b_l   = f_p_el_for_p(el_nr,l,1,1,z,nu_in,2,6) 
+        c_0_l = f_p_el_for_p(el_nr,l,0,0,z,nu_in,2,6) 
+        c_2_l = f_p_el_for_p(el_nr,l,2,2,z,nu_in,2,6) 
+        fac = [0,1,2,3,2,1,0]
+        for runny in range(len(b_l)):
+          res_6[runny] = apply_angle_part_s_parallel(third * (  b_l[runny].real * alpha_coef(l,1,1,0,0) 
+                                                     + c_0_l[runny].real * alpha_coef(l,0,0,0,0)
+                                                     + c_2_l[runny].real * (alpha_coef(l,2,2,0,0) + beta_bar_coef(l,2,2,0,0)))
+                                            , t0, alp, fac[runny])
+        p6_0_result_M[i] += ((res_6[0]+res_6[-1]))
+        p6_1_result_M[i] += ((res_6[1]+res_6[-2]))
+        p6_2_result_M[i] += ((res_6[2]+res_6[-3]))
+        p6_3_result_M[i] += ((res_6[3]))
         
   
       k_s[i] = a_result[i] + b_result[i] + c_result[i] + b0_result[i] + b1_result[i] + b2_result[i]
@@ -827,6 +868,10 @@ if __name__ == "__main__":
     axes[1,1].plot(x,p4_0_result,linestyle='dotted')# type: ignore
     axes[1,1].plot(x,p4_1_result,linestyle='dotted')# type: ignore
     axes[1,1].plot(x,p4_2_result,linestyle='dotted')# type: ignore
+    axes[1,1].plot(x,p6_0_result,linestyle='dashed')# type: ignore
+    axes[1,1].plot(x,p6_1_result,linestyle='dashed')# type: ignore
+    axes[1,1].plot(x,p6_2_result,linestyle='dashed')# type: ignore
+    axes[1,1].plot(x,p6_3_result,linestyle='dashed')# type: ignore
     axes[1,1].plot(x,l_p,color='k')# type: ignore
     axes[1,1].scatter(x,p0_result_M  ,s=20,facecolors='none',edgecolor='b',marker='^',label="p=0 with M")# type: ignore
     axes[1,1].scatter(x,p2_0_result_M,s=20,facecolors='none',edgecolor='g',marker='^',label="p=2 0/2 with M")# type: ignore
@@ -834,6 +879,10 @@ if __name__ == "__main__":
     axes[1,1].scatter(x,p4_0_result_M,s=20,facecolors='none',edgecolor='b',marker='o',label="p=4 0/4 with M")# type: ignore
     axes[1,1].scatter(x,p4_1_result_M,s=20,facecolors='none',edgecolor='orange',marker='o',label="p=4 1/3 with M")# type: ignore
     axes[1,1].scatter(x,p4_2_result_M,s=20,facecolors='none',edgecolor='g',marker='o',label="p=4 2/2 with M")# type: ignore
+    axes[1,1].scatter(x,p6_0_result_M,s=20,facecolors='none',edgecolor='b',marker='v',label="p=6 0/6 with M")# type: ignore
+    axes[1,1].scatter(x,p6_1_result_M,s=20,facecolors='none',edgecolor='orange',marker='v',label="p=6 1/5 with M")# type: ignore
+    axes[1,1].scatter(x,p6_2_result_M,s=20,facecolors='none',edgecolor='g',marker='v',label="p=6 2/4 with M")# type: ignore
+    axes[1,1].scatter(x,p6_3_result_M,s=20,facecolors='none',edgecolor='k',marker='v',label="p=6 3/3 with M")# type: ignore
     axes[1,1].scatter(x,l_p_M,s=20,facecolors='none',edgecolor='k',marker='*',label="sum")# type: ignore
     axes[1,1].legend(loc='upper right')# type: ignore
     axes[1,1].add_artist(legend1)# type: ignore
@@ -841,8 +890,28 @@ if __name__ == "__main__":
     plt.subplots_adjust(left=0.025, bottom=0.04, right=1.0, top=1.0, wspace=0.15, hspace=0.05)
     fig.suptitle("alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))
 
+    print("S ORBITAL FUNCITONS")
+    print("------------tau = 0-------------")
+    print(a_result/s_0_result)
+    print("------------tau = 1-------------")
+    print(b_result/s_1_1_result)
+    print(c_result/s_1_2_result)
+    print("------------tau = 2-------------")
+    print(b0_result/s_2_1_result)
+    print(b1_result/s_2_2_result)
+    print(b2_result/s_2_3_result)
+
+    print("P ORBITALS BELOW")
     print(p4_2_result/p4_2_result_M)
     print(p4_1_result/p4_1_result_M)
+    print(p4_0_result/p4_0_result_M)
+
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!P=6!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(p6_3_result/p6_3_result_M)
+    print(p6_2_result/p6_2_result_M)
+    print(p6_1_result/p6_1_result_M)
+    print(p6_0_result/p6_0_result_M)
+
     plt.show()
     exit()
   
@@ -1656,8 +1725,9 @@ if __name__ == "__main__":
   
       np.random.seed(int(np.ceil(time())))
       t0 = np.random.random(1)[0] * math.pi
-      #t0 = 0
-      TS = (1.0+np.cos(t0)**2)/2.0
+      if overwrite_theta == True:
+        t0 = 0
+      TS = math.sqrt((1.0+np.cos(t0)**2)/2.0)
       e = elements[el_nr]
       
       factor_x = 2*math.pi
@@ -1697,9 +1767,9 @@ if __name__ == "__main__":
           m_d3[i],m_d5[i], brennan_fdp[i],\
           hönl_K[i], hönl_L[i], hönl_M[i], hönl[i] = r
         
-        #res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(0), repeat(l_max), repeat(p_max), repeat(el_nr)))
-        #for i,r in enumerate(res):
-        #  zero_angle[i] = sum(np.sqrt(r))
+        res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(0), repeat(l_max), repeat(p_max), repeat(el_nr)))
+        for i,r in enumerate(res):
+          zero_angle[i] = r * factor_x
       
       second_x = speed_of_light / x * 1E10
       achse_z   = x / (get_ionization_energy_1s(el_nr)     / h)
@@ -1809,8 +1879,6 @@ if __name__ == "__main__":
       axes[1,2].plot(second_x,(fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl)/hönl,color='r',label="ratio hönl/hönl_integral")# type: ignore
       axes[1,2].axhline(y=1,linestyle='dashed',color='gray')# type: ignore
   
-      
-  
       axes[0,1].plot(second_x,res_K,label="K-shell electrons")# type: ignore
       axes[0,1].plot(second_x,res_L,label="L-shell electrons")# type: ignore
       axes[0,1].plot(second_x,res_M,label="M-shell electrons")# type: ignore
@@ -1819,21 +1887,22 @@ if __name__ == "__main__":
       axes[0,1].plot(second_x,hönl_L,linestyle='dashed',label="Hönl L-shell")# type: ignore
       axes[0,1].plot(second_x,hönl_M,linestyle='dashed',label="Hönl M-shell")# type: ignore
   
-      #axes[0,1].axhline(y=1,linestyle='dashed',color='gray')
-      #steps = 1
-      #print("Starting angle calculations!")
-      #for i in range(0,steps+1):
-      #  theta = i*(1./steps)*math.pi
-      #  temp = np.zeros_like(zero_angle)
-      #  print("{}/{} steps".format(i,steps))
-      #  with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-      #    res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(theta), repeat(l_max), repeat(p_max), repeat(el_nr)))
-      #    for j,r in enumerate(res):
-      #      temp[j] = sum(np.sqrt(r))
-      #    axes[0,1].plot(x2,zero_angle/temp*(1+pow(np.cos(theta),2))/2,label=r"$\theta_0 = ${:4.2f}$\pi$".format(theta/math.pi))
+      axes[0,1].axhline(y=1,linestyle='dashed',color='gray')# type: ignore
+      print("Starting angle calculations!")
+      for i in range(1,theta_steps+1):
+        theta = i*(1./theta_steps)*math.pi
+        temp: npt.NDArray = np.zeros_like(zero_angle)
+        print("{}/{} steps".format(i,theta_steps))
+        with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+          res = pool.starmap(calc_stuff_only_sums, zip(x, repeat(theta), repeat(l_max), repeat(p_max), repeat(el_nr)))
+          for i,r in enumerate(res):
+            temp[i] = r
+          temp *= factor_x
+          axes[1,1].plot(second_x,zero_angle/temp * math.sqrt((1+np.cos(theta)**2)/2),label=r"$\theta_0 = ${:4.2f}$\pi$".format(theta/math.pi))# type: ignore
   
-      #axes[0,1].plot(x2,zero_angle/resy * TS,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))
-      #axes[0,1].set_title(r"Ratio between $\theta_0=0$ and $\theta_0$", y=1.0, pad=-14)
+      axes[1,1].plot(second_x,zero_angle/resy * TS,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))# type: ignore
+      axes[1,1].set_title(r"Ratio between $\theta_0=0$ and $\theta_0$", y=1.0, pad=-14)# type: ignore
+      print("TS = " + str(TS))
   
       ticks = np.array([0.2,0.3,0.5,0.7,1.0,1.5,2.0,3.0])
   
@@ -1868,7 +1937,9 @@ if __name__ == "__main__":
       exit()
   
   if numplot == True: 
-    x = np.linspace(0.9,2,2*steps)
+
+    print("performing comparison of numerical and ealuation at a given energy")
+    x = np.linspace(0.9,2,steps)
     eta_nach_hoenl = np.zeros_like(x)
     eta_nach_integral = np.zeros_like(x)
     eta_nach_unserem = np.zeros_like(x)
@@ -1895,7 +1966,7 @@ if __name__ == "__main__":
       for i,r in enumerate(res):
         eta_nach_unserem[i] = r
         
-      from matrix_coefficients_v2 import n_prime_from_z, K_recursive_from_z
+      from matrix_coefficients_v2 import K_recursive_from_z
       res = pool.starmap(n_prime_from_z, zip(x,repeat(1)))
       for i,r in enumerate(res):
         nprime[i] = r.real

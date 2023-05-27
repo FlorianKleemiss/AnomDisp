@@ -1,6 +1,14 @@
 import math
 import scipy.integrate as integrate
-from constants_and_atomic_properties import *
+import numpy as np
+from typing import Literal, Union, Callable, overload
+import pyximport
+pyximport.install(language_level=3)
+from constants_and_atomic_properties import h,speed_of_light, f_s_1_hoenl,f_s_1_EM, f_s_1_WA, f_p_1_EM, f_p_1_WA,f_d_1_WA, prefactor
+from constants_and_atomic_properties import one_minus_delta_edge, elements
+from constants_and_atomic_properties import get_ionization_energy_1s,get_ionization_energy_2s,get_ionization_energy_3s,get_ionization_energy_2p1_2,get_ionization_energy_2p3_2
+from constants_and_atomic_properties import get_ionization_energy_3p_1_2, get_ionization_energy_3p_3_2, get_ionization_energy_3d_5_2, get_ionization_energy_3d_3_2
+from constants_and_atomic_properties import get_line_width_K, get_line_width_Ls, get_line_width_Lp_1_2, get_line_width_Lp_3_2
 # distutils: language=Py3
 
 parallel = True
@@ -121,20 +129,21 @@ def perform_imag_integration(nu: float, nu_edge: float, x_j:float, n_0:float, fu
 def perform_real_integration(nu: float, nu_edge:float, x_j:float, n_0: float,func: Callable) -> float:
   inte1 = integrate.quad(real_general_integration,
                          nu_edge,
-                         nu,
+                         1000*nu,
                          args=(x_j,nu,n_0,func),
                          points=nu,
                          limit=200000,
                          epsabs=1E-50,
                          epsrel=1E-10)
-  inte2 = integrate.quad(real_general_integration,
-                         nu,
-                         100*nu,
-                         args=(x_j,nu,n_0,func),
-                         points=nu,
-                         limit=200000,
-                         epsabs=1E-50,
-                         epsrel=1E-10)
+  #inte2 = integrate.quad(real_general_integration,
+  #                       nu,
+  #                       100*nu,
+  #                       args=(x_j,nu,n_0,func),
+  #                       points=nu,
+  #                       limit=200000,
+  #                       epsabs=1E-50,
+  #                       epsrel=1E-10)
+  inte2 = [0,0]
   if inte1[1] > 0.5*abs(inte1[0]):
     print("!!! inaccurate REAL1 integral at nu_edge/nu = " + "{:8.4f}".format(nu_edge/nu) + " " + str(inte1) + str(inte1[1]/abs(inte1[0])))
   if inte2[1] > 0.5*abs(inte2[0]):
