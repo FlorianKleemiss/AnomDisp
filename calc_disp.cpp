@@ -2,6 +2,7 @@
 #include "cell.h"
 #include "spherical_density.h"
 #include "matrix_coefficient.h"
+#include "intensity_calculation.h"
 #include <gsl/gsl_integration.h>
 
 double f (double x, void * params) {
@@ -10,13 +11,18 @@ double f (double x, void * params) {
 }
 typedef std::vector<double> vec;
 
-void plot(const vec &x, const vec &y, const std::string &data_filename = "data.txt")
+void plot(const vec &x, 
+          const vec &y, 
+          const std::string &data_filename = "data.txt",
+          const std::string &plot_filename = "")
 {
   std::string command_filename = "commands.txt";
   std::ofstream command;
   std::ofstream data;
   int j;
-  std::string plot_filename = get_basename_without_ending(data_filename) + ".png";
+  std::string lpfn;
+  if(plot_filename == "") lpfn = get_basename_without_ending(data_filename) + ".png";
+  else lpfn = plot_filename;
 
   std::cout << "\n";
   std::cout << "plot:\n";
@@ -48,7 +54,7 @@ void plot(const vec &x, const vec &y, const std::string &data_filename = "data.t
   command << "#  gnuplot < " << command_filename << "\n";
   command << "#\n";
   command << "set term png\n";
-  command << "set output '" << plot_filename << "'\n";
+  command << "set output '" << lpfn << "'\n";
   command << "set xlabel 'X'\n";
   command << "set ylabel 'Y'\n";
   command << "set title 'Plot using gnuplot'\n";

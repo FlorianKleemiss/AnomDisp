@@ -161,6 +161,550 @@ double get_Zeff_3d_5_2(int Z){
   else exit(-1);
 }
 
+double get_ionization_energy_1s(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {  13.6,                                                                                                                                                                                                                    24.6,
+                           54.7, 111.5,                                                                                                                                                                         188.0, 284.2, 409.9, 543.1, 696.7, 870.2,
+                         1070.8,1303.0,                                                                                                                                                                        1559.6,1839.0,2145.5,2472.0,2822.4,3205.9,
+                         3608.4,4038.5,                                                                                                    4492,  4966,  5465,  5989,  6539,  7112,  7709,  8333,  8979,  9659, 10367, 11103, 11867, 12658, 13474, 14326,
+                          15200, 16105,                                                                                                   17038, 17998, 18986, 20000, 21044, 22117, 23220, 24350, 25514, 26711, 27940, 29200, 30491, 31814, 33169, 34561,
+                          35985, 37441, 38925, 40443, 41991, 43569, 45184, 46834, 48519, 50239, 51996, 53789, 55618, 57486, 59390, 61332, 63314, 65351, 67416, 69525, 71676, 73871, 76111, 78395, 80725, 83102, 85530, 88005, 90524, 93105, 95730, 98404,
+                         101137,103922,106755,109651,112601,115606
+  };
+  if (Z<=92)
+    return ionization_energies[Z-1];
+  else{
+    //#extrapoalte from fourth order regression of tabulated data
+    double a1 =  4.00729846e-04;
+    double a2 = -2.27683735e-02;
+    double a3 =  1.30249774e+01;
+    double a4 = -6.43729353e+01;
+    double c  =  1.99592659e+02;
+    return a1 * pow(Z,4) + a2 * pow(Z,3) + a3 * pow(Z,2) + a4 * Z + c;
+  }
+  /*import np as np
+  from scipy.optimize import curve_fit
+  def func(x,a1,a2,a3,a4,c):
+    return a1*x*x*x*x + a2*x*x*x + a3*x*x + a4*x + c
+  x = range(2,93)
+  result,resultcov = curve_fit(func,x,ionization_energies[1:])
+  print (result)
+  print(resultcov)
+  coef = np.polyfit(x,ionization_energies[1:],3)
+  funct = np.polyval(coef,Z)
+  print(coef)
+  import matplotlib.pyplot as plt
+  plt.scatter(x,ionization_energies[1:],marker="*")
+  plt.plot(x,func(x, *result), 'r-')
+  plt.show()
+  */
+}
+
+double get_ionization_energy_2s(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,  37.3,  41.6, 0.000,  48.5,
+                           63.5,  88.7,                                                                                                                                                                         117.8, 149.7, 189.0, 230.9, 270.0, 326.3,
+                          378.6, 438.4,                                                                                                   498.0, 560.9, 626.7, 696.0, 769.1, 844.6, 925.1,1008.6,1096.7,1196.2,1299.0,1414.6,1527.0,1652.0,  1782,  1921,
+                           2065,  2216,                                                                                                    2373,  2532,  2698,  2866,  3043,  3224,  3412,  3604,  3806,  4018,  4238,  4465,  4698,  4939,  5188,  5453,
+                           5714,  5989,  6266,  6549,  6835,  7126,  7428,  7737,  8052,  8376,  8708,  9046,  9394,  9751, 10116, 10486, 10870, 11271, 11682, 12100, 12527, 12968, 13419, 13880, 14353, 14839, 15347, 15861, 16388, 16939, 17493, 18049,
+                          18639, 19237, 19840, 20472, 21105, 21757
+  };
+  //# Coefficients from fit to data
+  const double a1 = 1.44070614e+01;
+  const double a2 = 1.49753416e-01;
+  const double a3 = 1.15499698e-02;
+  const double a4 = 1.61081136e+00;
+  const double a5 =-2.27553738e+01;
+  const double b1 = 4.99999128e+01;
+  const double c  = 1.27894569e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=3)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*pow(Z,2) + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*pow(Z,2) + a5*Z + c;
+    /*import np as np
+    from scipy.optimize import curve_fit
+    def func(x,a1,a2,a3,a4,a5,b1,c):
+      return a1*np.exp2(a2*(x-b1)) + a3*x*x*x + a4*x*x + a5*x + c
+    x = range(10,93)
+    x2 = range(1,103)
+    y = ionization_energies[9:]
+    result,resultcov = curve_fit(func,x,y,p0=[8.36040351e+02,5.75329301e-02,2.15148012e+00,0,0,2.51302235e+01,0],bounds=([0,0,-np.inf,-np.inf,-np.inf,-50,-500],[2000,1000,1000,2000,2000,50,500]))
+    print (result)
+    print(resultcov)
+    #coef = np.polyfit(x,ionization_energies[9:],3)
+    #funct = np.polyval(coef,Z)
+    #print(coef)
+    import matplotlib.pyplot as plt
+    plt.scatter(x,y,marker="*")
+    plt.plot(x2,func(x2, *result), 'r-')
+    plt.show() */
+}
+
+double get_ionization_energy_2p1_2(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  21.7,
+                          30.65, 49.78,                                                                                                                                                                         72.95, 99.82,   136, 163.6,   202, 250.6,
+                          297.3, 349.7,                                                                                                   403.6, 460.2, 519.8, 583.8, 649.9, 719.9, 793.2, 870.0, 952.3,1044.9,1143.2,1248.1,1359.1,1474.3,  1596,1730.9,
+                           1864,  2007,                                                                                                    2156,  2307,  2456,  2625,  2793,  2967,  3146,  3330,  3524,  3727,  3938,  4156,  4380,  4612,  4852,  5107,
+                           5359,  5624,  5891,  6164,  6440,  6722,  7013,  7312,  7617,  7930,  8252,  8581,  8918,  9264,  9617,  9978, 10349, 10739, 11136, 11544, 11959, 12385, 12824, 13273, 13734, 14209, 14698, 15200, 15711, 16244, 16785, 17337,
+                          17907, 18484, 19083, 19693, 20314, 20948
+  };
+  //# Coefficients from fit to data
+  const double a1 = 1.30802855e+01;
+  const double a2 = 1.51798476e-01;
+  const double a3 = 1.14195659e-02;
+  const double a4 = 1.58049679e+00;
+  const double a5 =-2.74880264e+01;
+  const double b1 = 4.99597550e+01;
+  const double c  = 1.48993379e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=5)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    /*
+    import np as np
+    from scipy.optimize import curve_fit
+    def func(x,n1,n2,n3,n4,n5,m1,o):
+      return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    x = range(10,93)
+    x2 = range(1,103)
+    y = ionization_energies[9:]
+    result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-np.inf,-np.inf,-np.inf,-50,-500],[2000,1000,1000,2000,2000,50,500]))
+    print (result)
+    print(resultcov)
+    #coef = np.polyfit(x,ionization_energies[9:],3)
+    #funct = np.polyval(coef,Z)
+    #print(coef)
+    import matplotlib.pyplot as plt
+    plt.scatter(x,y,marker="*")
+    plt.plot(x2,func(x2, *result), 'r-')
+    plt.show()*/
+}
+
+double get_ionization_energy_2p3_2(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  21.6,
+                          30.81, 49.50,                                                                                                                                                                         72.55, 99.42,   135, 163.6,   200, 248.4,
+                          294.6, 346.2,                                                                                                   398.7, 453.8, 512.1, 574.1, 638.7, 706.8, 778.1, 852.7, 932.7,1021.8,1116.4,1217.0,1323.6,1433.9,  1550,1678.4,
+                           1804,  1940,                                                                                                    2080,  2223,  2371,  2520,  2677,  2838,  3004,  3173,  3351,  3538,  3730,  3929,  4132,  4341,  4557,  4786,
+                           5012,  5247,  5483,  5723,  5964,  6208,  6459,  6716,  6977,  7243,  7514,  7790,  8071,  8358,  8648,  8944,  9244,  9561,  9881, 10207, 10535, 10871, 11215, 11564, 11919, 12284, 12658, 13035, 13419, 13814, 14214, 14619,
+                          15031, 15444, 15871, 16300, 16733, 17166
+  };
+  //# Coefficients from fit to data
+  const double a1 = 6.26079141e-01;
+  const double a2 = 2.48380219e-01;
+  const double a3 = 3.01836854e-03;
+  const double a4 = 2.15937528e+00;
+  const double a5 =-4.18326000e+01;
+  const double b1 = 6.02739274e+01;
+  const double c  = 2.60817688e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=7)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    /*from scipy.optimize import curve_fit
+    def func(x,n1,n2,n3,n4,n5,m1,o):
+      return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+    x = range(10,93)
+    x2 = range(7,103)
+    y = ionization_energies[9:]
+    result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-100,-100,-1000,-100,0],[2000,100,100,1000,1000,100,500]),maxfev=100000000)
+    print (result)
+    print(resultcov)
+    #coef = np.polyfit(x,ionization_energies[9:],3)
+    #funct = np.polyval(coef,Z)
+    #print(coef)
+    import matplotlib.pyplot as plt
+    plt.scatter(x,y,marker="*")
+    plt.plot(x2,func(x2, *result), 'r-')
+    plt.show()*/
+}
+
+double get_ionization_energy_3s(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,  29.3,
+                           34.8,  44.3,                                                                                                    51.1,  58.7,  66.3,  74.1,  82.3,  91.3, 101.0, 110.8, 122.5, 139.8, 159.5, 180.1, 204.7, 229.6,   257, 292.8,
+                          326.7, 358.7,                                                                                                   392.0, 430.3, 466.6, 506.3,   544, 586.1, 628.1, 671.6, 719.0, 772.0, 827.2, 884.7,   946,  1006,  1072,1148.7,
+                           1211,  1293,  1362,  1436,  1511,  1575,   0.0,  1723,  1800,  1881,  1968,  2047,  2128,  2207,  2307,  2398,  2491,  2601,  2708,  2820,  2932,  3049,  3174,  3296,  3425,  3562,  3704,  3851,  3999,  4149,  4317,  4482,
+                           4652,  4822,  5002,  5182,  5367,  5548
+  };
+  //# Coefficients from fit to data
+  const double a1 = 1.43433111e+02;
+  const double a2 = 5.93352595e-02;
+  const double a3 = 3.63930366e-03;
+  const double a4 = 1.96661938e-01;
+  const double a5 =-8.55996542e+00;
+  const double b1 = 2.98052563e+01;
+  const double c  = 6.63407582e-05;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=18)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+  /*from scipy.optimize import curve_fit
+  def func(x,n1,n2,n3,n4,n5,m1,o):
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+  x = range(19,93)
+  x2 = range(7,103)
+  y = ionization_energies[18:]
+  result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-100,-100,-1000,-100,0],[2000,100,100,1000,1000,100,500]),maxfev=100000000)
+  print (result)
+  print(resultcov)
+  #coef = np.polyfit(x,ionization_energies[9:],3)
+  #funct = np.polyval(coef,Z)
+  #print(coef)
+  import matplotlib.pyplot as plt
+  plt.scatter(x,y,marker="*")
+  plt.plot(x2,func(x2, *result), 'r-')
+  plt.show()*/
+}
+
+double get_ionization_energy_3p_1_2(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,  15.9,
+                           18.3,  25.4,                                                                                                    28.3,  32.6,  37.2,  42.2,  47.2,  52.7,  58.9,  68.0,  77.3,  91.4, 103.5, 124.9, 146.9, 166.5,   189, 222.2,
+                          248.7, 280.3,                                                                                                   310.6, 343.5, 376.1, 411.6, 447.6, 483.5, 521.3, 559.9, 603.8, 652.6, 703.2, 756.5, 812.7, 870.8,   931,1002.1,
+                           1071,  1137,  1209,  1274,  1337,  1403,  1471,  1541,  1614,  1688,  1768,  1842,  1923,  2006,  2090,  2173,  2264,  2365,  2469,  2575,  2682,  2792,  2909,  3027,  3148,  3279,  3416,  3554,  3696,  3854,  4008,  4159,
+                           4327,  4490,  4656,  4830,  5001,  5182
+  };
+  //# Coefficients from fit to data
+  const double a1 = 1.70056228e+02;
+  const double a2 = 5.84139911e-02;
+  const double a3 =-1.06353074e-02;
+  const double a4 = 1.50935984e+00;
+  const double a5 =-6.65267026e+01;
+  const double b1 = 2.65575820e+00;
+  const double c  = 4.99863585e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=18)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+  /*from scipy.optimize import curve_fit
+  def func(x,n1,n2,n3,n4,n5,m1,o):
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+  x = range(19,93)
+  x2 = range(7,103)
+  y = ionization_energies[18:]
+  result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-100,-100,-1000,-100,0],[2000,100,100,1000,1000,100,500]),maxfev=100000000)
+  print (result)
+  print(resultcov)
+  #coef = np.polyfit(x,ionization_energies[9:],3)
+  #funct = np.polyval(coef,Z)
+  #print(coef)
+  import matplotlib.pyplot as plt
+  plt.scatter(x,y,marker="*")
+  plt.plot(x2,func(x2, *result), 'r-')
+  plt.show()*/
+}
+
+double get_ionization_energy_3p_3_2(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,  15.7,
+                           18.3,  25.4,                                                                                                    28.3,  32.6,  37.2,  42.2,  47.2,  52.7,  59.9,  66.2,  75.1,  88.6, 100.0, 120.8, 141.2, 160.7,   182, 214.4,
+                          239.1, 270.0,                                                                                                   298.8, 329.8, 360.6, 394.0, 417.7, 461.4, 496.5, 532.3, 573.0, 618.4, 665.3, 714.6, 766.4, 820.0,   875, 940.6,
+                           1003,  1063,  1128,  1187,  1242,  1297,  1357,  1420,  1481,  1544,  1611,  1676,  1741,  1812,  1885,  1950,  2024,  2108,  2194,  2281,  2367,  2457,  2551,  2645,  2743,  2847,  2957,  3066,  3177,  3302,  3426,  3538,
+                           3663,  3792,  3909,  4046,  4174,  4303
+  };
+  //# Coefficients from fit to data
+  const double a1 = 2.09817052e+02;
+  const double a2 = 5.25431495e-02;
+  const double a3 =-1.34329853e-02;
+  const double a4 = 1.70347853e+00;
+  const double a5 =-7.71441584e+01;
+  const double b1 =-4.18496392e+00;
+  const double c  = 4.99999983e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=18)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+  /*from scipy.optimize import curve_fit
+  def func(x,n1,n2,n3,n4,n5,m1,o):
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+  x = range(19,93)
+  x2 = range(7,103)
+  y = ionization_energies[18:]
+  result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-100,-100,-1000,-100,0],[2000,100,100,1000,1000,100,500]),maxfev=100000000)
+  print (result)
+  print(resultcov)
+  #coef = np.polyfit(x,ionization_energies[9:],3)
+  #funct = np.polyval(coef,Z)
+  #print(coef)
+  import matplotlib.pyplot as plt
+  plt.scatter(x,y,marker="*")
+  plt.plot(x2,func(x2, *result), 'r-')
+  plt.show()*/
+}
+
+double get_ionization_energy_3d_3_2(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                            0.0,   0.0,                                                                                                     0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,  10.2,  18.7,  29.8,  41.7,  55.5,    70,  95.0,
+                          113.0, 136.0,                                                                                                   157.7, 181.1, 205.0, 231.1, 257.6, 284.2, 311.9, 340.5, 374.0, 411.9, 451.4, 493.2, 537.5, 583.4, 630.8, 689.0,
+                          740.5, 795.7,   853, 902.4, 948.3,1003.3,  1052,1110.9,1158.6,1221.9,1276.9,  1333,  1392,  1453,  1515,  1576,  1639,  1716,  1793,  1872,  1949,  2031,  2116,  2202,  2291,  2385,  2485,  2586,  2688,  2798,  2909,  3022,
+                           3136,  3248,  3370,  3491,  3611,  3728
+  };
+  //# Coefficients from fit to data
+  const double a1 = 2.19640503e+02;
+  const double a2 = 5.02997104e-02;
+  const double a3 =-1.30856531e-02;
+  const double a4 = 1.59217604e+00;
+  const double a5 =-8.09352821e+01;
+  const double b1 =-8.92936626e+00;
+  const double c  = 4.99999918e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=18)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+  /*from scipy.optimize import curve_fit
+  def func(x,n1,n2,n3,n4,n5,m1,o):
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+  x = range(19,93)
+  x2 = range(7,103)
+  y = ionization_energies[18:]
+  result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-100,-100,-1000,-100,0],[2000,100,100,1000,1000,100,500]),maxfev=100000000)
+  print (result)
+  print(resultcov)
+  #coef = np.polyfit(x,ionization_energies[9:],3)
+  #funct = np.polyval(coef,Z)
+  #print(coef)
+  import matplotlib.pyplot as plt
+  plt.scatter(x,y,marker="*")
+  plt.plot(x2,func(x2, *result), 'r-')
+  plt.show()*/
+}
+  
+double get_ionization_energy_3d_5_2(int Z){
+  //#table from X-ray data booklet, in eV
+  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                            0.0,   0.0,                                                                                                     0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,  10.1,  18.7,  29.2,  41.7,  54.6,    69,  93.8,
+                            112, 134.2,                                                                                                   155.8, 178.8, 202.3, 227.9, 253.9, 280.0, 307.2, 335.2, 368.3, 405.2, 443.9, 484.9, 528.2, 573.0, 619.3, 676.4,
+                          726.6, 780.5,   836, 883.8, 928.8, 980.4,  1027,1083.4,1127.5,1189.6,1241.1,1292.6,  1351,  1409,  1468,  1528,  1589,  1662,  1735,  1809,  1883,  1960,  2040,  2122,  2206,  2295,  2389,  2484,  2580,  2683,  2787,  2892,
+                           3000,  3105,  3219,  3332,  3442,  3552
+  };
+  //# Coefficients from fit to data
+  const double a1 = 2.19703182e+02;
+  const double a2 = 4.99554795e-02;
+  const double a3 =-1.31912578e-02;
+  const double a4 = 1.60333067e+00;
+  const double a5 =-8.08169197e+01;
+  const double b1 =-8.82796315e+00;
+  const double c  = 4.99877841e+02;
+  if (Z<=92){
+    double result = ionization_energies[Z-1];
+    if (result == 0.0)
+      if (Z>=18)
+        result = a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+    return result;
+  }
+  else
+    //#extrapoalte from fourth order regression of tabulated data
+    return a1*std::exp2(a2*(Z-b1)) + a3*pow(Z,3) + a4*Z*Z + a5*Z + c;
+  /*from scipy.optimize import curve_fit
+  def func(x,n1,n2,n3,n4,n5,m1,o):
+    return n1*np.exp2(n2*(x-m1)) + n3*x*x*x + n4*x*x + n5*x + o
+  x = range(19,93)
+  x2 = range(7,103)
+  y = ionization_energies[18:]
+  result,resultcov = curve_fit(func,x,y,p0=[a1,a2,a3,a4,a5,b1,c],bounds=([0,0,-100,-100,-1000,-100,0],[2000,100,100,1000,1000,100,500]),maxfev=100000000)
+  print (result)
+  print(resultcov)
+  #coef = np.polyfit(x,ionization_energies[9:],3)
+  #funct = np.polyval(coef,Z)
+  #print(coef)
+  import matplotlib.pyplot as plt
+  plt.scatter(x,y,marker="*")
+  plt.plot(x2,func(x2, *result), 'r-')
+  plt.show()*/
+}
+
+double get_line_width_K(int Z){
+  //#returns line width in eV
+  //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  0.24,
+                           0.30,  0.36,                                                                                                                                                                          0.42,  0.48,  0.53,  0.59,  0.64,  0.68,
+                           0.74,  0.81,                                                                                                    0.86,  0.94,  1.01,  1.08,  1.16,  1.25,  1.33,  1.44,  1.55,  1.67,  1.82,  1.96,  2.14,  2.33,  2.52,  2.75,
+                           2.99,  3.25,                                                                                                    3.52,  3.84,  4.14,  4.52,  4.91,  5.33,  5.77,  6.24,  6.75,  7.28,  7.91,  8.49,  9.16,  9.89,  10.6,  11.4,
+                           12.3,  13.2,  14.1,  15.1,  16.2,  17.3,  18.5,  19.7,  21.0,  22.3,  23.8,  25.2,  26.8,  28.4,  30.1, 31.9,   33.7,  35.7,  37.7,  39.9,  42.1,  44.4,  46.8,  49.3,  52.0,  54.6,  57.4,  60.4,  63.4,  66.6,  69.8,  73.3,
+                           76.8,  80.4,  84.1,  88.0,  91.9,  96.1, 100, 105, 109, 114, 119, 124, 129, 135, 140, 145, 150
+};
+  return Linewidths[Z-1];
+}
+
+double get_line_width_Lp_3_2(int Z){
+  //#returns line width in eV
+  //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.1,
+                           0.20,  0.41,                                                                                                                                                                          0.73,  1.03,  1.26,  1.49,  1.58,  1.63,
+                           1.92,  2.07,                                                                                                    2.21,  2.34,  2.41,  2.54,  2.62,  2.76,  2.79,  2.89,  3.06,  3.28,  3.38,  3.53,  3.79,  3.94,  4.11,  4.28,
+                           4.44,  4.67,                                                                                                    4.71,  4.78,  3.94,  4.25,  4.36,  4.58,  4.73,  4.93,  4.88,  4.87,  5.00,  2.97,  3.13,  3.32,  3.46,  3.64,
+                           3.78,  3.92,  4.06,  4.21,  4.34,  4.52,  4.67,  4.80,  4.91,  5.05,  5.19,  5.25,  5.33,  5.43,  5.47, 5.53,   5.54,  5.63,  5.58,  5.61,  6.18,  7.25,  8.30,  9.39,  10.5,  11.3,  12.0,  12.2,  12.4,  12.6,  12.8,  13.1,
+                           13.3,  13.4,  13.6,  13.7,  14.3,  14.0,    14, 13.5, 13.3, 13.6, 13.8, 14.0, 14.3, 14.4, 14.8, 15.1, 15.9
+                        };
+  return Linewidths[Z-1];
+}
+
+double get_line_width_Lp_1_2(int Z){
+  //#returns line width in eV
+  //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0,   0.0,   0.0,
+                           0.00, 0.001,                                                                                                                                                                         0.004, 0.015, 0.032, 0.054, 0.083, 0.126,
+                          0.152,  0.17,                                                                                                    0.19,  0.24,  0.26,  0.29,  0.34,  0.37,  0.43,  0.52,  0.62,  0.72,  0.83,  0.95,  1.03,  1.13,  1.21,  1.31,
+                           1.43,  1.54,                                                                                                    1.65,  1.78,  1.87,  1.97,  2.08,  2.23,  2.35,  2.43,  2.57,  2.62,  2.72,  2.84,  3.00,  3.12,  3.25,  3.40,
+                           3.51,  3.57,  3.68,  3.80,  3.89,  3.97,  4.06,  4.15,  4.23,  4.32,  4.43,  4.55,  4.66,  4.73,  4.79, 4.82,   4.92,  5.02,  5.15,  5.33,  5.48,  5.59,  5.69,  5.86,  6.00,  6.17,  6.32,  6.48,  6.67,  6.83,  7.01,  7.20,
+                           7.47,  7.68,  7.95,  8.18,  8.75,  9.32,  9.91, 10.5, 10.9, 11.4, 11.8, 12.2, 12.7, 13.1, 13.6, 14.0, 14.4
+  };
+  return Linewidths[Z-1];
+}
+  
+double get_line_width_Ls(int Z){
+  //#returns line width in eV
+  //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
+  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+                            0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0,   0.0,   0.0,
+                           0.00, 0.001,                                                                                                                                                                         0.004, 0.014, 0.033, 0.054, 0.087, 0.128,
+                          0.156,  0.17,                                                                                                    0.19,  0.22,  0.24,  0.27,  0.32,  0.36,  0.43,  0.48,  0.56,  0.65,  0.76,  0.82,  0.94,  1.00,  1.08,  1.17,
+                           1.27,  1.39,                                                                                                    1.50,  1.57,  1.66,  1.78,  1.91,  2.00,  2.13,  2.25,  2.40,  2.50,  2.65,  2.75,  2.87,  2.95,  3.08,  3.13,
+                           3.25,  3.32,  3.41,  3.48,  3.60,  3.65,  3.75,  3.86,  3.91,  4.01,  4.12,  4.17,  4.26,  4.35,  4.48,  4.60,  4.68,  4.80,  4.88,  4.98,  5.04,  5.16,  5.25,  5.31,  5.41,  5.50,  5.65,  5.81,  5.98,  6.13,  6.29,  6.41,
+                           6.65,  6.82,  6.98,  7.13,  7.33,  7.43,  7.59,  7.82,  8.04,  8.26,  8.55,  8.75,  9.04,  9.33,  9.61,  9.90, 10.1
+                         };
+  return Linewidths[Z-1];
+}
+
+double one_minus_delta_edge(int Z, int n0, int l, double j){
+  double Z_s_sq, e_ion;
+  if (n0 == 1){
+    if (l != 0) exit(-1);
+    else{
+      Z_s_sq = pow(get_Zeff_1s(Z),2);
+      e_ion = get_ionization_energy_1s(Z);
+      double delta_K = alpha_sq * Z_s_sq / 4 - e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+      return -delta_K;
+    }
+  }
+  else if (n0 == 2){
+    if (l == 0){
+      Z_s_sq = pow(get_Zeff_2s(Z),2);
+      e_ion = get_ionization_energy_2s(Z);
+      double delta_l1 = alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+      return -delta_l1;
+    }
+    else if (l == 1){
+      if (j == 0.5){
+        Z_s_sq = pow(get_Zeff_2p_1_2(Z),2);
+        e_ion = get_ionization_energy_2p1_2(Z);
+        double delta_l2 = alpha_sq * Z_s_sq * 0.3125 - 4*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+        return -delta_l2;
+      }
+      else if (j == 1.5){
+        Z_s_sq = pow(get_Zeff_2p_3_2(Z),2);
+        e_ion = get_ionization_energy_2p3_2(Z);
+        double delta_l2 = alpha_sq * Z_s_sq * 0.0625 - 4*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+        return -delta_l2;
+      }
+      else exit(-1);
+    }
+    else exit(-1);
+  }
+  else if (n0 == 3){
+    if (l == 0){
+      Z_s_sq = pow(get_Zeff_3s(Z),2);
+      e_ion = get_ionization_energy_3s(Z);
+      double delta_m1 = alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+      return -delta_m1;
+    }
+    else if (l == 1){
+      if (j == 0.5){
+        Z_s_sq = pow(get_Zeff_3p_1_2(Z),2);
+        e_ion = get_ionization_energy_3p_1_2(Z);
+        double delta_m2 = alpha_sq * Z_s_sq * 0.25 - 9*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+        return -delta_m2;
+      }
+      else if (j == 1.5){
+        Z_s_sq = pow(get_Zeff_3p_3_2(Z),2);
+        e_ion = get_ionization_energy_3p_3_2(Z);
+        double delta_m3 = alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+        return -delta_m3;
+      }
+      else exit(-1);
+    }
+    else if (l == 2){
+      if (j == 1.5){
+        Z_s_sq = pow(get_Zeff_3d_3_2(Z),2);
+        e_ion = get_ionization_energy_3d_3_2(Z);
+        double delta_m4 = alpha_sq * Z_s_sq /12 - 9*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+        return -delta_m4;
+      }
+      else if (j == 2.5){
+        Z_s_sq = pow(get_Zeff_3d_5_2(Z),2);
+        e_ion = get_ionization_energy_3d_5_2(Z);
+        double delta_m5 = alpha_sq * Z_s_sq /36 - 9*e_ion/(Ryd_ener * Z_s_sq); // #21a in Hoenl
+        return -delta_m5;
+      }
+      else exit(-1);
+    }
+    else exit(-1);
+  }
+  else exit(-1);
+  return -200;
+}
+
 double b(int n_0, int l_0 , int Z){
   double Z_eff = -20;
   if (n_0 == 1)
@@ -181,4 +725,47 @@ double b(int n_0, int l_0 , int Z){
       Z_eff = get_Zeff_3d_3_2(Z);
   err_checkf(Z_eff != -20,"WRONG FUNCTION!", std::cout);
   return Z_eff/(n_0*a0);
+}
+
+double N0_square(const double &b_){
+  return pow(b_,3)/PI;
+}
+
+double N0(double b_){
+  return std::sqrt(N0_square(b_));
+}
+
+cdouble product_n_prime_from_z(int n_0,double z,int l){
+  cdouble n_p = n_prime_from_z(z,n_0);
+  cdouble fact = cdouble(1.0);
+  for (int nu=1; nu <= l; nu++)
+    fact *= n_p * n_p + double(nu*nu);
+  cdouble denom = 1.0-std::exp(-2*PI*n_p);
+  return fact/denom;
+}
+
+//Introduces factors 2pi m_e /h^2 and m
+cdouble N_square_from_z(int l, int m, double b_, int n_0, double z){
+  if (m > l)
+    return 0;
+  cdouble result = (2*l+1)*ft[l-m]/ft[l+m] * constant_factor / PI * n_0 * b_ * product_n_prime_from_z(n_0,z,l);
+  if (m >= 1)
+    result *= 2;
+  return result;
+}
+
+cdouble N(int l, int m, double b_, int n_0, double z){
+  return std::sqrt(N_square_from_z(l,m,b_,n_0,z));
+}
+
+cdouble N_square(int l, int m, double b_, int n_0, double z){
+  return N_square_from_z(l,m,b_,n_0,z);
+}
+
+cdouble N_lm_from_z(int l, int m, double z, double b_,int n_0){
+  return N(l,m,b_,n_0, z);
+}
+
+cdouble N_lm_square_from_z(int l, int m, double z, double b_, int n_0){
+  return N_square(l,m,b_,n_0,z);
 }

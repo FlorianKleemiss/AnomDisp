@@ -359,8 +359,7 @@ std::vector<cdouble> f_a_for_p(int Z, int l,int k,double z,double nu_in,int n_0,
   std::vector<cdouble> result(2*p+1,0.);
   if (z <= 0) return result;
   double b_ = b(n_0,0,Z);
-  //prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
-  cdouble prefactor = 1.0;
+  cdouble prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z);
   matrix_func func = function_selector(n_0, 0,0);
   for (int j=0; j <= p; j++){
     cdouble matrix_value1 = func(b_,z,n_0,l,nu_in,j);
@@ -383,8 +382,7 @@ std::vector<cdouble> f_p_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu
   std::vector<cdouble> result(2*p+1,0.);
   if (z <= 0) return result;
   double b_ = b(n_0, 1, Z);
-  //prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z)
-  cdouble prefactor = 1.0;
+  cdouble prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z);
   matrix_func func = function_selector(n_0,1,g_m);
   matrix_func conjugate_function = function_selector(n_0,1,g_k);
   for (int j=0; j <= p; j++){
@@ -409,8 +407,9 @@ std::vector<cdouble> f_d_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu
   if (z <= 0) return result;
   double b_ = b(n_0, 1, Z);
   cdouble prefactor = 1.0;
-  //if g_m <= 3: prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z)
-  //else: prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z)
+  if (g_m <= 3) prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z);
+  else if (g_m == 4) prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z);
+  else exit(-1);
   matrix_func func = function_selector(n_0,2,g_m);
   matrix_func conjugate_function = function_selector(n_0,2,g_k);
   for (int j=0; j <= p; j++){
