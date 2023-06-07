@@ -3,18 +3,15 @@
 #include "spherical_density.h"
 #include "matrix_coefficient.h"
 #include "intensity_calculation.h"
+#include "brennan.h"
 #include <gsl/gsl_integration.h>
-
-double f (double x, void * params) {
-  double alpha = *(double *) params;
-  return log(alpha*x) / sqrt(x);
-}
-typedef std::vector<double> vec;
 
 void plot(const vec &x, 
           const vec &y, 
           const std::string &data_filename = "data.txt",
-          const std::string &plot_filename = "")
+          const std::string &plot_filename = "",
+          const double &xmin = 0.15,
+          const double &xmax = 3.0)
 {
   std::string command_filename = "commands.txt";
   std::ofstream command;
@@ -55,9 +52,11 @@ void plot(const vec &x,
   command << "#\n";
   command << "set term png\n";
   command << "set output '" << lpfn << "'\n";
-  command << "set xlabel 'X'\n";
-  command << "set ylabel 'Y'\n";
-  command << "set title 'Plot using gnuplot'\n";
+  command << "set xlabel 'wavelength'\n";
+  command << "set ylabel 'fdp'\n";
+  command << "set logscale x\n";
+  command << "set xrange [" << xmin << ":" << xmax << "]\n";
+  command << "set title 'fdp plot for " << data_filename << "'\n";
   command << "set grid\n";
   command << "set style data lines\n";
   command << "plot '" << data_filename << "' using 1:2 with lines\n";
@@ -72,32 +71,27 @@ void plot(const vec &x,
 }
 
 int main (int argc, char** argv){
-  double result, error;
-  double expected = -4.0;
-  double alpha = 1.0;
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
-
-  gsl_function F;
-  F.function = &f;
-  F.params = &alpha;
-
-  gsl_integration_qags (&F, 0, 1, 0, 1e-7, 1000,
-                        w, &result, &error); 
-
-  printf ("result          = % .18f\n", result);
-  printf ("exact result    = % .18f\n", expected);
-  printf ("estimated error = % .18f\n", error);
-  printf ("actual error    = % .18f\n", result - expected);
-  printf ("intervals =  %d\n", int(w->size));
-
-  gsl_integration_workspace_free (w);
-
-  vec x {0,1};
-  vec y {0,1};
-  plot(x,y);
+  int steps = 1000;
+  vec x_axis(steps);
+  vec y_axis(steps);
+  double min, max, t0 = 0;
+  min = 0.15;
+  max = 5.0;
+  int Z = 52;
+  int sel;
+  std::cout << "Which atomic number do you want to calculate for? ";
+  std::cin >> sel;
+  if (sel > 0) Z = sel;
+#pragma omp parallel for
+  for(int i=0; i<steps; i++){
+    double wl = min+(max-min)/steps*i;
+    x_axis[i] = wl;
+    double nu = speed_of_light / wl * 1E10;
+    y_axis[i] = calc_sum(nu,t0,7,1,Z);
+  }
+  plot(x_axis,y_axis,atnr2letter(Z)+".fdp","",min,max);
 
   std::system("gnuplot\\bin\\gnuplot.exe commands.txt");
-  std::cout << "Works10!" << std::endl;
   return 0;
 
 }

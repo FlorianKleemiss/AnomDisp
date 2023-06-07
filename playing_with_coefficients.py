@@ -288,7 +288,6 @@ def calc_Intensity_p_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: i
     for p in range(0,p_max+1,2):
       for nummy in range(len(ms)):
         for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_temp, nu_in, n0, p)):
-          
           par += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alpha_loc, fac[num])
           orth += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alpha_loc, fac[num])
   
@@ -1307,6 +1306,8 @@ if __name__ == "__main__":
     axes[2,2].legend()# type: ignore
     axes[2,2].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
     axes[2,2].set_title("M-shell d-electrons", y=1.0, pad=-14)# type: ignore
+
+    print(M_d0_result - M_d0_result_M)
   
     plt.subplots_adjust(left=0.04, bottom=0.04, right=1.0, top=0.95, wspace=0.15, hspace=0.1)
     fig.suptitle("PARA alpha = {:4.2f}, theta_0 = {:4.2f}".format(alp,t0))

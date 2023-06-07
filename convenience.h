@@ -39,6 +39,22 @@ class cell;
 typedef std::vector<std::vector<std::complex<double>>> M_type;
 typedef std::vector<std::vector<double>> W_type;
 typedef std::complex<double> cdouble;
+typedef std::vector<double> vec;
+typedef std::vector<cdouble> cvec;
+
+inline double vec_sum(vec &in){
+  double res = 0.0;
+  for(int i=0; i<in.size(); i++)
+    res += in[i];
+  return res;
+}
+
+inline cdouble vec_sum(cvec &in){
+  cdouble res = 0.0;
+  for(int i=0; i<in.size(); i++)
+    res += in[i];
+  return res;
+}
 
 inline const std::complex<double> c_one(0,1.0);
 
@@ -65,11 +81,30 @@ constexpr int lebedev_table[33] = { 6,    14,   26,   38,   50,   74,   86,   11
              146,  170,  194,  230,  266,  302,  350,  434,
              590,  770,  974,  1202, 1454, 1730, 2030, 2354,
              2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810 };
-constexpr int ft[13] = { 1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600 };
+constexpr long long int ft[21] { 1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,20922789888000,355687428096000,6402373705728000,121645100408832000,2432902008176640000 };
 constexpr double alpha_coefficient = 0.1616204596739954813316614;
 constexpr double c_43 = 4.0 / 3.0;
 constexpr double c_38 = 3.0 / 8.0;
 constexpr double c_m53 = -5.0 / 3.0;
+constexpr double barnsbohr = 2.80028520539078E+7;
+constexpr double fine_struct = 7.2973525693E-3;
+constexpr double inv_fine_struct = 1/fine_struct;
+constexpr double fine_pi = inv_fine_struct / TWO_PI / PI;
+constexpr double inv_fine_mod = inv_fine_struct / FOUR_PI;
+constexpr double keV_per_hartree = 0.027211386245988;
+constexpr double angstrom2eV = 1.23984193*10000;
+constexpr double ansgtrom2keV = 12.3984193;
+constexpr double f_to_mu = 4208.031548;
+constexpr double barns_to_electrons = 1.43110541E-8;
+constexpr double a0 = 0.529177210903E-10; //in m
+constexpr double h = 6.62607015E-34/1.602176634E-19; //in eV*s
+constexpr double Ryd_ener = 13.6056923; //in eV
+constexpr double alpha = 0.0072973525693; //Sommerfeld fine structure constant
+constexpr double el_mass = 9.1093837015E-31; //in kg
+constexpr double el_charge = 1.602176634E-19; // in C
+constexpr double speed_of_light = 2.99792458E8; //m/s
+
+inline const double alpha_sq = pow(alpha,2);
 inline const double ctelf = 10 * pow(2, -2.0 / 3.0) * pow(3, c_m53) * pow(PI, -c_43);
 inline const double c_1_4p     = sqrt(1.0 / (FOUR_PI));
 inline const double c_3_4p     = sqrt(3.0 / (FOUR_PI));
@@ -88,6 +123,16 @@ inline const double c_315_16p  = sqrt(315.0 / (16.0 * PI));
 inline const double c_315_32p  = sqrt(315.0 / (32.0 * PI));
 inline const double c_315_256p = sqrt(315.0 / (256.0 * PI));
 
+constexpr long long int ft_fun(const int &nr){
+  if (nr >= 0 && nr <= 20)
+    return ft[nr];
+  else if (nr < 0)
+    return 0;
+  else if (nr > 200)
+    return int(INT_MAX);
+  else
+    return ft_fun(nr-1)*nr;
+}
 
 constexpr double bohr2ang(const double& inp)
 {
@@ -158,7 +203,6 @@ constexpr double real_masses[]{
  39.098,	40.078,																																44.956,	47.867,	50.942,	51.996,	54.938,	55.845,	58.933,	58.693,	63.546,	65.38,		69.723,	72.64,	74.922,	78.96,	79.904,	83.798,
  85.468,	87.62,																																88.906, 91.224,	92.906, 95.96,	97.90,	101.07,	102.91,	106.42,	107.87,	112.41,		114.82, 118.71,	121.76,	127.6,	126.9,	131.29,
  132.91,	137.33,		139.91, 140.12, 140.91, 144.24, 144.9, 150.36, 151.96, 157.25, 158.93, 162.5, 164.93, 167.26, 168.93, 173.05, 174.97,			178.49, 180.95, 183.84, 186.21, 190.23, 192.22, 195.08, 196.97, 200.59,		204.38, 207.2,	208.98, 208.9,	209.9,	222.0 };
-
 
 //bool yesno();
 bool is_similar_rel(const double& first, const double& second, const double& tolerance);
@@ -464,7 +508,8 @@ typedef std::set<std::vector<int>> hkl_list;
 typedef std::set<std::vector<int>>::const_iterator hkl_list_it;
 
 inline int binom(const int n, const int k) {
-  if (k == 0) return 0;
+  if (k == n) return 1;
+  else if (k == 0) return 1;
   else if (k == 1) return 1;
   else if (k > n) return 0;
   std::vector<int> aSolutions(k);

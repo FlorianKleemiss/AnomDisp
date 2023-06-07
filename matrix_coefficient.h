@@ -5,6 +5,7 @@
 #include <vector>
 #include <complex>
 #include <functional>
+#include <float.h>
 
 M_type prepare_M(int p,int l,double z,int n_0){
   cdouble inprime(n_prime_from_z(z,n_0)*c_one);
@@ -116,7 +117,7 @@ W_type W31 = make_matrix_W(3, 1, 20);
 W_type W33 = make_matrix_W(3, 3, 20);
 
 inline cdouble n1f(double nu,int p){
-  return pow(std::complex<double> (0.0,-q(nu)),p) / double(ft[p]);
+  return pow(cdouble (0.0,-q(nu)),p) / double(ft_fun(p));
 }
 
 cdouble A_l_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
@@ -125,7 +126,7 @@ cdouble A_l_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble K1 = K_recursive_from_z(p,l,b,z, n_0);
   if (K1 == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -b/2.0/pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -b/2.0/pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= std::sqrt(2.0);
   return part1 * n1 * J_ * K1;
 }
@@ -139,7 +140,7 @@ cdouble C_l_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble Ktot = (K1-K2_mod);
   if (Ktot == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -b/pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -b/pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= std::sqrt(2.0);
   return part1 * n1 * J_ * Ktot;
 }
@@ -153,7 +154,7 @@ cdouble E_l_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble Ktot = (3.*K1-10.*b/3.*K2+2.*b*b/3.*K3);
   if (Ktot == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -b/2.0/pow(-2.0*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -b/2.0/pow(-2.0*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= std::sqrt(2.0);
   return part1 * n1 * J_ * Ktot;
 }
@@ -164,7 +165,7 @@ cdouble B2_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble K1 = K_recursive_from_z(p+1,l,b,z,n_0);
   if (K1 == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -b*b/(4.0*pow(-2.0*b*std::sqrt(z-1),l+1));
+  cdouble part1 = -b*b/(4.0*pow(-2.0*b*std::sqrt(cdouble(z-1)),l+1));
   if (z<1) part1 *= std::sqrt(2.0);
   return part1 * n1 * J_ * K1;
 }
@@ -175,7 +176,7 @@ cdouble B1_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble K1 = K_recursive_from_z(p+1,l,b,z,n_0);
   if (K1 == 0.) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -b*b/(2.0*pow(-2.0*b*std::sqrt(z-1),l+1));
+  cdouble part1 = -b*b/(2.0*pow(-2.0*b*std::sqrt(cdouble(z-1)),l+1));
   if (z<1) part1 *= std::sqrt(2.0);
   return part1 * n1 * J_ * K1;
 }
@@ -189,7 +190,7 @@ cdouble B0_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble tot_term = (-2. * J2 * K2 + b* J1 * K1);
   if (tot_term == 0.) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -b/(2.*pow(-2.*b*std::sqrt(z-1),l+1));
+  cdouble part1 = -b/(2.*pow(-2.*b*std::sqrt(cdouble(z-1)),l+1));
   if (z<1) part1 *= std::sqrt(2.);
   return part1 * n1 * tot_term;
 }
@@ -202,7 +203,7 @@ cdouble D2_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble Ktot = (3.0*K1 - b * K2);
   if (Ktot == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b*b/(4.0*pow(-2*b*std::sqrt(z-1),l+1));
+  cdouble part1 = -sqrt(2./3.)*b*b/(4.0*pow(-2*b*std::sqrt(cdouble(z-1)),l+1));
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * J_ * Ktot;
 }
@@ -215,7 +216,7 @@ cdouble D1_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble Ktot = (3.0 * K1 - b * K2);
   if (Ktot == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b*b/(2.0*pow(-2.0*b*std::sqrt(z-1),l+1));
+  cdouble part1 = -sqrt(2./3.)*b*b/(2.0*pow(-2.0*b*std::sqrt(cdouble(z-1)),l+1));
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * J_ * Ktot;
 }
@@ -230,8 +231,8 @@ cdouble D0_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble tot_term = (J2*(-4.0*K1 + 2*b*K2) + b * J1 * (3.0*K2-b*K3));
   if (tot_term == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b/(2*pow(-2*b*std::sqrt(z-1),l+1));
-  if (z<1) part1 *= sqrt(2.0);
+  cdouble part1 = -std::sqrt(2./3.)*b/(2.0*pow(-2*b*std::sqrt(cdouble(z-1)),l+1));
+  if (z<1) part1 *= std::sqrt(2.0);
   return part1 * n1 * tot_term;
 }
 
@@ -244,7 +245,7 @@ cdouble G0_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble tot_term = (-2.0*J2*K1 + b*J1*K2);
   if (tot_term == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b*b/2./pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -sqrt(2./3.)*b*b/2./pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * tot_term;
 }
@@ -258,7 +259,7 @@ cdouble G1_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble tot_term = (-J1*K1 + b/4.*J2*K2);
   if (tot_term == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b*b/2./pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -sqrt(2./3.)*b*b/2./pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * tot_term;
 }
@@ -269,7 +270,7 @@ cdouble G2_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble K1 = K_recursive_from_z(p+2,l,b,z,n_0);
   if (K1 == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b*b*b/4./pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -sqrt(2./3.)*b*b*b/4./pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * (J1*K1);
 }
@@ -280,7 +281,7 @@ cdouble G3_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){
   cdouble K1 = K_recursive_from_z(p+2,l,b,z,n_0);
   if (K1 == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(2./3.)*b*b*b/8./pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -sqrt(2./3.)*b*b*b/8./pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * (J1*K1);
 }
@@ -294,7 +295,7 @@ cdouble G4_from_z_for_p(double b, double z, int n_0, int l, double nu, int p){ /
   cdouble tot_term = (1./3.*J1*(2.0*K1-b*K2) + b*J2*K2);
   if (tot_term == 0.0) return 0.0;
   cdouble n1 = n1f(nu,p);
-  cdouble part1 = -sqrt(1./2.)*b*b/2./pow(-2*b*std::sqrt(z-1),l+1);
+  cdouble part1 = -sqrt(1./2.)*b*b/2./pow(-2*b*std::sqrt(cdouble(z-1)),l+1);
   if (z<1) part1 *= sqrt(2.0);
   return part1 * n1 * tot_term;
 }
@@ -355,11 +356,13 @@ matrix_func function_selector(int n_0, int l_0, int g_m){
   return func;
 }
 
-std::vector<cdouble> f_a_for_p(int Z, int l,int k,double z,double nu_in,int n_0,int p){
-  std::vector<cdouble> result(2*p+1,0.);
+cvec f_a_for_p(int Z, int l,int k,double z,double nu_in,int n_0,int p){
+  cvec result(2*p+1,0.);
   if (z <= 0) return result;
   double b_ = b(n_0,0,Z);
   cdouble prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z);
+  if (prefactor == 0.0) 
+    return result;
   matrix_func func = function_selector(n_0, 0,0);
   for (int j=0; j <= p; j++){
     cdouble matrix_value1 = func(b_,z,n_0,l,nu_in,j);
@@ -378,8 +381,8 @@ std::vector<cdouble> f_a_for_p(int Z, int l,int k,double z,double nu_in,int n_0,
   return result;
 }
 
-std::vector<cdouble> f_p_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu_in,int n_0,int p){
-  std::vector<cdouble> result(2*p+1,0.);
+cvec f_p_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu_in,int n_0,int p){
+  cvec result(2*p+1,0.);
   if (z <= 0) return result;
   double b_ = b(n_0, 1, Z);
   cdouble prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z);
@@ -391,7 +394,7 @@ std::vector<cdouble> f_p_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu
       result[j] = 0.0;
       continue;
     }
-    cdouble matrix_value2 = func(b_,z,n_0,l,nu_in,p-j);
+    cdouble matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j);
     if (matrix_value2 == 0.0){
       result[j] = 0.0;
       continue;
@@ -402,10 +405,10 @@ std::vector<cdouble> f_p_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu
   return result;
 }
 
-std::vector<cdouble> f_d_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu_in,int n_0,int p){
-  std::vector<cdouble> result(2*p+1,0.);
+cvec f_d_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu_in,int n_0,int p){
+  cvec result(2*p+1,0.);
   if (z <= 0) return result;
-  double b_ = b(n_0, 1, Z);
+  double b_ = b(n_0, 2, Z);
   cdouble prefactor = 1.0;
   if (g_m <= 3) prefactor = N0_square(b_) * N_square(l,g_m,b_,n_0,z);
   else if (g_m == 4) prefactor = N0_square(b_) * N_square(l,1,b_,n_0,z);
@@ -418,7 +421,7 @@ std::vector<cdouble> f_d_el_for_p(int Z,int l,int g_m,int g_k,double z,double nu
       result[j] = 0.0;
       continue;
     }
-    cdouble matrix_value2 = func(b_,z,n_0,l,nu_in,p-j);
+    cdouble matrix_value2 = conjugate_function(b_,z,n_0,l,nu_in,p-j);
     if (matrix_value2 == 0.0){
       result[j] = 0.0;
       continue;

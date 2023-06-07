@@ -18,16 +18,16 @@
       "python.defaultInterpreterPath": "d:\\python38x64\\python.exe"
     },
     {
-      "name": "cl.exe build and debug active file",
+      "name": "cl.exe build and debug calc_disp file",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+      "program": "${fileDirname}\\calc_disp.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
       "console": "internalConsole",
-      "preLaunchTask": "cl.exe build active file"
+      "preLaunchTask": "cl.exe build calc_disp file"
     },
     {
       "name": "C/C++ Runner: Debug Session",
@@ -37,7 +37,7 @@
       "stopAtEntry": false,
       "externalConsole": true,
       "cwd": "d:/Dropbox/Disp_Exchange/NewCode",
-      "program": "d:/Dropbox/Disp_Exchange/NewCode/build/Debug/outDebug",
+      "program": "d:/Dropbox/Disp_Exchange/NewCode/calc_disp.exe",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

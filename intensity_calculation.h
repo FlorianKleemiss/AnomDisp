@@ -1,7 +1,9 @@
 #pragma once
+#include "convenience.h"
 #include "constants_and_atomic_properties.h"
 #include "legendre_polynomials.h"
 #include "matrix_coefficient.h"
+#include <gsl/gsl_integration.h>
 
 
 double apply_angle_part_s_parallel(double a_l, double theta0, double alpha, int l){
@@ -266,12 +268,14 @@ const double bbl33[] = {beta_bar_coef(0,3,3,0,0),
                         beta_bar_coef(10,3,3,0,0)};
 
 double calc_Intensity_s_orbital(double alpha_loc, 
-                                double nu_in,
-                                double t0, 
-                                int l_max, 
-                                int p_max, 
-                                int n0,
-                                int el_nr){
+                                void * params){
+  double* l_params = (double*) params;
+  double nu_in = l_params[0];
+  double t0    = l_params[1];
+  int l_max    = l_params[2];
+  int p_max    = l_params[3];
+  int n0       = l_params[4];
+  int el_nr    = l_params[5];
   double z_temp = 0.0;
   double de = 0.0;
   if (n0 == 1){
@@ -293,18 +297,19 @@ double calc_Intensity_s_orbital(double alpha_loc,
   double orth = 0;
   double temp;
   std::vector<int> fac;
-  for (int p=0; p < int(p_max/2+1); p++)
+  for (int p=0; p <= int(p_max/2); p++)
     fac.push_back(p+1);
-  for (int p=int(p_max/2+1); p>0; p++)
+  for (int p=int(p_max/2); p>0; p--)
     fac.push_back(p+1);
 
-  for (int l=0; l<=l_max; l+=1){
+  for (int l=0; l<=l_max; l++){
     temp = 0;
-    for (int p=0; p<=p_max+1; p+=2){
+    for (int p=0; p<=p_max; p+=2){
       auto r = f_a_for_p(el_nr, l, 0, z_temp, nu_in, n0, p);
       for (int run=0; run < r.size(); run++)
         temp += real(r[run]);
     }
+    if (temp == 0.0) continue;
     par += alpha_coef(l,1,1,t0,alpha_loc) * temp;
     orth += beta_coef(l,1,1,t0,alpha_loc) * temp;
   }
@@ -313,13 +318,15 @@ double calc_Intensity_s_orbital(double alpha_loc,
 }
 
 double calc_Intensity_p_orbital(double alpha_loc,
-                                double nu_in,
-                                double t0,
-                                int l_max,
-                                int p_max,
-                                int n0,
-                                int subshell,
-                                int el_nr){
+                                void * params){
+  double* l_params = (double*) params;
+  double nu_in = l_params[0];
+  double t0    = l_params[1];
+  int l_max    = l_params[2];
+  int p_max    = l_params[3];
+  int n0       = l_params[4];
+  int subshell = l_params[5];
+  int el_nr    = l_params[6];
   double z_temp = 0, de = 0;
   if (n0 == 1){
     printf("This shell doesn't have p orbitals");
@@ -351,9 +358,9 @@ double calc_Intensity_p_orbital(double alpha_loc,
   double par = 0;
   double orth = 0;
   std::vector<int> fac;
-  for (int p=0; p < int(p_max/2+1); p++)
+  for (int p=0; p <= int(p_max/2); p++)
     fac.push_back(p+1);
-  for (int p=int(p_max/2+1); p>0; p++)
+  for (int p=int(p_max/2); p>0; p--)
     fac.push_back(p+1);
 
   int ms[] = {0,1,2};
@@ -367,8 +374,8 @@ double calc_Intensity_p_orbital(double alpha_loc,
           temp[run] += real(r[run]) * mults[nummy];          
       }
       for (int nummy=0; nummy < 3; nummy++){
-        par += apply_angle_part_s_parallel(temp[nummy], t0, alpha_loc, fac[nummy]);
-        orth += apply_angle_part_s_orthogonal(temp[nummy], t0, alpha_loc, fac[nummy]);
+        par += apply_angle_part_s_parallel(temp[nummy], t0, alpha_loc, fac[p]);
+        orth += apply_angle_part_s_orthogonal(temp[nummy], t0, alpha_loc, fac[p]);
       }
     }
   }
@@ -378,13 +385,15 @@ double calc_Intensity_p_orbital(double alpha_loc,
 }
 
 double calc_Intensity_d_orbital(double alpha_loc, 
-                                double nu_in, 
-                                double t0, 
-                                int l_max, 
-                                int p_max, 
-                                int n0, 
-                                int subshell, 
-                                int el_nr){
+                                void * params){
+  double* l_params = (double*) params;
+  double nu_in = l_params[0];
+  double t0    = l_params[1];
+  int l_max    = l_params[2];
+  int p_max    = l_params[3];
+  int n0       = l_params[4];
+  int subshell = l_params[5];
+  int el_nr    = l_params[6];
   double z_temp, de;
   if (n0 == 1){
     printf("This shell doesn't have d orbitals");
@@ -415,9 +424,9 @@ double calc_Intensity_d_orbital(double alpha_loc,
   double orth = 0;
 
   std::vector<int> fac;
-  for (int p=0; p < int(p_max/2+1); p++)
+  for (int p=0; p <= int(p_max/2); p++)
     fac.push_back(p+1);
-  for (int p=int(p_max/2+1); p>0; p++)
+  for (int p=int(p_max/2); p>0; p--)
     fac.push_back(p+1);
 
   int ms[] = {0,1,2,3,4};
@@ -431,11 +440,104 @@ double calc_Intensity_d_orbital(double alpha_loc,
           temp[run] += real(r[run]) * mults[nummy];          
       }
       for (int nummy=0; nummy < 5; nummy++){
-        par += apply_angle_part_s_parallel(temp[nummy], t0, alpha_loc, fac[nummy]);
-        orth += apply_angle_part_s_orthogonal(temp[nummy], t0, alpha_loc, fac[nummy]);
+        par += apply_angle_part_s_parallel(temp[nummy], t0, alpha_loc, fac[p]);
+        orth += apply_angle_part_s_orthogonal(temp[nummy], t0, alpha_loc, fac[p]);
       }
     }
   }
   //#Has division by 5**2 to accomodate the averaging over 5 d orbtials  a.k.a. the d-wonder
   return (par*par + orth*orth) / 25.0;
+}
+
+//This routine performs the calculation of unpolarized intensities of K, L and M shell with
+// the respective subshells and energy levels, as a vector with the order:
+// 1s, 2s, 3s, 2p_1/2, 2p_3/3, 3p_1/2, 3p_3/2, 3d_3/2, 3d_5/2
+// Where the respective occupation factors have already been included.
+// Input is:
+//     nu_in: frequency of incomning X-ray in Hz
+//     t0:    theta angle between incoming and outgoing X-ray (=2 Theta in crystallography)
+//     l_max: Maximun value of l (angular momentum of unoccupied orbitals) used during calculations 
+//     p_max: Maximum value of p (e.g. the excitiation mutlipole) used, changes number of internal functions used
+//     Z:     number of the element in the periodic table
+std::vector<double> calc_stuff(double nu_in, double t0, int l_max, int p_max, int Z){
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000000);
+  double error, result;
+  gsl_function F_s, F_p, F_d; //GSL function wrapper for later call with integration
+  double s_params[6], p_params[7], d_params[7]; // THree vectors holding the parameters for function calls of respective shells
+  const double denom = 2*PI*constant_factor*constant_factor; //This one already includes later multiplication of 2pi to get fdp
+  F_s.function = &calc_Intensity_s_orbital;
+  F_s.params = &s_params;
+
+  F_p.function = &calc_Intensity_p_orbital;
+  F_p.params = &p_params;
+
+  F_d.function = &calc_Intensity_d_orbital;
+  F_d.params = &d_params;
+
+  s_params[0] = nu_in;
+  s_params[1] = t0;
+  s_params[2] = l_max;
+  s_params[3] = p_max;
+  s_params[4] = 1;
+  s_params[5] = Z;
+  gsl_integration_qags (&F_s, 0, 2*PI, 0, 1e-10, 10000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of s1, at nu=",std::to_string(nu_in).c_str());
+  const double K_s_orb = result /denom;
+  s_params[4] = 2;
+  gsl_integration_qags (&F_s, 0, 2*PI, 0, 1e-10, 10000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of s2, at nu=",std::to_string(nu_in).c_str());
+  const double L_s_orb = result /denom;
+  s_params[4] = 3;
+  gsl_integration_qags (&F_s, 0, 2*PI, 0, 1e-10, 10000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of s3, at nu=",std::to_string(nu_in).c_str());
+  const double M_s_orb = result /denom;
+
+  p_params[0] = nu_in;
+  p_params[1] = t0;
+  p_params[2] = l_max;
+  p_params[3] = p_max;
+  p_params[4] = 2; // L-shell
+  p_params[5] = 1; // subsehll = 1, that is J= 1/2
+  p_params[6] = Z;
+  gsl_integration_qags (&F_p, 0, 2*PI, 0, 1e-12, 2000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of p1, at nu=",std::to_string(nu_in).c_str());
+  const double L_p1_orb = result /denom;
+  p_params[5] = 2; // subshell = 2, that is J= 3/2
+  gsl_integration_qags (&F_p, 0, 2*PI, 0, 1e-12, 2000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of p2, at nu=",std::to_string(nu_in).c_str());
+  const double L_p2_orb = result /denom;
+
+  p_params[4] = 3; // M-shell
+  p_params[5] = 1; // subshell = 1, that is J=1/2
+  gsl_integration_qags (&F_p, 0, 2*PI, 0, 1e-10, 2000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of p3, at nu=",std::to_string(nu_in).c_str());
+  const double M_p1_orb = result /denom;
+  p_params[5] = 2; // J = 3/2
+  gsl_integration_qags (&F_p, 0, 2*PI, 0, 1e-10, 2000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of p4, at nu=",std::to_string(nu_in).c_str());
+  const double M_p2_orb = result /denom;
+
+  d_params[0] = nu_in;
+  d_params[1] = t0;
+  d_params[2] = l_max;
+  d_params[3] = p_max;
+  d_params[4] = 3;
+  d_params[5] = 1;
+  d_params[6] = Z;
+  gsl_integration_qags (&F_d, 0, 2*PI, 0, 1e-10, 2000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of d1, at nu=",std::to_string(nu_in).c_str());
+  const double M_d1_orb = result /denom;
+  d_params[5] = 2;
+  gsl_integration_qags (&F_d, 0, 2*PI, 0, 1e-10, 2000, w, &result, &error);
+  if (error/result > 0.1) printf("Error in integration of d2, at nu=",std::to_string(nu_in).c_str());
+  const double M_d2_orb = result /denom;
+  std::vector<double> res {sqrt(K_s_orb), sqrt(L_s_orb), sqrt(M_s_orb), 
+                          sqrt(L_p1_orb), 2*sqrt(L_p2_orb), sqrt(M_p1_orb), 2*sqrt(M_p2_orb),
+                          3*sqrt(M_d1_orb), 2*sqrt(M_d2_orb)};
+  return res;
+}
+
+double calc_sum(double nu_in, double t0, int l_max, int p_max, int Z){
+  vec parts = calc_stuff(nu_in,t0,l_max,p_max,Z);
+  return 2*PI*vec_sum(parts);
 }

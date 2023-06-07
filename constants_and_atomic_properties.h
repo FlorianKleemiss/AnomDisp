@@ -1,19 +1,9 @@
 #pragma once
 #include "convenience.h"
 
-const double a0 = 0.529177210903E-10; //in m
-const double h = 6.62607015E-34/1.602176634E-19; //in eV*s
-const double Ryd_ener = 13.6056923; //in eV
-const double alpha = 0.0072973525693; //Sommerfeld fine structure constant
-const double alpha_sq = pow(alpha,2);
-const double el_mass = 9.1093837015E-31; //in kg
-const double el_charge = 1.602176634E-19; // in C
 const double prefactor = pow(el_charge,2)/(2*pow(PI,2)*el_mass);
-const double speed_of_light = 2.99792458E8; //m/s
 const double r_0 = pow(el_charge,2)/el_charge/pow(speed_of_light,2);
 const double r_0_for_nu = pow(el_charge,2)/el_charge;
-const double angstrom2eV = 1.23984193 * 10000; // eV*µm * µm/Angstrom
-const double barn2bohr = 2.80028520539078E+7;
 const double constant_factor = 4*PI2*el_mass/h/h; //p_0 according to Hönl's Waller paper (1933) Page 646
 
 double q(double nu){
@@ -175,11 +165,11 @@ double get_ionization_energy_1s(int Z){
     return ionization_energies[Z-1];
   else{
     //#extrapoalte from fourth order regression of tabulated data
-    double a1 =  4.00729846e-04;
-    double a2 = -2.27683735e-02;
-    double a3 =  1.30249774e+01;
-    double a4 = -6.43729353e+01;
-    double c  =  1.99592659e+02;
+    const double a1 =  4.00729846e-04;
+    const double a2 = -2.27683735e-02;
+    const double a3 =  1.30249774e+01;
+    const double a4 = -6.43729353e+01;
+    const double c  =  1.99592659e+02;
     return a1 * pow(Z,4) + a2 * pow(Z,3) + a3 * pow(Z,2) + a4 * Z + c;
   }
   /*import np as np
@@ -709,21 +699,23 @@ double b(int n_0, int l_0 , int Z){
   double Z_eff = -20;
   if (n_0 == 1)
     Z_eff = get_Zeff_1s(Z);
-  else if (n_0 == 2)
+  else if (n_0 == 2){
     if (l_0 == 0)
       Z_eff = get_Zeff_2s(Z);
     else if (l_0 == 1)
       Z_eff = get_Zeff_2p_1_2(Z);
     else if (l_0 == 2)
       Z_eff = get_Zeff_2p_3_2(Z);
-  else if (n_0 == 3)
+  }
+  else if (n_0 == 3){
     if (l_0 == 0)
       Z_eff = get_Zeff_3s(Z);
     else if (l_0 == 1)
       Z_eff = get_Zeff_3p_1_2(Z);
     else if (l_0 == 2)
       Z_eff = get_Zeff_3d_3_2(Z);
-  err_checkf(Z_eff != -20,"WRONG FUNCTION!", std::cout);
+  }
+  err_checkf(Z_eff != -20,"WRONG FUNCTION! " + std::to_string(Z) + " " + std::to_string(n_0) + " " +std::to_string(l_0) , std::cout);
   return Z_eff/(n_0*a0);
 }
 
@@ -748,7 +740,7 @@ cdouble product_n_prime_from_z(int n_0,double z,int l){
 cdouble N_square_from_z(int l, int m, double b_, int n_0, double z){
   if (m > l)
     return 0;
-  cdouble result = (2*l+1)*ft[l-m]/ft[l+m] * constant_factor / PI * n_0 * b_ * product_n_prime_from_z(n_0,z,l);
+  cdouble result = (2*l+1)*ft_fun(l-m)/ft_fun(l+m) * constant_factor / PI * n_0 * b_ * product_n_prime_from_z(n_0,z,l);
   if (m >= 1)
     result *= 2;
   return result;
