@@ -93,7 +93,7 @@ constexpr double fine_pi = inv_fine_struct / TWO_PI / PI;
 constexpr double inv_fine_mod = inv_fine_struct / FOUR_PI;
 constexpr double keV_per_hartree = 0.027211386245988;
 constexpr double angstrom2eV = 1.23984193*10000;
-constexpr double ansgtrom2keV = 12.3984193;
+constexpr double angstrom2keV = 12.3984193;
 constexpr double f_to_mu = 4208.031548;
 constexpr double barns_to_electrons = 1.43110541E-8;
 constexpr double a0 = 0.529177210903E-10; //in m
@@ -520,4 +520,38 @@ inline int binom(const int n, const int k) {
   }
 
   return aSolutions[k - 1];
+}
+
+inline double hypergeometric(double a, double b, double c, const double& x)
+{
+  const double TOLERANCE = 1.0e-15;
+  double term = a * b * x / c;
+  double value = 1.0 + term;
+  int n = 1;
+
+  while (std::abs(term) > TOLERANCE)
+  {
+    a++, b++, c++, n++;
+    term *= a * b * x / c / n;
+    value += term;
+  }
+
+  return value;
+}
+
+inline cdouble hypergeometric(double a, double b, double c, const cdouble& x)
+{
+  const double TOLERANCE = 1.0e-15;
+  cdouble term = a * b * x / c;
+  cdouble value = 1.0 + term;
+  int n = 1;
+
+  while (std::abs(term) > TOLERANCE)
+  {
+    a++, b++, c++, n++;
+    term *= a * b * x / c / (double)n;
+    value += term;
+  }
+
+  return value;
 }

@@ -3,6 +3,8 @@
 #include <vector>
 #include "convenience.h"
 
+namespace kleemiss_peyerimhoff{
+
 double alpha_coef(int l, int m, int mp, double t0, double alpha){
     if (m>l || mp > l) return 0.0;
     double st0 = sin(t0/2.0);
@@ -14,7 +16,7 @@ double alpha_coef(int l, int m, int mp, double t0, double alpha){
             sum += pow(-1,rho) * binom(l-m,rho) * binom(l+m,l-rho) * pow(st0/ct0,m+2*rho);
         return part1 * sum;
     }
-    double part1 = cos(m*alpha) * ft_fun(l-mp) / ft_fun(l-m); // NEED TO CHANGE TO A ft function
+    double part1 = cos(m*alpha) * ft_fun(l-mp) / ft_fun(l-m);
     if (part1 == 0) return 0.0;
     double sum = 0;
     for(int rho=0; rho <= l-m; rho++){
@@ -178,4 +180,5 @@ double beta_bar_coef(int l, int m, int mp, double t0, double alpha){
       sum += pow(-1,rho) * f0 * s;
     }
     return part1 * sum;
+}
 }

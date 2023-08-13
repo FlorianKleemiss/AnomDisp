@@ -21,318 +21,61 @@ from matrix_coefficients_v2 import f_p_el_for_p,f_a_for_p,f_d_el_for_p
 from constants_and_atomic_properties import *
 from constants_and_atomic_properties import speed_of_light, constant_factor, h, one_minus_delta_edge, a0, xn, b, elements, sugiura_exps, n_prime_from_z
 from hoenl_like import calc_hoenllike, sugiura_k_purely_imag
+from norbert_florian_integration import *
 #from mpl_toolkits import mplot3d
 
-al00  = []
-al11  = []
-al22  = []
-al33  = []
-bbl22 = []
-bbl11 = []
-bbl33 = []
-for l in range(10):
-  al00.append(alpha_coef(l,0,0,0,0))
-  al11.append(alpha_coef(l,1,1,0,0))
-  al22.append(alpha_coef(l,2,2,0,0))
-  al33.append(alpha_coef(l,3,3,0,0))
-  bbl22.append(beta_bar_coef(l,2,2,0,0))
-  bbl11.append(beta_bar_coef(l,1,1,0,0))
-  bbl33.append(beta_bar_coef(l,3,3,0,0))
+Sr = [17.566,1.556,9.818,14.099,5.422,0.166,2.669,132.376,2.506,-1.586,3.325]
+atom_x = 0.
+atom_y = 0.
+atom_z = 0.
+atom_u = 0.04
+nu = speed_of_light*1E10/0.71078
 
-@overload
-def apply_angle_part_s_parallel(a_l: float, theta0:float, alpha:float, l:int) -> float: ...
+def DW(stol_sq, uiso) -> float:
+  biso = uiso * 8*math.pi*math.pi
+  return math.exp(-biso*stol_sq)
+def stol_from_hkl(h,k,l) -> float: #This is hardcoded for the 10^3 Angs 90-90-90 cell
+  lower = (pow(h, 2) + pow(k, 2) + pow(l, 2)) / 100.0 
+  res = math.sqrt(1 / lower)
+  return 1.0 / (2 * res)
 
-@overload
-def apply_angle_part_s_parallel(a_l: npt.NDArray, theta0:float, alpha:float, l:int) -> npt.NDArray: ...
+def F_calc(indices,ndisp,precalc_array) -> "list[float]":
+  h,k,l = indices
+  if h==0 and k==0 and l == 0:
+    two_theta = 0
+    f_0 = 0
+    for i in range(5):
+      f_0 += Sr[2*i]
+    fp_fdp = precalc_array[1][0]
+    fp_fdp_0 = precalc_array[1][0]
+    f  = (f_0 + fp_fdp)
+    f0 = (f_0 + fp_fdp_0)
+    phase = cmath.polar(f)[1]/math.pi*180
+    print("Done with",h,k,l, "t0 ", two_theta, " fp_fdp ",fp_fdp, " f ",f, "f0: ",f0)
+    return [h,k,l,abs(f*f), 0.01, abs(f0), phase]
+  stol = stol_from_hkl(h,k,l)
+  stol_sq = pow(stol,2)
+  two_theta = math.asin(stol*0.71078)*2.0
+  TS = np.sqrt((1.0+np.cos(two_theta)**2)/2.0)
+  f_0 = complex(0)
+  for i in range(4):
+    f_0 += Sr[2*i] * math.exp(-Sr[2*i+1]*stol_sq)
+    
+  f_0 += Sr[8]
+  fp_fdp = np.interp(two_theta,precalc_array[0],precalc_array[1])/TS
+  #phi = 2*math.pi * (atom_x*h/10.0+atom_y*k/10.0+atom_z*10.0)
+  phi = cmath.rect(1.0,0.0)
+  T = DW(stol_sq,atom_u)
+  #f = (f_0 + fp_fdp - ndisp) * phi * T
+  f = (f_0 + fp_fdp) * phi * T
+  phase = cmath.polar(f)[1]/math.pi*180
+  fp_fdp_0 = precalc_array[1][0]
+  f0 = (f_0 + fp_fdp_0) * T * phi
+  print("Done with",h,k,l, "t0 ", two_theta, " fp_fdp ",fp_fdp, " f ",f, "f0: ",f0)
+  return [h, k, l, abs(f*f), abs(f*f)*0.01, abs(f0), phase]
 
-def apply_angle_part_s_parallel(a_l: Union[float,npt.NDArray], theta0:float, alpha:float, l:int) -> Union[float,npt.NDArray]:
-  a_l *= alpha_coef(l,1,1,theta0,alpha)
-  return a_l
-
-@overload
-def apply_angle_part_s_orthogonal(a_l: float, theta0:float, alpha:float, l:int) -> float: ...
-
-@overload
-def apply_angle_part_s_orthogonal(a_l: npt.NDArray, theta0:float, alpha:float, l:int) -> npt.NDArray: ...
-
-def apply_angle_part_s_orthogonal(a_l: Union[float,npt.NDArray],theta0: float,alpha:float, l: int) -> Union[float,npt.NDArray]:
-  a_l *= beta_coef(l,1,1,theta0,alpha)
-  return a_l
-
-def apply_angle_part_p_parallel(b_l: float,c_0_l: float,c_2_l: float,d_l: float,_k: int, theta0: float, alpha: float, l: int) -> "list[float]":
-  ct0 = np.cos(theta0)
-  st0 = np.sin(theta0)
-  ca = np.cos(alpha)
-  sa = np.sin(alpha)
-  if _k == 0:
-    b_l   *= -st0 * alpha_coef(l,1,0,theta0,alpha)
-    c_0_l *=  ct0 * alpha_coef(l,0,0,theta0,alpha) * ca
-    c_2_l *=  ct0 * alpha_coef(l,2,0,theta0,alpha) * ca
-    d_l   *=  ct0 * alpha_bar_coef(l,2,0,theta0,alpha) * sa
-  elif _k == 1:
-    b_l   *= ct0 * alpha_coef(l,1,1,theta0,alpha)
-    c_0_l *= st0 * alpha_coef(l,0,1,theta0,alpha) * ca
-    c_2_l *= st0 * alpha_coef(l,2,1,theta0,alpha) * ca
-    d_l   *= st0 * alpha_bar_coef(l,2,1,theta0,alpha) * sa
-  elif _k == 2:
-    b_l   *= -st0 * alpha_coef(l,1,2,theta0,alpha)
-    c_0_l *=  ct0 * alpha_coef(l,0,2,theta0,alpha) * ca - sa * beta_coef(l,0,2,theta0,alpha)
-    c_2_l *=  ct0 * alpha_coef(l,2,2,theta0,alpha) * ca - sa * beta_coef(l,2,2,theta0,alpha)
-    d_l   *=  ct0 * alpha_bar_coef(l,2,2,theta0,alpha) * sa + ca * beta_bar_coef(l,2,2,theta0,alpha)
-  return [b_l,c_0_l,c_2_l,d_l]
-
-def apply_angle_part_p_orthogonal(b_l: float,c_0_l: float,c_2_l: float,d_l: float,_k: int, theta0: float, alpha: float, l: int) -> "list[float]":
-  ct0 = np.cos(theta0)
-  st0 = np.sin(theta0)
-  ca = np.cos(alpha)
-  sa = np.sin(alpha)
-  if _k == 0:
-    b_l   *= 0
-    c_0_l *= -alpha_coef(l,0,0,theta0,alpha) * sa
-    c_2_l *= -alpha_coef(l,2,0,theta0,alpha) * sa
-    d_l   *= alpha_bar_coef(l,2,0,theta0,alpha) * ca
-  elif _k == 1:
-    b_l   *= ct0 * beta_coef(l,1,1,theta0,alpha)
-    c_0_l *= st0 * beta_coef(l,0,1,theta0,alpha) * ca
-    c_2_l *= st0 * beta_coef(l,2,1,theta0,alpha) * ca
-    d_l   *= st0 * beta_bar_coef(l,2,1,theta0,alpha) * sa
-  elif _k == 2:
-    b_l   *= -st0 * beta_coef(l,1,2,theta0,alpha)
-    c_0_l *=  ct0 * beta_coef(l,0,2,theta0,alpha) * ca + sa * alpha_coef(l,0,2,theta0,alpha)
-    c_2_l *=  ct0 * beta_coef(l,2,2,theta0,alpha) * ca + sa * alpha_coef(l,2,2,theta0,alpha)
-    d_l   *=  ct0 * beta_bar_coef(l,2,2,theta0,alpha) * sa - ca * alpha_bar_coef(l,2,2,theta0,alpha)
-  return [b_l,c_0_l,c_2_l,d_l]
-
-def apply_angle_part_d_parallel(vals: "list[float]",_k: int, theta0: float, alpha:float, l: int) -> "list[float]":
-  ct0 = np.cos(theta0)
-  c2t0 = np.cos(2*theta0)
-  st0 = np.sin(theta0)
-  s2t0 = np.sin(2*theta0)
-  ca = np.cos(alpha)
-  c2a = np.cos(2*alpha)
-  sa = np.sin(alpha)
-  s2a = np.sin(2*alpha)
-  if _k == 0:
-    vals[0] *=  c2t0 * alpha_coef(l,0,0,theta0,alpha) * ca
-    vals[1] *=  c2t0 * alpha_coef(l,2,0,theta0,alpha) * ca
-    vals[2] *=  c2t0 * sa * alpha_bar_coef(l,2,0,theta0,alpha)
-    vals[3] *=  0.5*s2t0 * alpha_bar_coef(l,1,0,theta0,alpha) * s2a
-    vals[4] *=  0.5*s2t0 * alpha_bar_coef(l,3,0,theta0,alpha) * s2a
-    vals[5] *=  -np.sqrt(3.0)/2.0 * s2t0 * alpha_coef(l,1,0,theta0,alpha)
-    vals[6] *=  0.5*s2t0*c2a *alpha_coef(l,1,0,theta0,alpha)
-    vals[7] *=  0.5*s2t0*c2a *alpha_coef(l,3,0,theta0,alpha)
-  elif _k == 1:
-    vals[0] *=  st0*sa * beta_coef(l,0,1,theta0,alpha)      - 0.5*s2t0*ca*alpha_coef(l,0,1,theta0,alpha)
-    vals[1] *=  st0*sa * beta_coef(l,2,1,theta0,alpha)      - 0.5*s2t0*ca*alpha_coef(l,2,1,theta0,alpha)
-    vals[2] *= -st0*ca * beta_bar_coef(l,2,1,theta0,alpha)  - 0.5*s2t0*sa*alpha_bar_coef(l,2,1,theta0,alpha)
-    vals[3] *=  ct0*c2a * beta_bar_coef(l,1,1,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,1,1,theta0,alpha)
-    vals[4] *=  ct0*c2a * beta_bar_coef(l,3,1,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,3,1,theta0,alpha)
-    vals[5] *=                                                np.sqrt(3.0)*0.5*st0*st0 * alpha_coef(l,1,1,theta0,alpha)
-    vals[6] *= -ct0*s2a * beta_coef(l,1,1,theta0,alpha)     + (1-0.5*st0*st0)*c2a*alpha_coef(l,1,1,theta0,alpha)
-    vals[7] *= -ct0*s2a * beta_coef(l,3,1,theta0,alpha)     + (1-0.5*st0*st0)*c2a*alpha_coef(l,3,1,theta0,alpha)
-  elif _k == 2:
-    vals[0] *=  c2t0*ca * alpha_coef(l,0,2,theta0,alpha)          - ct0*sa*beta_coef(l,0,2,theta0,alpha)
-    vals[1] *=  c2t0*ca * alpha_coef(l,2,2,theta0,alpha)          - ct0*sa*beta_coef(l,2,2,theta0,alpha)
-    vals[2] *=  c2t0*sa * alpha_bar_coef(l,2,2,theta0,alpha)      + ct0*ca*beta_bar_coef(l,2,2,theta0,alpha)
-    vals[3] *=  0.5*s2t0*s2a * alpha_bar_coef(l,1,2,theta0,alpha) + st0*c2a*beta_bar_coef(l,1,2,theta0,alpha)
-    vals[4] *=  0.5*s2t0*s2a * alpha_bar_coef(l,3,2,theta0,alpha) + st0*c2a*beta_bar_coef(l,3,2,theta0,alpha)
-    vals[5] *=                                                    - np.sqrt(3.0)*0.5*s2t0 * alpha_coef(l,1,2,theta0,alpha)
-    vals[6] *=  0.5*s2t0*c2a * alpha_coef(l,1,2,theta0,alpha)     - st0*s2a*beta_coef(l,1,2,theta0,alpha)
-    vals[7] *=  0.5*s2t0*c2a * alpha_coef(l,3,2,theta0,alpha)     - st0*s2a*beta_coef(l,3,2,theta0,alpha)
-  elif _k == 3:
-    vals[0] *=  st0*sa * beta_coef(l,0,3,theta0,alpha)      - 0.5*s2t0*ca*alpha_coef(l,0,3,theta0,alpha)
-    vals[1] *=  st0*sa * beta_coef(l,2,3,theta0,alpha)      - 0.5*s2t0*ca*alpha_coef(l,2,3,theta0,alpha)
-    vals[2] *= -st0*ca * beta_bar_coef(l,2,3,theta0,alpha)  - 0.5*s2t0*sa*alpha_bar_coef(l,2,3,theta0,alpha)
-    vals[3] *=  ct0*c2a * beta_bar_coef(l,1,3,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,1,3,theta0,alpha)
-    vals[4] *=  ct0*c2a * beta_bar_coef(l,3,3,theta0,alpha) + (1-0.5*st0*st0)*s2a*alpha_bar_coef(l,3,3,theta0,alpha)
-    vals[5] *=                                                np.sqrt(3.0)*0.5*st0*st0 * alpha_coef(l,1,3,theta0,alpha)
-    vals[6] *= -ct0*s2a * beta_coef(l,1,3,theta0,alpha)     + (1-0.5*st0*st0)*c2a*alpha_coef(l,1,3,theta0,alpha)
-    vals[7] *= -ct0*s2a * beta_coef(l,3,3,theta0,alpha)     + (1-0.5*st0*st0)*c2a*alpha_coef(l,3,3,theta0,alpha)
-  elif _k == 4:
-    vals[0] *=  0.5*np.sqrt(3.0) *s2t0*ca * alpha_coef(l,0,1,theta0,alpha) 
-    vals[1] *=  0.5*np.sqrt(3.0) *s2t0*ca * alpha_coef(l,2,1,theta0,alpha) 
-    vals[2] *=  np.sqrt(3.0)*0.5*s2t0*sa * alpha_bar_coef(l,2,1,theta0,alpha)
-    vals[3] *=  np.sqrt(3.0)*0.5*st0*st0*s2a * alpha_bar_coef(l,1,1,theta0,alpha)
-    vals[4] *=  np.sqrt(3.0)*0.5*st0*st0*s2a * alpha_bar_coef(l,3,1,theta0,alpha)
-    vals[5] *=  (1.5*ct0*ct0-0.5) * alpha_coef(l,1,1,theta0,alpha)
-    vals[6] *=  np.sqrt(3.0)*0.5*st0*st0*c2a *alpha_coef(l,1,1,theta0,alpha)
-    vals[7] *=  np.sqrt(3.0)*0.5*st0*st0*c2a *alpha_coef(l,3,1,theta0,alpha)
-  return vals
-
-def apply_angle_part_d_orthogonal(vals: "list[float]",_k: int, theta0: float, alpha:float, l: int) -> "list[float]":
-  ct0 = np.cos(theta0)
-  c2t0 = np.cos(2*theta0)
-  st0 = np.sin(theta0)
-  s2t0 = np.sin(2*theta0)
-  ca = np.cos(alpha)
-  c2a = np.cos(2*alpha)
-  sa = np.sin(alpha)
-  s2a = np.sin(2*alpha)
-  if _k == 0:
-    vals[0] *=  -ct0*sa * alpha_coef(l,0,0,theta0,alpha) 
-    vals[1] *=  -ct0*sa * alpha_coef(l,2,0,theta0,alpha)
-    vals[2] *=  ct0 * ca * alpha_bar_coef(l,2,0,theta0,alpha)  #
-    vals[3] *=  st0 * c2a * alpha_bar_coef(l,1,0,theta0,alpha) #
-    vals[4] *=  st0 * c2a * alpha_bar_coef(l,3,0,theta0,alpha) 
-    vals[5] *=  0
-    vals[6] *=  -st0*s2a * alpha_coef(l,1,0,theta0,alpha)
-    vals[7] *=  -st0*s2a * alpha_coef(l,3,0,theta0,alpha)
-  elif _k == 1:
-    vals[0] *= 0.5*s2t0*ca * beta_coef(l,0,1,theta0,alpha)              + st0*sa*alpha_coef(l,0,1,theta0,alpha)      #1
-    vals[1] *= 0.5*s2t0*ca * beta_coef(l,2,1,theta0,alpha)              + st0*sa*alpha_coef(l,2,1,theta0,alpha)      #1
-    vals[2] *= 0.5*s2t0*sa * beta_bar_coef(l,2,1,theta0,alpha)          - st0*ca*alpha_bar_coef(l,2,1,theta0,alpha)  #2
-    vals[3] *= -(1-0.5*st0*st0)*s2a * beta_bar_coef(l,1,1,theta0,alpha) + ct0*c2a*alpha_bar_coef(l,1,1,theta0,alpha) #2
-    vals[4] *= -(1-0.5*st0*st0)*s2a * beta_bar_coef(l,3,1,theta0,alpha) + ct0*c2a*alpha_bar_coef(l,3,1,theta0,alpha) #2
-    vals[5] *= -np.sqrt(3.0)*0.5*st0*st0 * beta_coef(l,1,1,theta0,alpha)                                             #
-    vals[6] *= -(1-0.5*st0*st0)*c2a * beta_coef(l,1,1,theta0,alpha)     - ct0*s2a*alpha_coef(l,1,1,theta0,alpha)     #1
-    vals[7] *= -(1-0.5*st0*st0)*c2a * beta_coef(l,3,1,theta0,alpha)     - ct0*s2a*alpha_coef(l,3,1,theta0,alpha)     #1
-  elif _k == 2:
-    vals[0] *= c2t0*ca * beta_coef(l,0,2,theta0,alpha)           + ct0*sa*alpha_coef(l,0,2,theta0,alpha)      #1
-    vals[1] *= c2t0*ca * beta_coef(l,2,2,theta0,alpha)           + ct0*sa*alpha_coef(l,2,2,theta0,alpha)      #1
-    vals[2] *= -ct0*ca * alpha_bar_coef(l,2,2,theta0,alpha)      + c2t0*sa*beta_bar_coef(l,2,2,theta0,alpha)  #1
-    vals[3] *= -st0*c2a * alpha_bar_coef(l,1,2,theta0,alpha) + 0.5*s2t0*s2a*beta_bar_coef(l,1,2,theta0,alpha) #1
-    vals[4] *= -st0*c2a * alpha_bar_coef(l,3,2,theta0,alpha) + 0.5*s2t0*s2a*beta_bar_coef(l,3,2,theta0,alpha) #1
-    vals[5] *= -np.sqrt(3.0)*0.5*s2t0 * beta_coef(l,1,2,theta0,alpha)                                         #
-    vals[6] *= 0.5*s2t0*c2a * beta_coef(l,1,2,theta0,alpha)     + st0*s2a*alpha_coef(l,1,2,theta0,alpha)      #1
-    vals[7] *= 0.5*s2t0*c2a * beta_coef(l,3,2,theta0,alpha)     + st0*s2a*alpha_coef(l,3,2,theta0,alpha)      #1
-  elif _k == 3:
-    vals[0] *= -0.5*s2t0*ca * beta_coef(l,0,3,theta0,alpha)      - st0*sa*alpha_coef(l,0,3,theta0,alpha)
-    vals[1] *= -0.5*s2t0*ca * beta_coef(l,2,3,theta0,alpha)      - st0*sa*alpha_coef(l,2,3,theta0,alpha)
-    vals[2] *= -0.5*s2t0*sa * beta_bar_coef(l,2,3,theta0,alpha)  + st0*ca*alpha_bar_coef(l,2,3,theta0,alpha)
-    vals[3] *= (1-0.5*st0*st0)*s2a * beta_bar_coef(l,1,3,theta0,alpha) - ct0*c2a*alpha_bar_coef(l,1,3,theta0,alpha)
-    vals[4] *= (1-0.5*st0*st0)*s2a * beta_bar_coef(l,3,3,theta0,alpha) - ct0*c2a*alpha_bar_coef(l,3,3,theta0,alpha)
-    vals[5] *= np.sqrt(3.0)*0.5*st0*st0 * beta_coef(l,1,3,theta0,alpha)
-    vals[6] *= (1-0.5*st0*st0)*c2a * beta_coef(l,1,3,theta0,alpha)     + ct0*s2a*alpha_coef(l,1,3,theta0,alpha)
-    vals[7] *= (1-0.5*st0*st0)*c2a * beta_coef(l,3,3,theta0,alpha)     + ct0*s2a*alpha_coef(l,3,3,theta0,alpha)
-  elif _k == 4:
-    vals[0] *= 0.5*np.sqrt(3.0)*s2t0*ca * beta_coef(l,0,1,theta0,alpha) 
-    vals[1] *= 0.5*np.sqrt(3.0)*s2t0*ca * beta_coef(l,2,1,theta0,alpha) 
-    vals[2] *= 0.5*np.sqrt(3.0)*s2t0*sa * beta_bar_coef(l,2,1,theta0,alpha)
-    vals[3] *= 0.5*np.sqrt(3.0)*st0*st0*s2a * beta_bar_coef(l,1,1,theta0,alpha)
-    vals[4] *= 0.5*np.sqrt(3.0)*st0*st0*s2a * beta_bar_coef(l,3,1,theta0,alpha)
-    vals[5] *= (1.5*ct0*ct0-0.5) * beta_coef(l,1,1,theta0,alpha)
-    vals[6] *= np.sqrt(3.0)*0.5*st0*st0*c2a * beta_coef(l,1,1,theta0,alpha)
-    vals[7] *= np.sqrt(3.0)*0.5*st0*st0*c2a * beta_coef(l,3,1,theta0,alpha)
-  return vals
-
-def calc_Intensity_s_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: int, p_max: int, n0: int, el_nr: int) -> float:
-  z_temp = None
-  if n0 == 1:
-    z_temp = nu_in / (get_ionization_energy_1s(el_nr) / h)
-    de = one_minus_delta_edge(el_nr,1,0,0)
-  elif n0 == 2:
-    z_temp = nu_in / (get_ionization_energy_2s(el_nr) / h)
-    de = one_minus_delta_edge(el_nr,2,0,0)
-  elif n0 == 3:
-    z_temp = nu_in / (get_ionization_energy_3s(el_nr) / h)
-    de = one_minus_delta_edge(el_nr,3,0,0)
-  else:
-    z_temp = 0
-    de = 0
-  if z_temp < 1: return 0
-  z_temp *= de
-
-  par = 0
-  orth = 0
-  fac = []
-  for p in range(int(p_max/2+1)):
-    fac.append(p+1)
-  for p in reversed(range(int(p_max/2+1))):
-    fac.append(p+1)
-
-  for l in range(l_max+1):
-    temp = 0
-    for p in range(0,p_max+1,2):
-      for r in f_a_for_p(el_nr, l, 0, z_temp, nu_in, n0, p):
-        temp += r.real
-    par += alpha_coef(l,1,1,t0,alpha_loc) * temp
-    orth += beta_coef(l,1,1,t0,alpha_loc) * temp
-  
-  return (par**2 + orth**2)
-
-def calc_Intensity_p_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: int, p_max: int, n0: int, subshell: int, el_nr: int) -> float:
-  if n0 == 1:
-    print("This shell doesn't have p orbitals")
-    exit(-1)
-  elif n0 == 2:
-    if subshell == 1:
-      z_temp = nu_in / (get_ionization_energy_2p1_2(el_nr) / h)
-      de = one_minus_delta_edge(el_nr,2,1,0.5)
-    else:
-      z_temp = nu_in / (get_ionization_energy_2p3_2(el_nr) / h)
-      de = one_minus_delta_edge(el_nr,2,1,1.5)
-  elif n0 == 3:
-    if subshell == 1:
-      z_temp = nu_in / (get_ionization_energy_3p_1_2(el_nr) / h)
-      de = one_minus_delta_edge(el_nr,3,1,0.5)
-    else:
-      z_temp = nu_in / (get_ionization_energy_3p_3_2(el_nr) / h)
-      de = one_minus_delta_edge(el_nr,3,1,1.5)
-  else:
-    z_temp = 0
-    de = 0
-  if z_temp < 1: return 0
-  z_temp *= de
-
-  par = 0
-  orth = 0
-  fac = []
-  for p in range(int(p_max/2+1)):
-    fac.append(p+1)
-  for p in reversed(range(int(p_max/2+1))):
-    fac.append(p+1)
-
-  ms = [0,1,2]
-  for l in range(l_max+1):
-    mults = [al00[l],al11[l],al22[l]+bbl22[l]]
-    for p in range(0,p_max+1,2):
-      for nummy in range(len(ms)):
-        for num,r in enumerate(f_p_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_temp, nu_in, n0, p)):
-          par += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alpha_loc, fac[num])
-          orth += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alpha_loc, fac[num])
-  
-  #Has division by 3**2 to avergae over all 3 p orbitals a.k.a. the p-wonder
-  return (par**2 + orth**2) / 9
-
-def calc_Intensity_d_orbital(alpha_loc: float, nu_in: float, t0: float, l_max: int, p_max: int, n0: int, subshell: int, el_nr: int) -> float:
-  if n0 == 1:
-    print("This shell doesn't have d orbitals")
-    exit(-1)
-  elif n0 == 2:
-    print("This shell doesn't have d orbitals")
-    exit(-1)
-  elif n0 == 3:
-    if subshell == 1:
-      z_temp = nu_in / (get_ionization_energy_3d_3_2(el_nr) / h)
-      de = one_minus_delta_edge(el_nr,3,2,1.5)
-    else:
-      z_temp = nu_in / (get_ionization_energy_3d_5_2(el_nr) / h)
-      de = one_minus_delta_edge(el_nr,3,2,2.5)
-  else:
-    z_temp = 0
-    de = 0
-  if z_temp < 1: return 0
-  z_temp *= de
-
-  par = 0
-  orth = 0
-  fac = []
-  for p in range(int(p_max/2+1)):
-    fac.append(p+1)
-  for p in reversed(range(int(p_max/2+1))):
-    fac.append(p+1)
-
-  ms = [0,1,2,3,4]
-  for l in range(l_max+1):
-    mults = [al00[l],bbl11[l]+al11[l],al22[l]+bbl22[l],bbl33[l]+al33[l],al11[l]]
-    for p in range(0,p_max+1,2):
-      for nummy in range(len(ms)):
-        for num,r in enumerate(f_d_el_for_p(el_nr, l, ms[nummy], ms[nummy], z_temp, nu_in, n0, p)):
-          
-          par += apply_angle_part_s_parallel(r.real * mults[nummy], t0, alpha_loc, fac[num])
-          orth += apply_angle_part_s_orthogonal(r.real * mults[nummy], t0, alpha_loc, fac[num])
-  #Has division by 5**2 to accomodate the averaging over 5 d orbtials  a.k.a. the d-wonder
-  return (par**2 + orth**2) / 25.0
+def inches(cm):
+  return cm / 2.54
 
 def calc_stuff(nu_in, t0, l_max, p_max, el_nr):
   #Integrate Intensity over all poalrization angles alpha and then divide by 2pi and constant_coef, to get rid of physical prefactor
@@ -389,13 +132,19 @@ def eta_K_unsers(z: float, nu_0:float, el_nr:int) -> float:
   #return 2**7/3/z_eff**4*sugiura_exps(z_eff,n0)/nu_0/nu*math.pi/2*emd
   return f/nu_in**2*math.pi
 
+def eta_all_unser(nu_in, t0, l_max, p_max, el_nr):
+  f = calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr)
+  return f/nu_in**2*math.pi
+
 if __name__ == "__main__":
   test_1s = False
   higher_p_test = False
   M_shell_test = False
   M_shell_test_orthogonal = False
   form_factor_test = False
-  numplot=False
+  numplot = False
+  theta_plot = False
+  fcf_test = False
   cmaps = ['blue','orange','green','red','black','blue','orange','green','red','black']
   t0:float = 0
   alp:float = 0
@@ -435,7 +184,9 @@ if __name__ == "__main__":
         ('M miracle', 3),
         ('M miracle orthogonal', 5),
         ('Dispersion Coefficient Plot', 4),
-        ('Numerical_plot', 6),
+        ('Numerical Plot', 6),
+        ('Theta Plot', 7),
+        ('fcf&cif of angular_effect', 8)
         ]
   result = 0
   def set_result():
@@ -482,6 +233,10 @@ if __name__ == "__main__":
     M_shell_test_orthogonal = True
   elif result == 6:
     numplot = True
+  elif result == 7:
+    theta_plot = True
+  elif result == 8:
+    fcf_test = True
 
   if test_1s == True:
     b_ = b(1,0,1)
@@ -1861,9 +1616,8 @@ if __name__ == "__main__":
       res_L = (l_s+l_p1+2*l_p3)*factor_x/TS
       res_M = (m_s+m_p1+2*m_p3+3*m_d3+2*m_d5)*factor_x/TS
       resy = res_K+res_L+res_M
-      resy_br = resy
   
-      axes[0,2].plot(second_x,resy_br,color='k',label="Norbert & Florian")# type: ignore
+      axes[0,2].plot(second_x,resy,color='k',label="Norbert & Florian")# type: ignore
       axes[0,2].axhline(y=0,linestyle='dashed',color='gray')# type: ignore
       axes[0,2].plot(second_x,brennan_fdp,color='r',label="brennan")# type: ignore
       axes[0,2].plot(second_x,hönl,color='b',label="hönl")# type: ignore
@@ -1874,9 +1628,9 @@ if __name__ == "__main__":
       
       #axes[0,2].scatter(second_x,fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl,facecolors='none',edgecolors='k',marker='^',label="total purely paper")
   
-      axes[1,2].plot(second_x,resy_br/brennan_fdp,color='k',label="ratio N&F/brennan")# type: ignore
+      axes[1,2].plot(second_x,resy/brennan_fdp,color='k',label="ratio N&F/brennan")# type: ignore
       axes[1,2].plot(second_x,hönl/brennan_fdp,color='b',label="ratio hönl/brennan")# type: ignore
-      axes[1,2].plot(second_x,resy_br/hönl,color='g',label="ratio N&F/hönl")# type: ignore
+      axes[1,2].plot(second_x,resy/hönl,color='g',label="ratio N&F/hönl")# type: ignore
       axes[1,2].plot(second_x,(fdp_nach_Wa+fdp_nach_EM+fdp_nach_hoenl)/hönl,color='r',label="ratio hönl/hönl_integral")# type: ignore
       axes[1,2].axhline(y=1,linestyle='dashed',color='gray')# type: ignore
   
@@ -1900,8 +1654,8 @@ if __name__ == "__main__":
             temp[i] = r
           temp *= factor_x
           axes[1,1].plot(second_x,zero_angle/temp * math.sqrt((1+np.cos(theta)**2)/2),label=r"$\theta_0 = ${:4.2f}$\pi$".format(theta/math.pi))# type: ignore
-  
-      axes[1,1].plot(second_x,zero_angle/resy * TS,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))# type: ignore
+      print(factor_x)
+      axes[1,1].plot(second_x,zero_angle/resy,color='k',label=r"$\theta_0 = ${:5.3f}$\pi$".format(t0/math.pi))# type: ignore
       axes[1,1].set_title(r"Ratio between $\theta_0=0$ and $\theta_0$", y=1.0, pad=-14)# type: ignore
       print("TS = " + str(TS))
   
@@ -1916,14 +1670,14 @@ if __name__ == "__main__":
         ax.legend()
   
       ##This adds the frequency in ExaHz on top of the 1,2 axes
-      def tickfunc(x):
-        N = speed_of_light / x * 1E-8
-        return  ["%.3f" %z for z in N]
-      ax2 = axes[1,2].twiny()# type: ignore
-      ax2.set_xscale('log')
-      ax2.set_xlim(lam_min,lam_max)
-      ax2.set_xticks(ticks)
-      ax2.set_xticklabels(tickfunc(ticks))
+      #def tickfunc(x):
+      #  N = speed_of_light / x * 1E-8 * h
+      #  return  ["%.3f" %z for z in N]
+      #ax2 = axes[1,2].twiny()# type: ignore
+      #ax2.set_xscale('log')
+      #ax2.set_xlim(lam_min,lam_max)
+      #ax2.set_xticks(ticks)
+      #ax2.set_xticklabels(tickfunc(ticks))
   
       
       fig.suptitle(r"$\theta_0$ = {:4.2f} $\pi$".format(t0/math.pi))
@@ -1940,7 +1694,7 @@ if __name__ == "__main__":
   if numplot == True: 
 
     print("performing comparison of numerical and ealuation at a given energy")
-    x = np.linspace(0.9,2,steps)
+    x = np.linspace(0.9,1.1,steps)
     eta_nach_hoenl = np.zeros_like(x)
     eta_nach_integral = np.zeros_like(x)
     eta_nach_unserem = np.zeros_like(x)
@@ -1963,57 +1717,408 @@ if __name__ == "__main__":
       res = pool.starmap(sugiura_k_purely_imag, zip(repeat(el_nr), x*get_ionization_energy_1s(el_nr)))
       for i,r in enumerate(res):
         eta_nach_integral[i] = r
-      res = pool.starmap(eta_K_unsers, zip(x,repeat(nu_0), repeat(el_nr)))
-      for i,r in enumerate(res):
-        eta_nach_unserem[i] = r
+      #res = pool.starmap(eta_K_unsers, zip(x,repeat(nu_0), repeat(el_nr)))
+      #for i,r in enumerate(res):
+      #  eta_nach_unserem[i] = r
         
-      from matrix_coefficients_v2 import K_recursive_from_z
-      res = pool.starmap(n_prime_from_z, zip(x,repeat(1)))
-      for i,r in enumerate(res):
-        nprime[i] = r.real
-        inprime[i] = r.imag
-        
-      res = pool.starmap(K_recursive_from_z, zip(repeat(0),repeat(1), repeat(b(1,0,el_nr)), x,repeat(1)))
-      for i,r in enumerate(res):
-        K_recursive[i] = r.real
-        K_recursive_imag[i] = r.imag
-      res = pool.starmap(sugiura_exps, zip(x,repeat(1)))
-      for i,r in enumerate(res):
-        SE[i] = r
-      
+      #from matrix_coefficients_v2 import K_recursive_from_z
+      #res = pool.starmap(n_prime_from_z, zip(x,repeat(1)))
+      #for i,r in enumerate(res):
+      #  nprime[i] = r.real
+      #  inprime[i] = r.imag
+      #  
+      #res = pool.starmap(K_recursive_from_z, zip(repeat(0),repeat(1), repeat(b(1,0,el_nr)), x,repeat(1)))
+      #for i,r in enumerate(res):
+      #  K_recursive[i] = r.real
+      #  K_recursive_imag[i] = r.imag
+      #res = pool.starmap(sugiura_exps, zip(x,repeat(1)))
+      #for i,r in enumerate(res):
+      #  SE[i] = r
 
-    fig, axes = plt.subplots(2,2)
-    axes[0,0].plot(x,eta_nach_hoenl,label="without integral")# type: ignore
-    axes[0,0].plot(x,eta_nach_unserem,label="unsers")# type: ignore
-    axes[0,0].plot(x,eta_nach_integral,label="with integral")# type: ignore
-    axes[0,0].legend()# type: ignore
-
-    ratio1 = np.zeros_like(eta_nach_hoenl)
-    ratio2 = np.zeros_like(eta_nach_hoenl)
-    for i,e in enumerate(eta_nach_hoenl):
-      ratio1[i] = eta_nach_hoenl[i]  /eta_nach_integral[i]
-      ratio2[i] = eta_nach_unserem[i]/eta_nach_integral[i]
-      if x[i] <= 1:
-        ratio1[i] += 1
-        ratio2[i] += 1
-
-    axes[1,0].plot(x,ratio1,label="ratio")# type: ignore
-    axes[1,0].plot(x,ratio2,label="ratio unsers")# type: ignore
-    axes[1,0].legend()# type: ignore
-
-    axes[0,0].axvline(x=1/omdelta_K,linestyle='dashed',color='gray')# type: ignore
-    axes[1,0].axvline(x=1/omdelta_K,linestyle='dashed',color='gray')# type: ignore
-    axes[1,1].axvline(x=1,linestyle='dashed',color='gray')# type: ignore
-    axes[0,1].axvline(x=1,linestyle='dashed',color='gray')# type: ignore
+    eta_nach_integral /= max(eta_nach_hoenl)  
+    eta_nach_hoenl /= max(eta_nach_hoenl)
     
-    axes[0,1].plot(x,nprime,label="Re prime(z)")# type: ignore
-    axes[0,1].plot(x,inprime,label="Im nprime(z)")# type: ignore
-    axes[0,1].legend()# type: ignore
-    axes[1,1].plot(x,SE*1E-10,label="sugiura(z)")# type: ignore
-    axes[1,1].plot(x,K_recursive,label="Re K(z)")# type: ignore
-    axes[1,1].plot(x,K_recursive_imag,label="Im K(z)")# type: ignore
-    axes[1,1].legend()# type: ignore
-    print(eta_nach_hoenl[-1]/eta_nach_integral[-1], eta_nach_unserem[-1]/eta_nach_integral[-1])
+
+    fig, axes = plt.subplots(1,1)
+    axes.plot(x,eta_nach_hoenl,label="without damping")# type: ignore
+    #axes[0,0].plot(x,eta_nach_unserem,label="unsers")# type: ignore
+    axes.plot(x,eta_nach_integral,"--",label="with damping")# type: ignore
+    axes.set_ylabel(r"Normalized $f''$")
+    axes.set_xlabel(r"$\frac{E_{X-ray}}{E_{Edge}}$")
+    axes.legend()# type: ignore
+
+    #ratio1 = np.zeros_like(eta_nach_hoenl)
+    #ratio2 = np.zeros_like(eta_nach_hoenl)
+    #for i,e in enumerate(eta_nach_hoenl):
+    #  ratio1[i] = eta_nach_hoenl[i]  /eta_nach_integral[i]
+    #  ratio2[i] = eta_nach_unserem[i]/eta_nach_integral[i]
+    #  if x[i] <= 1:
+    #    ratio1[i] += 1
+    #    ratio2[i] += 1
+#
+    #axes[1,0].plot(x,ratio1,label="ratio")# type: ignore
+    #axes[1,0].plot(x,ratio2,label="ratio unsers")# type: ignore
+    #axes[1,0].legend()# type: ignore
+#
+    ##axes[0,0].axvline(x=1/omdelta_K,linestyle='dashed',color='gray')# type: ignore
+    #axes[1,0].axvline(x=1/omdelta_K,linestyle='dashed',color='gray')# type: ignore
+    #axes[1,1].axvline(x=1,linestyle='dashed',color='gray')# type: ignore
+    #axes[0,1].axvline(x=1,linestyle='dashed',color='gray')# type: ignore
+    #
+    #axes[0,1].plot(x,nprime,label="Re prime(z)")# type: ignore
+    #axes[0,1].plot(x,inprime,label="Im nprime(z)")# type: ignore
+    #axes[0,1].legend()# type: ignore
+    #axes[1,1].plot(x,SE*1E-10,label="sugiura(z)")# type: ignore
+    #axes[1,1].plot(x,K_recursive,label="Re K(z)")# type: ignore
+    #axes[1,1].plot(x,K_recursive_imag,label="Im K(z)")# type: ignore
+    #axes[1,1].legend()# type: ignore
+    #print(eta_nach_hoenl[-1]/eta_nach_integral[-1], eta_nach_unserem[-1]/eta_nach_integral[-1])
     
-    plt.show()
+    fig.set_figheight(inches(17))
+    fig.set_figwidth(inches(22))
+    
+    fig.savefig('integral_effect.png',dpi=300,bbox_inches='tight')
     exit()
+  
+  if theta_plot == True: 
+
+    print("performing plot against theta angle at molybdnum wavelength")
+    x = np.linspace(0,math.pi,steps)
+    p0 = np.zeros_like(x)
+    p2 = np.zeros_like(x)
+    p4 = np.zeros_like(x)
+    p6 = np.zeros_like(x)
+
+    nu = speed_of_light*1E10/0.71078
+
+    TS = np.sqrt((1.0+np.cos(x)**2)/2.0)
+
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+      res  = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(0), repeat(40)))
+      res2 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(2), repeat(40)))
+      res4 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(4), repeat(40)))
+      res6 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(6), repeat(40)))
+      for i,r in enumerate(res):
+        p0[i] = r
+        p2[i] = res2[i]
+        p4[i] = res4[i]
+        p6[i] = res6[i]
+
+    p0 /= TS
+    p2 /= TS
+    p4 /= TS
+    p6 /= TS
+    
+    p0 *= 2*math.pi
+    p2 *= 2*math.pi
+    p4 *= 2*math.pi
+    p6 *= 2*math.pi
+    
+
+    angle = x / math.pi * 180
+
+    fig, axes = plt.subplots(1,1)
+    axes.plot(angle,p0,"k",label="f'' p=0")# type: ignore
+    axes.plot(angle,p2,"r-.",label="f'' p=2")# type: ignore
+    axes.plot(angle,p4,"b--",label="f'' p=4")# type: ignore
+    axes.plot(angle,p6,"g:",label="f'' p=6")# type: ignore
+    axes.set_ylabel(r"$f''$ /$e$")
+    axes.set_xlabel(r"$2\theta$")
+    axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
+    axes.legend()# type: ignore
+    
+    fig.set_figheight(inches(17))
+    fig.set_figwidth(inches(22))
+    
+    fig.savefig('Zr_atMo.png',dpi=300,bbox_inches='tight')
+
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+      res  = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(0), repeat(38)))
+      res2 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(2), repeat(38)))
+      res4 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(4), repeat(38)))
+      res6 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(6), repeat(38)))
+      for i,r in enumerate(res):
+        p0[i] = r
+        p2[i] = res2[i]
+        p4[i] = res4[i]
+        p6[i] = res6[i]
+
+    p0 /= TS
+    p2 /= TS
+    p4 /= TS
+    p6 /= TS
+    p0 *= 2*math.pi
+    p2 *= 2*math.pi
+    p4 *= 2*math.pi
+    p6 *= 2*math.pi
+    fig, axes = plt.subplots(1,1)
+    axes.plot(angle,p0,"k",label="f'' p=0")# type: ignore
+    axes.plot(angle,p2,"r-.",label="f'' p=2")# type: ignore
+    axes.plot(angle,p4,"b--",label="f'' p=4")# type: ignore
+    axes.plot(angle,p6,"g:",label="f'' p=6")# type: ignore
+    axes.set_ylabel(r"$f''$ /$e$")
+    axes.set_xlabel(r"$2\theta$")
+    axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
+    axes.legend()# type: ignore
+    
+    fig.set_figheight(inches(17))
+    fig.set_figwidth(inches(22))
+    
+    fig.savefig('Sr_atMo.png',dpi=300,bbox_inches='tight')
+    
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+      res  = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(0), repeat(92)))
+      res2 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(2), repeat(92)))
+      res4 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(4), repeat(92)))
+      res6 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(6), repeat(92)))
+      for i,r in enumerate(res):
+        p0[i] = r
+        p2[i] = res2[i]
+        p4[i] = res4[i]
+        p6[i] = res6[i]
+
+    p0 /= TS
+    p2 /= TS
+    p4 /= TS
+    p6 /= TS
+    p0 *= 2*math.pi
+    p2 *= 2*math.pi
+    p4 *= 2*math.pi
+    p6 *= 2*math.pi
+    fig, axes = plt.subplots(1,1)
+    axes.plot(angle,p0,"k",label="f'' p=0")# type: ignore
+    axes.plot(angle,p2,"r-.",label="f'' p=2")# type: ignore
+    axes.plot(angle,p4,"b--",label="f'' p=4")# type: ignore
+    axes.plot(angle,p6,"g:",label="f'' p=6")# type: ignore
+    axes.set_ylabel(r"$f''$ /$e$")
+    axes.set_xlabel(r"$2\theta$")
+    axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
+    axes.legend()# type: ignore
+    
+    fig.set_figheight(inches(17))
+    fig.set_figwidth(inches(22))
+    
+    fig.savefig('U_atMo.png',dpi=300,bbox_inches='tight')
+    exit()
+  if fcf_test == True:
+    
+    cif = """
+data_Sr
+_chemical_formula_moiety           'Sr1'
+_chemical_formula_sum              'Sr1'
+_chemical_formula_weight           87.62
+loop_
+  _atom_type_symbol
+  _atom_type_scat_dispersion_real
+  _atom_type_scat_dispersion_imag
+  _atom_type_scat_source
+  _atom_type_scat_dispersion_source
+ Sr 0.35 0.522 'NoSpherA2: Chem.Sci. 2021, DOI:10.1039/D0SC05526C'
+ 'Brennan, Cowan, Rev. Sci. Instrum., 1992, 63, 850'
+
+_space_group_crystal_system        'triclinic'
+_space_group_IT_number             1
+_space_group_name_H-M_alt          'P 1'
+_space_group_name_Hall             'P 1'
+loop_
+  _space_group_symop_id
+  _space_group_symop_operation_xyz
+ 1 x,y,z
+
+_symmetry_Int_Tables_number        1
+_cell_length_a                     10.000(2)
+_cell_length_b                     10.000(3)
+_cell_length_c                     10.000(2)
+_cell_angle_alpha                  90.000(2)
+_cell_angle_beta                   90.000(2)
+_cell_angle_gamma                  90.000(2)
+_cell_volume                       1000.0(5)
+_cell_formula_units_Z              1
+_cell_measurement_temperature      293(2)
+_exptl_crystal_F_000               38.000
+_diffrn_reflns_av_R_equivalents    0.0000
+_diffrn_reflns_av_unetI/netI       0.0311
+_diffrn_reflns_Laue_measured_fraction_full  0.9981
+_diffrn_reflns_Laue_measured_fraction_max  0.9988
+_diffrn_reflns_limit_h_max         15
+_diffrn_reflns_limit_h_min         -15
+_diffrn_reflns_limit_k_max         15
+_diffrn_reflns_limit_k_min         -15
+_diffrn_reflns_limit_l_max         15
+_diffrn_reflns_limit_l_min         -15
+_diffrn_reflns_number              7595
+_diffrn_reflns_point_group_measured_fraction_full  0.9981
+_diffrn_reflns_point_group_measured_fraction_max  0.9988
+_diffrn_reflns_theta_full          25.2436
+_diffrn_reflns_theta_max           30.05
+_diffrn_reflns_theta_min           3.05
+_diffrn_measured_fraction_theta_full  0.9981
+_diffrn_measured_fraction_theta_max  0.9988
+_diffrn_radiation_type             'Mo K\a'
+_diffrn_radiation_wavelength       0.71078
+_reflns_Friedel_coverage           0.0
+_reflns_limit_h_max                15
+_reflns_limit_h_min                -15
+_reflns_limit_k_max                15
+_reflns_limit_k_min                -15
+_reflns_limit_l_max                15
+_reflns_limit_l_min                -15
+_reflns_number_gt                  5024
+_reflns_number_total               7595
+_reflns_threshold_expression       I>=2u(I)
+_refine_diff_density_max           1.6950
+_refine_diff_density_min           -0.8025
+_refine_diff_density_rms           0.0870
+_refine_ls_d_res_high              0.7097
+_refine_ls_d_res_low               6.6752
+_refine_ls_goodness_of_fit_ref     0.9034
+_refine_ls_hydrogen_treatment      constr
+_refine_ls_matrix_type             full
+_refine_ls_number_constraints      0
+_refine_ls_number_parameters       495
+_refine_ls_number_reflns           7595
+_refine_ls_number_restraints       29
+_refine_ls_R_factor_all            0.0548
+_refine_ls_R_factor_gt             0.0361
+_refine_ls_restrained_S_all        0.9015
+_refine_ls_shift/su_max            -0.4325
+_refine_ls_shift/su_mean           0.0077
+_refine_ls_structure_factor_coef   Fsqd
+_refine_ls_weighting_details      
+ 'w=1/[\s^2^(Fo^2^)]'
+_refine_ls_weighting_scheme        calc
+_refine_ls_wR_factor_gt            0.0871
+_refine_ls_wR_factor_ref           0.0924
+
+loop_
+  _atom_site_label
+  _atom_site_type_symbol
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_U_iso_or_equiv
+  _atom_site_adp_type
+  _atom_site_occupancy
+  _atom_site_refinement_flags_posn
+  _atom_site_refinement_flags_adp
+ Sr Sr 0.000(18) 0.000(14) 0.000(2) 0.04(8) Uiso 1.000000 . .
+
+"""
+    fcf_header = """
+data_Sr
+_computing_structure_refinement   'olex2.refine 1.5-dev (Bourhis et al., 2015)'
+_shelx_refln_list_code            6
+loop_
+  _space_group_symop_id
+  _space_group_symop_operation_xyz
+  1  x,y,z
+
+_space_group_crystal_system       triclinic
+_space_group_IT_number            1
+_space_group_name_H-M_alt         'P 1'
+_space_group_name_Hall            'P 1'
+_symmetry_space_group_name_H-M    'P 1'
+_symmetry_space_group_name_Hall   'P 1'
+_symmetry_Int_Tables_number       1
+_cell_length_a                    10.000(2)
+_cell_length_b                    10.000(3)
+_cell_length_c                    10.000(2)
+_cell_angle_alpha                 90.00(2)
+_cell_angle_beta                  90.00(2)
+_cell_angle_gamma                 90.00(2)
+_cell_volume                      1000.0(5)
+loop_
+  _refln_index_h
+  _refln_index_k
+  _refln_index_l
+  _refln_F_squared_meas
+  _refln_F_squared_sigma
+  _refln_F_calc
+  _refln_phase_calc"""
+    
+    h = range(-30,31)
+    k = range(-30,31)
+    l = range(-30,31)
+    #h = range(-1,2)
+    #k = range(-1,2)
+    #l = range(-1,2)
+    listy = [h,k,l]
+    import itertools
+    from matrix_coefficients_v2 import prepare_M
+    indices_temp = list(itertools.product(*listy))
+    indices = []
+    for i in indices_temp:
+      if i[0] == i[1] == i[2] == 0: continue
+      if stol_from_hkl(i[0],i[1],i[2]) > 1.0: continue
+      indices.append(i)
+    
+    read = True
+    if read == False:
+      M_matrizes = []
+      for shell in range(0,6):
+        M_matrizes.append([])
+      for shell in range(1,6):
+        for n_0 in range(0,4):
+          M_matrizes[shell].append([])
+      for shell in range(1,6):
+        for n_0 in range(1,4):
+          for l in range(l_max+2):
+            M_matrizes[shell][n_0].append([])
+      for shell in range(1,6):
+        for n_0 in range(1,4):
+          for l in range(l_max+2):
+            for p in range(p_max+6):
+              z = get_z_temp(38,n_0,shell,nu)
+              if z == -100: continue
+              M_matrizes[shell][n_0][l].append(prepare_M(p,l,z,n_0))
+      precalc_0  = NF(38,nu, 0,4,0,False,M_matrizes)
+      x = np.linspace(0,math.pi,128)
+      with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        precalc  = pool.starmap(NF, zip(repeat(38), repeat(nu), x, repeat(4), repeat(2), repeat(False), repeat(M_matrizes)))
+      
+      precalc *= 2
+      preacalc_arrays = (x,precalc,precalc_0)
+      with open("t0.npy","wb") as f:
+        np.save(f,x)
+      with open("fp_fdp.npy","wb") as f:
+        np.save(f,precalc)
+    else:
+      x = np.load("t0.npy")
+      angle = x / math.pi * 180
+      precalc = np.load("fp_fdp.npy")
+      precalc *= math.pi
+      im = precalc[0:128].imag
+      re = precalc[0:128].real
+      fig, axes = plt.subplots(1,1)
+      axes.plot(angle,re,"b",label="f'")# type: ignore
+      axes.plot(angle,im,"k",label="f''")# type: ignore
+      axes.set_ylabel(r"$f$ /$e$")
+      axes.set_xlabel(r"$2\theta$")
+      axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
+      axes.legend()# type: ignore
+      
+      fig.set_figheight(inches(17))
+      fig.set_figwidth(inches(22))
+      
+      fig.savefig('Sr_integrated.png',dpi=300,bbox_inches='tight')
+      precalc_0 = -0.5155468923122816+1.6399873146939559j
+      preacalc_arrays = (x,precalc[0:128],precalc_0)
+      
+    print("We have f' and f''!")
+    print("Calculating number of dispersion electrons...")
+    #n_disp = NF_DL(38,nu,0.0,5,2,M_matrizes)
+    n_disp = 0.0
+    #print("Number of disp els: ", n_disp)
+    #print(NF(38,nu,0,5,4,False,M_matrizes))
+    with open("Sr.cif","wt") as ciffy:
+      ciffy.write(cif)
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+      print("starting calc!")
+      res  = pool.starmap(F_calc, zip(indices,repeat(n_disp),repeat(preacalc_arrays)))
+      with open("Sr.fcf","wt") as fcfy:
+        fcfy.write(fcf_header+'\n')
+        fcfy.write('\n'.join(' '.join(map(str, r)) for r in res))
+    
+    print("Done with calculation!")
+    exit()
+

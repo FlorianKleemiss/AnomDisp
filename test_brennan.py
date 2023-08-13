@@ -4,8 +4,18 @@ from constants_and_atomic_properties import *
 #energy = float(input("Please enter Wavelength in Angstrom: "))
 #z = input("Please Enter Element Name: ")
 #energy = angstrom2eV / wavelength / 1000
+
+from scipy import constants as conts
+
+def ret_energy(wavelength):
+  return (conts.h * conts.c) / (wavelength*1.60218e-19) * 1E10
+
+def ret_wl(energy):
+  return (conts.h * conts.c) / (energy*1.60218e-19) * 1E10
+
+
 import matplotlib.pyplot as plt
-Z = elements[50]
+Z = elements[83]
 bren = brennan()
 minimal = 200
 maximal = 2000

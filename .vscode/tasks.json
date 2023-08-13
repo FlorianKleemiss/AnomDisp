@@ -23,16 +23,16 @@
 			"/Zi",
 			"/EHsc",
 			"/FS",
-      "/std:c++20",
-      "/I",
-      "${fileDirname}\\gsl_stuff",
+            "/std:c++20",
+            "/I",
+            "${fileDirname}\\gsl_stuff",
 			"/Fe:",
 			"${fileDirname}\\${fileBasenameNoExtension}.exe",
 			"${file}",
-      "convenience.cpp",
-      "spherical_density.cpp",
-      "/link",
-      "${fileDirname}\\gsl_stuff\\lib\\x64\\Release\\gsl.lib"
+            "convenience.cpp",
+            "spherical_density.cpp",
+            "/link",
+            "${fileDirname}\\gsl_stuff\\lib\\x64\\Release\\gsl.lib"
 		  ],
 		  "problemMatcher": ["$msCompile"],
 		  "group": {
@@ -42,30 +42,50 @@
 		},
 		{
 			"type": "shell",
-			"label": "cl.exe build calc_disp file",
+			"label": "build calc_disp",
 			"command": "cl.exe",
 			"args": [
 			  "/Zi",
 			  "/EHsc",
 			  "/FS",
-		    "/std:c++20",
-        "/openmp:experimental",
-        "/Od",
-		    "/I",
-		    "${fileDirname}\\gsl_stuff",
+		      "/std:c++20",
+              "/openmp:experimental",
+              "/Od",
+		      "/I",
+		      "${fileDirname}\\gsl_stuff",
 			  "/Fe:",
 			  "${fileDirname}\\calc_disp.exe",
 			  "calc_disp.cpp",
-		    "convenience.cpp",
-		    "spherical_density.cpp",
-		    "/link",
-		    "${fileDirname}\\gsl_stuff\\lib\\x64\\Release\\gsl.lib"
+		      "convenience.cpp",
+		      "spherical_density.cpp",
+		      "/link",
+		      "${fileDirname}\\gsl_stuff\\lib\\x64\\Release\\gsl.lib"
 			],
 			"problemMatcher": ["$msCompile"],
 			"group": {
 			  "kind": "build",
 			  "isDefault": true
 			}
-		  },
+		},
+		{
+			"label": "clean up after build",
+			"type": "shell",
+			"command": "del",
+			"args": [
+				"calc_disp.obj",
+				"spherical_density.obj",
+				"convenience.obj",
+				"calc_disp.ilk"
+			],
+			"dependsOn":[
+				"build calc_disp"
+			]
+		},
+		{
+			"label": "Build Calc_Disp",
+			"dependsOn":[
+				"clean up after build"
+			]
+		}
 	]
 }

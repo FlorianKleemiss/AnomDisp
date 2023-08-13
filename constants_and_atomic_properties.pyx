@@ -283,19 +283,16 @@ def N0_square(b_: float) -> float:
 def N0(b_: float) -> float:
   return math.sqrt(N0_square(b_))
 
-def product_n_prime_from_z(n_0: int,z: float,l: int) -> complex:
+def product_n_prime_from_z(n_0: int,z: float,l: int) -> float:
   n_p = n_prime_from_z(z,n_0)
-  fact = complex(1.0)
+  fact = 1.0
   for nu in range(1,l+1):
-    fact *= n_p * n_p + nu*nu
-  if z < 1:
-    denom = 1-complex(np.cos(-2*math.pi*n_p.imag),np.sin(-2*math.pi*n_p.imag))
-  else: 
-    denom = 1-math.exp(-2*math.pi*n_p.real)
+    fact *= (n_p * n_p).real + nu * nu
+  denom = 1-math.exp(-2*math.pi*abs(n_p))
   return fact/denom
 
 #Introduces factors 2pi m_e /h^2 and m
-def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
+def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> float:
   if (m > l):
     return 0
   result = (2*l+1)*math.factorial(l-m)/math.factorial(l+m) * constant_factor / math.pi * n_0 * b_ * product_n_prime_from_z(n_0,z,l)
@@ -303,16 +300,16 @@ def N_square_from_z(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
     result *= 2
   return result
 
-def N(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
-  return cmath.sqrt(N_square_from_z(l,m,b_,n_0,z))
+def N(l: int, m: int, b_: float, n_0: int, z: float) -> float:
+  return math.sqrt(N_square_from_z(l,m,b_,n_0,z))
 
-def N_square(l: int, m: int, b_: float, n_0: int, z: float) -> complex:
+def N_square(l: int, m: int, b_: float, n_0: int, z: float) -> float:
   return N_square_from_z(l,m,b_,n_0,z)
 
-def N_lm_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> complex:
+def N_lm_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> float:
   return N(l,m,b_,n_0, z)
 
-def N_lm_square_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> complex:
+def N_lm_square_from_z(l: int,m: int,z: float,b_: float,n_0: int) -> float:
   return N_square(l,m,b_,n_0,z)
 
 kpcor =  [ 0.0,    0.0,                                                                                                                                                                                                                   0.0,

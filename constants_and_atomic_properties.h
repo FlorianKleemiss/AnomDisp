@@ -6,28 +6,28 @@ const double r_0 = pow(el_charge,2)/el_charge/pow(speed_of_light,2);
 const double r_0_for_nu = pow(el_charge,2)/el_charge;
 const double constant_factor = 4*PI2*el_mass/h/h; //p_0 according to Hönl's Waller paper (1933) Page 646
 
-double q(double nu){
+double q(const double& nu){
   return 2*PI*nu/speed_of_light;
 }
 
-cdouble n_prime_from_z(cdouble z,double n_0){
-  return n_0/std::sqrt(z-1.0);
+cdouble n_prime_from_z(const double& z, const double& n_0){
+  return n_0/std::sqrt(cdouble(z)-1.0);
 }
 
-cdouble exp_from_z(double z, double n_0){
-  cdouble z_1 = z-1;
+cdouble exp_from_z(const double& z, const double& n_0){
+  const cdouble z_1 = z-1;
   cdouble temp = 0.0;
-  cdouble sqrt_var = std::sqrt(z_1);
-  //if(z<=1):
-  //  temp -= 2/3.0*z_1*special.hyp2f1(0.75,1,1.75,z_1*z_1)
+  const cdouble sqrt_var = std::sqrt(abs(z_1));
+  if(z<=1)
+    temp -= 2.0/3.0*z_1*hypergeometric(0.75,1.0,1.75,z_1*z_1);
   temp += std::atan(sqrt_var)/sqrt_var;
   temp = std::exp(-2.0*n_0*temp);
   return temp;
 }
 
-double get_Zeff_1s(int Z){
+double get_Zeff_1s(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    1.0,                                                                                                                                                                                                                  1.618,
+  const double Zeff[] = {    1.0,                                                                                                                                                                                                                  1.618,
            2.618, 3.614,                                                                                                                                                                         4.603, 5.587, 6.570, 7.553, 8.534, 9.515,
           10.498,11.484,                                                                                                                                                                        12.471,13.459,14.448,15.437,16.427,17.417,
           18.408,19.400,                                                                                                  20.394,21.388,22.382,23.378,24.372,25.368,26.364,27.360,28.357,29.353,30.349,31.345,32.341,33.337,34.333,35.329,
@@ -39,9 +39,9 @@ double get_Zeff_1s(int Z){
   else exit(-1);
 }
 
-double get_Zeff_2s(int Z){
+double get_Zeff_2s(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {   0.0,                                                                                                                                                                                                                      0.0,
+  const double Zeff[] = {   0.0,                                                                                                                                                                                                                      0.0,
             1.550, 2.266,                                                                                                                                                                         3.036, 3.776, 4.505, 5.257, 5.997, 6.731,
             7.708, 8.699,                                                                                                                                                                         9.686,10.669,11.648,12.625,13.599,14.572,
            15.550,16.530,                                                                                                  17.510,18.490,19.468,20.446,21.421,22.397,23.373,24.348,25.324,26.298,27.273,28.248,29.224,30.201,31.179,32.158,
@@ -53,9 +53,9 @@ double get_Zeff_2s(int Z){
   else exit(-1);
 }
 
-double get_Zeff_2p_1_2(int Z){
+double get_Zeff_2p_1_2(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                         2.268, 2.916, 3.547, 4.022, 4.598, 5.185,
             6.268, 7.306,                                                                                                                                                                         8.343, 9.362,10.355,11.356,12.357,13.340,
            14.330,15.320,                                                                                                  16.303,17.286,18.270,19.263,20.224,21.218,22.194,23.172,24.161,25.137,26.114,27.093,28.071,29.051,30.033,31.014,
@@ -67,9 +67,9 @@ double get_Zeff_2p_1_2(int Z){
   else exit(-1);
 }
 
-double get_Zeff_2p_3_2(int Z){
+double get_Zeff_2p_3_2(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                         2.268, 2.916, 3.546, 4.082, 4.615, 5.175,
             6.256, 7.292,                                                                                                                                                                         8.313, 9.323,10.332,11.321,12.306,13.304,
            14.289,15.275,                                                                                                  16.262,17.244,18.222,19.193,20.165,21.140,22.112,23.081,24.045,25.011,25.976,26.942,27.909,28.876,29.844,30.813,
@@ -81,9 +81,9 @@ double get_Zeff_2p_3_2(int Z){
   else exit(-1);
 }
 
-double get_Zeff_3s(int Z){
+double get_Zeff_3s(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
             3.212, 4.156,                                                                                                                                                                         5.201, 6.127, 6.999, 7.863, 8.699, 9.519,
            10.601,11.677,                                                                                                  12.549,13.377,14.189,14.875,15.776,16.578,17.370,18.157,18.835,19.719,20.623,21.549,22.489,23.439,24.397,25.359,
@@ -95,9 +95,9 @@ double get_Zeff_3s(int Z){
   else exit(-1);
 }
 
-double get_Zeff_3p_1_2(int Z){
+double get_Zeff_3p_1_2(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
               0.0,   0.0,                                                                                                                                                                         3.642, 4.543, 5.386, 6.041, 6.786, 7.541,
             8.726, 9.837,                                                                                                  10.673,11.471,12.251,12.864,13.766,14.537,15.297,16.053,16.667,17.544,18.468,19.420,20.370,21.342,22.324,23.298,
@@ -109,9 +109,9 @@ double get_Zeff_3p_1_2(int Z){
   else exit(-1);
 }
 
-double get_Zeff_3p_3_2(int Z){
+double get_Zeff_3p_3_2(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
               0.0,   0.0,                                                                                                                                                                           0.0, 4.541, 5.376, 6.083, 6.781, 7.502,
             8.685, 9.791,                                                                                                  10.633,11.415,12.178,12.774,13.666,14.422,15.163,15.898,16.495,17.356,18.257,19.184,20.136,21.083,22.037,23.012,
@@ -123,9 +123,9 @@ double get_Zeff_3p_3_2(int Z){
   else exit(-1);
 }
 
-double get_Zeff_3d_3_2(int Z){
+double get_Zeff_3d_3_2(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
               0.0,   0.0,                                                                                                   6.216, 7.146, 7.904, 7.631, 9.246, 9.670,10.240,10.829,10.584,11.978,13.272,14.501,15.694,16.822,17.929,19.018,
@@ -137,9 +137,9 @@ double get_Zeff_3d_3_2(int Z){
   else exit(-1);
 }
 
-double get_Zeff_3d_5_2(int Z){
+double get_Zeff_3d_5_2(const int& Z){
   //Get the shielding constant according to the data in https://research.unl.pt/ws/portalfiles/portal/13073849/ADNDT_2016_7_Revision_2.pdf
-  double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
+  const double Zeff[] = {    0.0,                                                                                                                                                                                                                     0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
               0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
               0.0,   0.0,                                                                                                     0.0, 7.139, 7.845, 7.608, 9.225, 9.779,10.300,10.805,10.479,11.886,13.228,14.457,15.613,16.751,17.850,18.924,
@@ -151,9 +151,9 @@ double get_Zeff_3d_5_2(int Z){
   else exit(-1);
 }
 
-double get_ionization_energy_1s(int Z){
+double get_ionization_energy_1s(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {  13.6,                                                                                                                                                                                                                    24.6,
+  const double ionization_energies[] = {  13.6,                                                                                                                                                                                                                    24.6,
                            54.7, 111.5,                                                                                                                                                                         188.0, 284.2, 409.9, 543.1, 696.7, 870.2,
                          1070.8,1303.0,                                                                                                                                                                        1559.6,1839.0,2145.5,2472.0,2822.4,3205.9,
                          3608.4,4038.5,                                                                                                    4492,  4966,  5465,  5989,  6539,  7112,  7709,  8333,  8979,  9659, 10367, 11103, 11867, 12658, 13474, 14326,
@@ -190,9 +190,9 @@ double get_ionization_energy_1s(int Z){
   */
 }
 
-double get_ionization_energy_2s(int Z){
+double get_ionization_energy_2s(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,  37.3,  41.6, 0.000,  48.5,
                            63.5,  88.7,                                                                                                                                                                         117.8, 149.7, 189.0, 230.9, 270.0, 326.3,
                           378.6, 438.4,                                                                                                   498.0, 560.9, 626.7, 696.0, 769.1, 844.6, 925.1,1008.6,1096.7,1196.2,1299.0,1414.6,1527.0,1652.0,  1782,  1921,
@@ -237,9 +237,9 @@ double get_ionization_energy_2s(int Z){
     plt.show() */
 }
 
-double get_ionization_energy_2p1_2(int Z){
+double get_ionization_energy_2p1_2(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  21.7,
                           30.65, 49.78,                                                                                                                                                                         72.95, 99.82,   136, 163.6,   202, 250.6,
                           297.3, 349.7,                                                                                                   403.6, 460.2, 519.8, 583.8, 649.9, 719.9, 793.2, 870.0, 952.3,1044.9,1143.2,1248.1,1359.1,1474.3,  1596,1730.9,
@@ -285,9 +285,9 @@ double get_ionization_energy_2p1_2(int Z){
     plt.show()*/
 }
 
-double get_ionization_energy_2p3_2(int Z){
+double get_ionization_energy_2p3_2(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  21.6,
                           30.81, 49.50,                                                                                                                                                                         72.55, 99.42,   135, 163.6,   200, 248.4,
                           294.6, 346.2,                                                                                                   398.7, 453.8, 512.1, 574.1, 638.7, 706.8, 778.1, 852.7, 932.7,1021.8,1116.4,1217.0,1323.6,1433.9,  1550,1678.4,
@@ -331,9 +331,9 @@ double get_ionization_energy_2p3_2(int Z){
     plt.show()*/
 }
 
-double get_ionization_energy_3s(int Z){
+double get_ionization_energy_3s(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,  29.3,
                            34.8,  44.3,                                                                                                    51.1,  58.7,  66.3,  74.1,  82.3,  91.3, 101.0, 110.8, 122.5, 139.8, 159.5, 180.1, 204.7, 229.6,   257, 292.8,
@@ -377,9 +377,9 @@ double get_ionization_energy_3s(int Z){
   plt.show()*/
 }
 
-double get_ionization_energy_3p_1_2(int Z){
+double get_ionization_energy_3p_1_2(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,  15.9,
                            18.3,  25.4,                                                                                                    28.3,  32.6,  37.2,  42.2,  47.2,  52.7,  58.9,  68.0,  77.3,  91.4, 103.5, 124.9, 146.9, 166.5,   189, 222.2,
@@ -423,9 +423,9 @@ double get_ionization_energy_3p_1_2(int Z){
   plt.show()*/
 }
 
-double get_ionization_energy_3p_3_2(int Z){
+double get_ionization_energy_3p_3_2(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,  15.7,
                            18.3,  25.4,                                                                                                    28.3,  32.6,  37.2,  42.2,  47.2,  52.7,  59.9,  66.2,  75.1,  88.6, 100.0, 120.8, 141.2, 160.7,   182, 214.4,
@@ -469,9 +469,9 @@ double get_ionization_energy_3p_3_2(int Z){
   plt.show()*/
 }
 
-double get_ionization_energy_3d_3_2(int Z){
+double get_ionization_energy_3d_3_2(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
                             0.0,   0.0,                                                                                                     0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,  10.2,  18.7,  29.8,  41.7,  55.5,    70,  95.0,
@@ -515,9 +515,9 @@ double get_ionization_energy_3d_3_2(int Z){
   plt.show()*/
 }
   
-double get_ionization_energy_3d_5_2(int Z){
+double get_ionization_energy_3d_5_2(const int& Z){
   //#table from X-ray data booklet, in eV
-  double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double ionization_energies[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
                             0.0,   0.0,                                                                                                     0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,  10.1,  18.7,  29.2,  41.7,  54.6,    69,  93.8,
@@ -561,10 +561,10 @@ double get_ionization_energy_3d_5_2(int Z){
   plt.show()*/
 }
 
-double get_line_width_K(int Z){
+double get_line_width_K(const int& Z){
   //#returns line width in eV
   //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
-  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,  0.24,
                            0.30,  0.36,                                                                                                                                                                          0.42,  0.48,  0.53,  0.59,  0.64,  0.68,
                            0.74,  0.81,                                                                                                    0.86,  0.94,  1.01,  1.08,  1.16,  1.25,  1.33,  1.44,  1.55,  1.67,  1.82,  1.96,  2.14,  2.33,  2.52,  2.75,
@@ -575,10 +575,10 @@ double get_line_width_K(int Z){
   return Linewidths[Z-1];
 }
 
-double get_line_width_Lp_3_2(int Z){
+double get_line_width_Lp_3_2(const int& Z){
   //#returns line width in eV
   //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
-  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0, 0.000,   0.1,
                            0.20,  0.41,                                                                                                                                                                          0.73,  1.03,  1.26,  1.49,  1.58,  1.63,
                            1.92,  2.07,                                                                                                    2.21,  2.34,  2.41,  2.54,  2.62,  2.76,  2.79,  2.89,  3.06,  3.28,  3.38,  3.53,  3.79,  3.94,  4.11,  4.28,
@@ -589,10 +589,10 @@ double get_line_width_Lp_3_2(int Z){
   return Linewidths[Z-1];
 }
 
-double get_line_width_Lp_1_2(int Z){
+double get_line_width_Lp_1_2(const int& Z){
   //#returns line width in eV
   //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
-  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0,   0.0,   0.0,
                            0.00, 0.001,                                                                                                                                                                         0.004, 0.015, 0.032, 0.054, 0.083, 0.126,
                           0.152,  0.17,                                                                                                    0.19,  0.24,  0.26,  0.29,  0.34,  0.37,  0.43,  0.52,  0.62,  0.72,  0.83,  0.95,  1.03,  1.13,  1.21,  1.31,
@@ -603,10 +603,10 @@ double get_line_width_Lp_1_2(int Z){
   return Linewidths[Z-1];
 }
   
-double get_line_width_Ls(int Z){
+double get_line_width_Ls(const int& Z){
   //#returns line width in eV
   //#according to Kraus & Oliver J. Phys. Chem. Ref. Data, Vol.8, No.2, 1979
-  double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
+  const double Linewidths[] = {   0.0,                                                                                                                                                                                                                     0.0,
                             0.0,   0.0,                                                                                                                                                                           0.0,  0.00,   0.0,   0.0,   0.0,   0.0,
                            0.00, 0.001,                                                                                                                                                                         0.004, 0.014, 0.033, 0.054, 0.087, 0.128,
                           0.156,  0.17,                                                                                                    0.19,  0.22,  0.24,  0.27,  0.32,  0.36,  0.43,  0.48,  0.56,  0.65,  0.76,  0.82,  0.94,  1.00,  1.08,  1.17,
@@ -617,7 +617,8 @@ double get_line_width_Ls(int Z){
   return Linewidths[Z-1];
 }
 
-double one_minus_delta_edge(int Z, int n0, int l, double j){
+namespace kleemiss_peyerimhoff{
+double one_minus_delta_edge(const int& Z, const int& n0, const int& l, const double& j){
   double Z_s_sq, e_ion;
   if (n0 == 1){
     if (l != 0) exit(-1);
@@ -695,7 +696,7 @@ double one_minus_delta_edge(int Z, int n0, int l, double j){
   return -200;
 }
 
-double b(int n_0, int l_0 , int Z){
+double b(const int& n_0, const int& l_0 , const int& Z){
   double Z_eff = -20;
   if (n_0 == 1)
     Z_eff = get_Zeff_1s(Z);
@@ -723,41 +724,42 @@ double N0_square(const double &b_){
   return pow(b_,3)/PI;
 }
 
-double N0(double b_){
+double N0(const double& b_){
   return std::sqrt(N0_square(b_));
 }
 
-cdouble product_n_prime_from_z(int n_0,double z,int l){
+double product_n_prime_from_z(const int& n_0, const double& z, const int& l){
   cdouble n_p = n_prime_from_z(z,n_0);
-  cdouble fact = cdouble(1.0);
+  double fact = 1.0;
   for (int nu=1; nu <= l; nu++)
-    fact *= n_p * n_p + double(nu*nu);
-  cdouble denom = 1.0-std::exp(-2*PI*n_p);
+    fact *= real(n_p * n_p) + nu * nu;
+  double denom = 1.0 - std::exp(-2*PI*abs(n_p));
   return fact/denom;
 }
 
 //Introduces factors 2pi m_e /h^2 and m
-cdouble N_square_from_z(int l, int m, double b_, int n_0, double z){
+double N_square_from_z(const int& l, const int& m, const double& b_, const int& n_0, const double& z){
   if (m > l)
     return 0;
-  cdouble result = (2*l+1)*ft_fun(l-m)/ft_fun(l+m) * constant_factor / PI * n_0 * b_ * product_n_prime_from_z(n_0,z,l);
+  double result = (2*l+1)*ft_fun(l-m)/ft_fun(l+m) * constant_factor / PI * n_0 * b_ * product_n_prime_from_z(n_0,z,l);
   if (m >= 1)
     result *= 2;
   return result;
 }
 
-cdouble N(int l, int m, double b_, int n_0, double z){
+double N(const int& l, const int& m, const double& b_, const int& n_0, const double& z){
   return std::sqrt(N_square_from_z(l,m,b_,n_0,z));
 }
 
-cdouble N_square(int l, int m, double b_, int n_0, double z){
+double N_square(const int& l, const int& m, const double& b_, const int& n_0, const double& z){
   return N_square_from_z(l,m,b_,n_0,z);
 }
 
-cdouble N_lm_from_z(int l, int m, double z, double b_,int n_0){
+double N_lm_from_z(const int& l, const int& m, const double& z, const double& b_, const int& n_0){
   return N(l,m,b_,n_0, z);
 }
 
-cdouble N_lm_square_from_z(int l, int m, double z, double b_, int n_0){
+double N_lm_square_from_z(const int& l, const int& m, const double& z, const double& b_, const int& n_0){
   return N_square(l,m,b_,n_0,z);
+}
 }

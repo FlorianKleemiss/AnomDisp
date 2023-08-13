@@ -1,0 +1,101 @@
+
+data_Sr
+_chemical_formula_moiety           'Sr1'
+_chemical_formula_sum              'Sr1'
+_chemical_formula_weight           87.62
+loop_
+  _atom_type_symbol
+  _atom_type_scat_dispersion_real
+  _atom_type_scat_dispersion_imag
+  _atom_type_scat_source
+  _atom_type_scat_dispersion_source
+ Sr 0.35 0.522 'NoSpherA2: Chem.Sci. 2021, DOI:10.1039/D0SC05526C'
+ 'Brennan, Cowan, Rev. Sci. Instrum., 1992, 63, 850'
+
+_space_group_crystal_system        'triclinic'
+_space_group_IT_number             1
+_space_group_name_H-M_alt          'P 1'
+_space_group_name_Hall             'P 1'
+loop_
+  _space_group_symop_id
+  _space_group_symop_operation_xyz
+ 1 x,y,z
+
+_symmetry_Int_Tables_number        1
+_cell_length_a                     10.000(2)
+_cell_length_b                     10.000(3)
+_cell_length_c                     10.000(2)
+_cell_angle_alpha                  90.000(2)
+_cell_angle_beta                   90.000(2)
+_cell_angle_gamma                  90.000(2)
+_cell_volume                       1000.0(5)
+_cell_formula_units_Z              1
+_cell_measurement_temperature      293(2)
+_exptl_crystal_F_000               38.000
+_diffrn_reflns_av_R_equivalents    0.0000
+_diffrn_reflns_av_unetI/netI       0.0311
+_diffrn_reflns_Laue_measured_fraction_full  0.9981
+_diffrn_reflns_Laue_measured_fraction_max  0.9988
+_diffrn_reflns_limit_h_max         15
+_diffrn_reflns_limit_h_min         -15
+_diffrn_reflns_limit_k_max         15
+_diffrn_reflns_limit_k_min         -15
+_diffrn_reflns_limit_l_max         15
+_diffrn_reflns_limit_l_min         -15
+_diffrn_reflns_number              7595
+_diffrn_reflns_point_group_measured_fraction_full  0.9981
+_diffrn_reflns_point_group_measured_fraction_max  0.9988
+_diffrn_reflns_theta_full          25.2436
+_diffrn_reflns_theta_max           30.05
+_diffrn_reflns_theta_min           3.05
+_diffrn_measured_fraction_theta_full  0.9981
+_diffrn_measured_fraction_theta_max  0.9988
+_diffrn_radiation_type             'Mo K'
+_diffrn_radiation_wavelength       0.71078
+_reflns_Friedel_coverage           0.0
+_reflns_limit_h_max                15
+_reflns_limit_h_min                -15
+_reflns_limit_k_max                15
+_reflns_limit_k_min                -15
+_reflns_limit_l_max                15
+_reflns_limit_l_min                -15
+_reflns_number_gt                  5024
+_reflns_number_total               7595
+_reflns_threshold_expression       I>=2u(I)
+_refine_diff_density_max           1.6950
+_refine_diff_density_min           -0.8025
+_refine_diff_density_rms           0.0870
+_refine_ls_d_res_high              0.7097
+_refine_ls_d_res_low               6.6752
+_refine_ls_goodness_of_fit_ref     0.9034
+_refine_ls_hydrogen_treatment      constr
+_refine_ls_matrix_type             full
+_refine_ls_number_constraints      0
+_refine_ls_number_parameters       495
+_refine_ls_number_reflns           7595
+_refine_ls_number_restraints       29
+_refine_ls_R_factor_all            0.0548
+_refine_ls_R_factor_gt             0.0361
+_refine_ls_restrained_S_all        0.9015
+_refine_ls_shift/su_max            -0.4325
+_refine_ls_shift/su_mean           0.0077
+_refine_ls_structure_factor_coef   Fsqd
+_refine_ls_weighting_details      
+ 'w=1/[\s^2^(Fo^2^)]'
+_refine_ls_weighting_scheme        calc
+_refine_ls_wR_factor_gt            0.0871
+_refine_ls_wR_factor_ref           0.0924
+
+loop_
+  _atom_site_label
+  _atom_site_type_symbol
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_U_iso_or_equiv
+  _atom_site_adp_type
+  _atom_site_occupancy
+  _atom_site_refinement_flags_posn
+  _atom_site_refinement_flags_adp
+ Sr Sr 0.000(18) 0.000(14) 0.000(2) 0.04(8) Uiso 1.000000 . .
+

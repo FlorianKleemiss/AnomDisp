@@ -25,3 +25,7 @@ paralle_orthogonal_calc.docx
 *.pdb
 *ignore*
 gsl_stuff/gsl-msvc-x64.targets
+gnuplot*
+*iobj
+*ipdb
+olex2*
