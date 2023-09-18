@@ -104,6 +104,14 @@ def calc_stuff_with_brennan(nu_in, t0, l_max, p_max, el_nr, br, e):
   
   return t1,t2,t3,t4,t5,t6,t7,t8,t9, brennan_fdp, hönl_K, hönl_L, hönl_M, hönl
 
+def calc_stuff_hoenl(nu_in, t0, l_max, p_max, el_nr, br, e):
+  wavelength = speed_of_light / nu_in * 1E10
+
+  brennan_fdp = br.at_angstrom(wavelength, e)[1]
+  hönl_K,hönl_L,hönl_M,hönl = calc_hoenllike(h*nu_in, el_nr)
+  
+  return brennan_fdp, hönl_K, hönl_L, hönl_M, hönl
+
 def calc_stuff_only_sums(nu_in, t0, l_max, p_max, el_nr) -> float:
   t1,t2,t3,t4,t5,t6,t7,t8,t9 = calc_stuff(nu_in, t0, l_max, p_max, el_nr)
 
@@ -145,6 +153,7 @@ if __name__ == "__main__":
   numplot = False
   theta_plot = False
   fcf_test = False
+  spectrum_plot = False
   cmaps = ['blue','orange','green','red','black','blue','orange','green','red','black']
   t0:float = 0
   alp:float = 0
@@ -186,7 +195,8 @@ if __name__ == "__main__":
         ('Dispersion Coefficient Plot', 4),
         ('Numerical Plot', 6),
         ('Theta Plot', 7),
-        ('fcf&cif of angular_effect', 8)
+        ('fcf&cif of angular_effect', 8),
+        ("spectrum plot", 9)
         ]
   result = 0
   def set_result():
@@ -237,6 +247,8 @@ if __name__ == "__main__":
     theta_plot = True
   elif result == 8:
     fcf_test = True
+  elif result == 9:
+    spectrum_plot = True
 
   if test_1s == True:
     b_ = b(1,0,1)
@@ -1681,6 +1693,7 @@ if __name__ == "__main__":
   
       
       fig.suptitle(r"$\theta_0$ = {:4.2f} $\pi$".format(t0/math.pi))
+      
       plt.subplots_adjust(left=0.05, bottom=0.04, right=1.0, top=0.95, wspace=0.10, hspace=0.175)
       plt.show()
     #with open('factor_profiling_stats.txt', 'w') as stream:
@@ -1690,7 +1703,56 @@ if __name__ == "__main__":
     #    stats.dump_stats('.prof_stats')
     #    stats.print_stats()
       exit()
+  if spectrum_plot == True:
+    print("Performing Disp Correction Calculation")
+    #axis x is in nu
+    x = np.logspace(math.log10(speed_of_light*1E10/lam_min), 
+                    math.log10(speed_of_light*1E10/lam_max), 
+                    steps)
   
+    np.random.seed(int(np.ceil(time())))
+    t0 = np.random.random(1)[0] * math.pi
+    if overwrite_theta == True:
+      t0 = 0
+    TS = math.sqrt((1.0+np.cos(t0)**2)/2.0)
+    e = elements[el_nr]
+  
+    br = brennan()
+    hönl_K  = np.zeros_like(x)
+    hönl_L  = np.zeros_like(x)
+    hönl_M  = np.zeros_like(x)
+    hönl    = np.zeros_like(x)
+    brennan_fdp = np.zeros_like(x)
+    
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+      res = pool.starmap(calc_stuff_hoenl, zip(x, repeat(t0), repeat(l_max), repeat(p_max), repeat(el_nr), repeat(br), repeat(e)))
+      for i,r in enumerate(res):
+        brennan_fdp[i], hönl_K[i], hönl_L[i], hönl_M[i], hönl[i] = r
+    
+    second_x = speed_of_light / x * 1E10      
+    fig, axes = plt.subplots(1,1)
+  
+    axes.axhline(y=0,linestyle='dashed',color='gray')# type: ignore
+    axes.plot(second_x,brennan_fdp,color='r',label="Brennan & Cowan")# type: ignore
+    axes.plot(second_x,hönl,color='b',label="AnomDisp")# type: ignore
+    axes.set_ylabel(r"$f''$ /$e$")
+    axes.set_xlabel(r"$\lambda /\AA$")
+  
+    ticks = np.array([0.2,0.3,0.5,0.7,1.0,1.5])
+  
+    for ax in fig.get_axes():
+      ax.set_xscale('log')
+      ax.set_xlim(lam_min,lam_max)
+      ax.set_xticks(ticks)
+      ax.get_xaxis().get_major_formatter().labelOnlyBase = False
+      ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
+      ax.legend()
+    fig.set_figheight(inches(17))
+    fig.set_figwidth(inches(22))
+    plt.subplots_adjust(left=0.05, bottom=0.04, right=1.0, top=0.95, wspace=0.10, hspace=0.175)
+    fig.savefig('%s_atMo_spectrum.png'%e,dpi=300,bbox_inches='tight')
+    plt.show()
+    
   if numplot == True: 
 
     print("performing comparison of numerical and ealuation at a given energy")
@@ -1788,12 +1850,16 @@ if __name__ == "__main__":
     p2 = np.zeros_like(x)
     p4 = np.zeros_like(x)
     p6 = np.zeros_like(x)
+    bc = np.zeros_like(x)
 
     nu = speed_of_light*1E10/0.71078
 
     TS = np.sqrt((1.0+np.cos(x)**2)/2.0)
+    from brennan import brennan
+    br = brennan()
 
-    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(16) as pool:
+      brennan_value = br.at_angstrom(0.71073,"Zr")
       res  = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(0), repeat(40)))
       res2 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(2), repeat(40)))
       res4 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(4), repeat(40)))
@@ -1803,6 +1869,7 @@ if __name__ == "__main__":
         p2[i] = res2[i]
         p4[i] = res4[i]
         p6[i] = res6[i]
+        bc[i] = brennan_value[1]
 
     p0 /= TS
     p2 /= TS
@@ -1822,6 +1889,7 @@ if __name__ == "__main__":
     axes.plot(angle,p2,"r-.",label="f'' p=2")# type: ignore
     axes.plot(angle,p4,"b--",label="f'' p=4")# type: ignore
     axes.plot(angle,p6,"g:",label="f'' p=6")# type: ignore
+    axes.plot(angle,bc,linestyle='dashed', color='red',label="Brennan & Cowan")# type: ignore
     axes.set_ylabel(r"$f''$ /$e$")
     axes.set_xlabel(r"$2\theta$")
     axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
@@ -1832,7 +1900,8 @@ if __name__ == "__main__":
     
     fig.savefig('Zr_atMo.png',dpi=300,bbox_inches='tight')
 
-    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(16) as pool:
+      brennan_value = br.at_angstrom(0.710731,"Sr")
       res  = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(0), repeat(38)))
       res2 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(2), repeat(38)))
       res4 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(4), repeat(38)))
@@ -1842,6 +1911,7 @@ if __name__ == "__main__":
         p2[i] = res2[i]
         p4[i] = res4[i]
         p6[i] = res6[i]
+        bc[i] = brennan_value[1]
 
     p0 /= TS
     p2 /= TS
@@ -1856,6 +1926,7 @@ if __name__ == "__main__":
     axes.plot(angle,p2,"r-.",label="f'' p=2")# type: ignore
     axes.plot(angle,p4,"b--",label="f'' p=4")# type: ignore
     axes.plot(angle,p6,"g:",label="f'' p=6")# type: ignore
+    axes.plot(angle,bc,linestyle='dashed', color='red',label="Brennan & Cowan")# type: ignore
     axes.set_ylabel(r"$f''$ /$e$")
     axes.set_xlabel(r"$2\theta$")
     axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
@@ -1866,7 +1937,8 @@ if __name__ == "__main__":
     
     fig.savefig('Sr_atMo.png',dpi=300,bbox_inches='tight')
     
-    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(16) as pool:
+      brennan_value = br.at_angstrom(0.710731,"U")
       res  = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(0), repeat(92)))
       res2 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(2), repeat(92)))
       res4 = pool.starmap(calc_stuff_only_sums, zip(repeat(nu), x, repeat(10), repeat(4), repeat(92)))
@@ -1876,6 +1948,7 @@ if __name__ == "__main__":
         p2[i] = res2[i]
         p4[i] = res4[i]
         p6[i] = res6[i]
+        bc[i] = brennan_value[1]
 
     p0 /= TS
     p2 /= TS
@@ -1890,6 +1963,7 @@ if __name__ == "__main__":
     axes.plot(angle,p2,"r-.",label="f'' p=2")# type: ignore
     axes.plot(angle,p4,"b--",label="f'' p=4")# type: ignore
     axes.plot(angle,p6,"g:",label="f'' p=6")# type: ignore
+    axes.plot(angle,bc,linestyle='dashed', color='red',label="Brennan & Cowan")# type: ignore
     axes.set_ylabel(r"$f''$ /$e$")
     axes.set_xlabel(r"$2\theta$")
     axes.axvline(x=50,linestyle='dashed',color='gray',label='Min. IUCr')# type: ignore
